@@ -101,7 +101,7 @@ classdef mount <handle
         end
         
         function ALT=get.Alt(MountObj)
-            MountObj.ALT = MountDriverHndl.get.ALT;
+            MountObj.ALT = MountDriverHndl.get.Alt;
         end
         
         function set.Alt(MountObj,ALT)
