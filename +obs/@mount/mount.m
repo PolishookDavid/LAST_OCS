@@ -1,14 +1,13 @@
 classdef mount <handle
 
-    properties
-        RA  = NaN;
-        Dec = NaN;
-        HA  = NaN;
-        Az  = NaN;
-        Alt = NaN;
-        TrackingSpeed=NaN;
+    properties (Dependent)
+        RA
+        Dec
+        Az
+        Alt
+        TrackingSpeed
     end
-   
+      
     properties(GetAccess=public, SetAccess=private)
         Status = 'unknown';
         isEastOfPier = NaN;
@@ -48,7 +47,7 @@ classdef mount <handle
     end
     
     properties(Hidden,Constant)
-        sidereal=360/86164.0905; %sidereal tracking rate, degrees/sec
+        SiderealRate=360/86164.0905; %sidereal tracking rate, degrees/sec
          % empirical slewing rate (fixed?), degrees/sec, excluding accelerations
          % if it could be varied (see ':GSR#'/':MSRn#'), this won't be a 
          % Constant property
@@ -79,74 +78,62 @@ classdef mount <handle
     methods
         % setters and getters
         function Az=get.Az(MountObj)
-            MountObj.Az = MountObj.MountDriverHndl.Az;
+            Az = MountObj.MountDriverHndl.Az;
         end
 
         function set.Az(MountObj,Az)
-            MountObj.MountDriverHndl.Az(Az);
+            MountObj.MountDriverHndl.Az = Az;
             switch MountObj.MountDriverHndl.lastError
                 case "target Az beyond limits"
                     MountObj.lastError = "target Az beyond limits";
             end            
         end
         
-        function isEastOfPier=get.isEastOfPier(MountObj)
-            % true if east, false if west.
-            %  Assuming that the mount is polar aligned
-            MountObj.isEastOfPier = MountObj.MountDriverHndl.isEastOfPier;
-        end
-
-        function CounterweightDown=get.isCounterWeightDown(MountObj)
-            MountObj.isCounterweightDown = MountObj.MountDriverHndl.isCounterweightDown;
-        end
-        
         function Alt=get.Alt(MountObj)
-            MountObj.Alt = MountObj.MountDriverHndl.Alt;
+            Alt = MountObj.MountDriverHndl.Alt;
         end
         
         function set.Alt(MountObj,Alt)
-            MountObj.MountDriverHndl.Alt(Alt);
+            MountObj.MountDriverHndl.Alt = Alt;
             switch MountObj.MountDriverHndl.lastError
                 case "target Alt beyond limits"
                     MountObj.lastError = "target Alt beyond limits";
             end            
         end
         
-        function Dec=get.Dec(MountObj)
-            MountObj.Dec = MountObj.MountDriverHndl.Dec;
-        end
-        
-        function set.Dec(MountObj,Dec)
-            MountObj.MountDriverHndl.Dec(Dec);
-            switch MountObj.MountDriverHndl.lastError
-                case "target Alt beyond limits"
-                    MountObj.lastError = "target Dec beyond limits";
-            end            
-        end
-        
         function RA=get.RA(MountObj)
-            MountObj.RA = MountObj.MountDriverHndl.RA;
+            RA = MountObj.MountDriverHndl.RA;
         end
-        
- 
+
         function set.RA(MountObj,RA)
-            MountObj.MountDriverHndl.RA(RA);
+            MountObj.MountDriverHndl.RA = RA;
             switch MountObj.MountDriverHndl.lastError
                 case "target Alt beyond limits"
                     MountObj.lastError = "target RA beyond limits";
             end
         end
 
-        function HourAngle=get.HA(MountObj)
-            % Functionality from MAAT library
-            RAD = 180./pi;
-            % Get JD from the computer
-            JD = celestial.time.julday;    
-            LST = celestial.time.lst(JD,MountObj.MountCoo.ObsLon./RAD,'a');  % fraction of day
-
-            MountObj.HA = LST - MountObj.RA;
+        function Dec=get.Dec(MountObj)
+            Dec = MountObj.MountDriverHndl.Dec;
         end
         
+        function set.Dec(MountObj,Dec)
+            MountObj.MountDriverHndl.Dec = Dec;
+            switch MountObj.MountDriverHndl.lastError
+                case "target Alt beyond limits"
+                    MountObj.lastError = "target Dec beyond limits";
+            end            
+        end
+                
+        function EastOfPier=get.isEastOfPier(MountObj)
+            % true if east, false if west.
+            %  Assuming that the mount is polar aligned
+            EastOfPier = MountObj.MountDriverHndl.isEastOfPier;
+        end
+
+        function CounterWeightDown=get.isCounterWeightDown(MountObj)
+            CounterWeightDown = MountObj.MountDriverHndl.isCounterweightDown;
+        end
         
         function S=get.fullStatus(MountObj)
             S = MountObj.MountDriverHndl.fullStatus;
@@ -168,9 +155,12 @@ classdef mount <handle
             TrackSpeed = MountObj.MountDriverHndl.TrackingSpeed;
         end
 
-        function set.TrackingSpeed(TrackingSpeed,Speed)
+        function set.TrackingSpeed(MountObj,Speed)
+            if (strcmp(Speed,'Sidereal')),
+               Speed=MountObj.SiderealRate;
+            end
             MountObj.lastError = ''
-            MountObj.MountDriverHndl.TrackingSpeed(Speed)
+            MountObj.MountDriverHndl.TrackingSpeed = Speed;
             MountObj.lastError = MountObj.MountDriverHndl.lastError;
         end
 
@@ -181,7 +171,7 @@ classdef mount <handle
         end
         
         function set.MeridianFlip(MountObj,flip)
-            MountObj.MountDriverHndl.MeridianFlip(flip);
+            MountObj.MountDriverHndl.MeridianFlip = flip;
             switch MountObj.MountDriverHndl.lastError
                 case "failed"
                     MountObj.lastError = "failed";
@@ -193,7 +183,7 @@ classdef mount <handle
         end
         
         function set.MeridianLimit(MountObj,limit)
-            MountObj.MountDriverHndl.MeridianLimit(limit);
+            MountObj.MountDriverHndl.MeridianLimit = limit;
             switch MountObj.MountDriverHndl.lastError
                 case "failed"
                     MountObj.lastError = "failed";
@@ -205,31 +195,31 @@ classdef mount <handle
         end
         
         function set.MinAlt(MountObj,MinAlt)
-            MountObj.MountDriverHndl.MinAlt(MinAlt)
+            MountObj.MountDriverHndl.MinAlt = MinAlt;
             switch MountObj.MountDriverHndl.lastError
                 case "failed"
                     MountObj.lastError = "failed";
             end
         end
        
-        function ParkPos=get.ParkPos(MountObj)
-            ParkPosition = MountObj.MountDriverHndl.ParkPos
+        function ParkPosition=get.ParkPos(MountObj)
+            ParkPosition = MountObj.MountDriverHndl.ParkPos;
         end
 
         function set.ParkPos(MountObj,pos)
-            MountObj.MountDriverHndl.ParkPos(pos)
+            MountObj.MountDriverHndl.ParkPos = pos;
             switch MountObj.MountDriverHndl.lastError
                 case "invalid parking position"
                     MountObj.lastError = "invalid parking position";
             end
         end
         
-        function pos=get.MountPos(MountObj)
+        function MountPosition=get.MountPos(MountObj)
             MountPosition = MountObj.MountDriverHndl.MountPos
         end
             
         function set.MountPos(MountObj,Position)
-            MountObj.MountDriverHndl.MountPos(Position)
+            MountObj.MountDriverHndl.MountPos = Position;
             switch MountObj.MountDriverHndl.lastError
                 case "invalid position for mount"
                     MountObj.lastError = "invalid position for mount";

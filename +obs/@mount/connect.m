@@ -4,4 +4,6 @@ function MountObj=connect(MountObj)
     MountObj.MountDriverHndl.connect
     MountObj.lastError = MountObj.MountDriverHndl.lastError
     MountObj.Port = MountObj.MountDriverHndl.Port;
+    MountObj.MountCoo.ObsLon = MountObj.MountDriverHndl.fullStatus.Lon;
+    MountObj.MountCoo.ObsLat = MountObj.MountDriverHndl.fullStatus.Lat;
 end

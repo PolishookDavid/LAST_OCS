@@ -48,7 +48,7 @@ function [DistRA,DistDec,Aux]=GoTo(MountObj, Long, Lat, varargin)
 
 
 % Convert input into RA/Dec
-[RA, Dec] = celestial.coo.convert2equatorial(MountObj,Long, Lat, varargin)
+[RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin)
 MountObj.MountDriverHndl.GoTo(RA, Dec, 'eq');
 MountObj.lastError = MountObj.MountDriverHndl.lastError;
 
