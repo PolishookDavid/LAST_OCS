@@ -78,12 +78,12 @@ classdef mount <handle
     
     methods
         % setters and getters
-        function AZ=get.Az(MountObj)
-            MountObj.AZ = MountDriverHndl.get.Az;
+        function Az=get.Az(MountObj)
+            MountObj.Az = MountDriverHndl.get.Az;
         end
 
-        function set.Az(MountObj,AZ)
-            MountDriverHndl.set.Az(AZ);
+        function set.Az(MountObj,Az)
+            MountDriverHndl.set.Az(Az);
             switch MountDriverHndl.lastError
                 case "target Az beyond limits"
                     MountObj.lastError = "target Az beyond limits";
@@ -100,24 +100,24 @@ classdef mount <handle
             MountObj.isCounterweightDown = MountDriverHndl.get.isCounterweightDown;
         end
         
-        function ALT=get.Alt(MountObj)
-            MountObj.ALT = MountDriverHndl.get.Alt;
+        function Alt=get.Alt(MountObj)
+            MountObj.Alt = MountDriverHndl.get.Alt;
         end
         
-        function set.Alt(MountObj,ALT)
-            MountDriverHndl.set.Alt(ALT);
+        function set.Alt(MountObj,Alt)
+            MountDriverHndl.set.Alt(Alt);
             switch MountDriverHndl.lastError
                 case "target Alt beyond limits"
                     MountObj.lastError = "target Alt beyond limits";
             end            
         end
         
-        function DEC=get.Dec(MountObj)
-            MountObj.DEC = MountHndl.get.DEC;
+        function Dec=get.Dec(MountObj)
+            MountObj.Dec = MountHndl.get.Dec;
         end
         
-        function set.Dec(MountObj,DEC)
-            MountDriverHndl.set.Alt(ALT);
+        function set.Dec(MountObj,Dec)
+            MountDriverHndl.set.Dec(Dec);
             switch MountDriverHndl.lastError
                 case "target Alt beyond limits"
                     MountObj.lastError = "target Dec beyond limits";
@@ -130,7 +130,7 @@ classdef mount <handle
         
  
         function set.RA(MountObj,RA)
-            MountDriverHndl.set.Alt(ALT);
+            MountDriverHndl.set.RA(RA);
             switch MountDriverHndl.lastError
                 case "target Alt beyond limits"
                     MountObj.lastError = "target RA beyond limits";
@@ -199,12 +199,12 @@ classdef mount <handle
             end
         end
         
-        function alt=get.MinAlt(MountObj)
-            alt = MountObj.MountDriverHndl.get.MinAlt
+        function MinAlt=get.MinAlt(MountObj)
+            MinAlt = MountObj.MountDriverHndl.get.MinAlt
         end
         
-        function set.MinAlt(MountObj,alt)
-            MountObj.MountDriverHndl.set.MinAlt(alt)
+        function set.MinAlt(MountObj,MinAlt)
+            MountObj.MountDriverHndl.set.MinAlt(MinAlt)
             switch MountDriverHndl.lastError
                 case "failed"
                     MountObj.lastError = "failed";
