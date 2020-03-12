@@ -48,9 +48,13 @@ function [DistRA,DistDec,Aux]=GoTo(MountObj, Long, Lat, varargin)
 
 
 % Convert input into RA/Dec
-[RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin)
-MountObj.MountDriverHndl.GoTo(RA, Dec, 'eq');
-MountObj.lastError = MountObj.MountDriverHndl.lastError;
+[RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin{:})
+if(~isnan(RA) & ~isnan(Dec)),
+   MountObj.MountDriverHndl.GoTo(RA, Dec, 'eq');
+   MountObj.lastError = MountObj.MountDriverHndl.lastError;
+else
+    fprintf('Could not find coordinates\n')
+end
 
 end
             

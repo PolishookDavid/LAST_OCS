@@ -70,6 +70,7 @@ classdef mount <handle
         
         function delete(MountObj)
             MountObj.MountDriverHndl.delete;
+            fclose(MountObj);
             % shall we try-catch and report success/failure?
         end
         
