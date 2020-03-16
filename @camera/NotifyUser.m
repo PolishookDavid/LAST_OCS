@@ -1,21 +1,10 @@
 function NotifyUser(CameraObj)
-% supposed to be a blocking function
-% writing this only because I'm asked for. For the QHY it doesn't make
-%  too much sense because the camera status is guessed and maintained as
-%  class state variables, not read querying the camera. For other cameras
-%  it could make sense. The QHY does not return to idle by itself, they do
-%  only after reading or aborting exposure
+% Notify the user the exposure was finished, and the image was readout and downloaded
 
-% After image was taken do the following
+Beep;
+fprintf('Image %s is ready\n', CameraObj.lastImageName)
 
-% Save the image according to setting.
-CameraObj.SaveCurImage;
-
-% Notify the user by sound and comment
-CameraObj.NotifyUser;
-
-% Display the image according to setting.
-CameraObj.DisplayImage;
+% NOT READY YET - DP, Mar 16, 2020
 
 
 end
