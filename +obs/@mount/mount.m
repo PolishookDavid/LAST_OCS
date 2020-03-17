@@ -95,11 +95,15 @@ classdef mount <handle
         end
         
         function set.Alt(MountObj,Alt)
-            MountObj.MountDriverHndl.Alt = Alt;
-            switch MountObj.MountDriverHndl.lastError
-                case "target Alt beyond limits"
-                    MountObj.lastError = "target Alt beyond limits";
-            end            
+            if (Alt >= MountObj.MinAlt)
+               MountObj.MountDriverHndl.Alt = Alt;
+               switch MountObj.MountDriverHndl.lastError
+                   case "target Alt beyond limits"
+                       MountObj.lastError = "target Alt beyond limits";
+               end            
+            else
+               MountObj.lastError = "target Alt beyond limits";
+            end
         end
         
         function RA=get.RA(MountObj)
@@ -107,11 +111,17 @@ classdef mount <handle
         end
 
         function set.RA(MountObj,RA)
-            MountObj.MountDriverHndl.RA = RA;
-            switch MountObj.MountDriverHndl.lastError
-                case "target Alt beyond limits"
+           [Az, Alt] = celestial.coo.convert_coo(RA, MountObj.Dec, 'j2000.0', 'h', +celestial.time.julday, [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat]./180.*pi)
+           if(Alt < MountObj.MinAlt)
+              fprintf('Target is too low\n')
+              MountObj.lastError = 'Target is too low\n';
+           else
+              MountObj.MountDriverHndl.RA = RA;
+              switch MountObj.MountDriverHndl.lastError
+                 case "target Alt beyond limits"
                     MountObj.lastError = "target RA beyond limits";
-            end
+              end
+           end
         end
 
         function Dec=get.Dec(MountObj)
@@ -119,11 +129,17 @@ classdef mount <handle
         end
         
         function set.Dec(MountObj,Dec)
-            MountObj.MountDriverHndl.Dec = Dec;
-            switch MountObj.MountDriverHndl.lastError
-                case "target Alt beyond limits"
-                    MountObj.lastError = "target Dec beyond limits";
-            end            
+           [Az, Alt] = celestial.coo.convert_coo(MountObj.RA, Dec, 'j2000.0', 'h', +celestial.time.julday, [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat]./180.*pi)
+           if(Alt < MountObj.MinAlt)
+              fprintf('Target is too low\n')
+              MountObj.lastError = 'Target is too low\n';
+           else
+              MountObj.MountDriverHndl.Dec = Dec;
+              switch MountObj.MountDriverHndl.lastError
+                  case "target Alt beyond limits"
+                      MountObj.lastError = "target Dec beyond limits";
+              end
+           end
         end
                 
         function EastOfPier=get.isEastOfPier(MountObj)
