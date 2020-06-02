@@ -46,19 +46,48 @@ function [DistRA,DistDec,Aux]=goto(MountObj, Long, Lat, varargin)
 %          mount.GoTo('9804;',[],'NameServer','jpl')
 %--------------------------------------------------------------------------
 
+RAD = 180./pi;
 
-% Convert input into RA/Dec
-[RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin{:})
-[Az, Alt] = celestial.coo.convert_coo(RA, Dec, 'j2000.0', 'h', +celestial.time.julday, [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat]./180.*pi)
+if nargin<3
+    Lat = [];
+end
 
-if(isnan(RA) || isnan(Dec))
-   fprintf('Could not find coordinates\n')
-elseif(Alt < MountObj.MinAlt)
-    fprintf('Target is too low\n')
+if (~strcmp(MountObj.Status, 'park'))
+   % Convert input into RA/Dec [input deg, output deg]
+   [RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin{:});
+
+   if(~isnan(RA) && ~isnan(Dec))
+      % check that target is visible
+      % note that input is in [rad]
+      JD = celestial.time.julday;
+      [Flag,FlagRes,Data] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
+                                                           'Lon', MountObj.MountCoo.ObsLon./RAD, 'Lat', MountObj.MountCoo.ObsLat./RAD, ...
+                                                           'AltMinConst', MountObj.MinAlt./RAD, 'AzAltConst', MountObj.MinAzAltMap./RAD);
+      if (Flag)
+         % Start timer to notify when slewing is complete
+         MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+         start(MountObj.SlewingTimer);
+
+         % Start slewing
+         MountObj.MountDriverHndl.GoTo(RA, Dec, 'eq');
+      
+         % Get error
+         MountObj.lastError = MountObj.MountDriverHndl.lastError;
+      else
+         if (~FlagRes.Alt)
+            MountObj.lastError = 'Target Alt too low';
+            fprintf('%s\n',MountObj.lastError)
+         else
+            if (~FlagRes.AzAlt)
+               MountObj.lastError = 'Target Alt too low for the local Az';
+               fprintf('%s\n',MountObj.lastError)
+            end
+         end
+      end
+   else
+      fprintf('Could not find coordinates\n')
+   end
 else
-   MountObj.MountDriverHndl.GoTo(RA, Dec, 'eq');
-   MountObj.lastError = MountObj.MountDriverHndl.lastError;
-end
-
-end
-            
+   MountObj.lastError = "Telescope is parking. Run: park(0) to unpark";
+   fprintf('%s\n', MountObj.lastError)
+end          

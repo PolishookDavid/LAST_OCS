@@ -34,8 +34,8 @@ classdef focuser <handle
         % constructor and destructor
         function F=focuser(varargin)
             if (isempty(varargin))
-               Answer = input('Is the mirror unlock?\n', 's');
-               if (Answer == 'Yes' | Answer == 'yes' | Answer == 'YES' | Answer == 'y')
+               Answer = input('Is the mirror unlock? [y/n]\n', 's');
+               if strcmpi(Answer,'y')
                   F.FocuserDriverHndl=inst.CelestronFocuser;
                else
                   fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n')

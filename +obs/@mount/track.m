@@ -1,4 +1,4 @@
-function track(I,rate)
+function track(MountObj,rate)
     if ~exist('rate','var')
         MountObj.MountDriverHndl.track(); % Driver will tarck at sidereal rate
     else
