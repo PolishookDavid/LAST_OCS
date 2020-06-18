@@ -6,9 +6,11 @@ function home(MountObj)
       MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
       start(MountObj.SlewingTimer);
                   
-      MountObj.MountDriverHndl.home;
+      MountObj.MouHn.home;
+      MountObj.LogFile.writeLog('Slewing home')
    else
-      MountObj.lastError = "Telescope is parking. Run: park(0)";
-      fprintf('%s\n', MountObj.lastError)
+      MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
+      MountObj.LogFile.writeLog(MountObj.lastError)
+      if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
    end
 end

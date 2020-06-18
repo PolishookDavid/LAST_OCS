@@ -1,7 +1,13 @@
 function track(MountObj,rate)
+% Start tracking.
+% MountObj.track use sidereal rate.
+% rate in degrees/sec between 4.1781e-04°/sec and 7.9383e-3°/sec
+% rate = 0 stops the tracking.
     if ~exist('rate','var')
-        MountObj.MountDriverHndl.track(); % Driver will tarck at sidereal rate
+        MountObj.MouHn.track(); % Driver will tarck at sidereal rate
+        MountObj.LogFile.writeLog('call track')
     else
-        MountObj.MountDriverHndl.track(rate);
+        MountObj.MouHn.track(rate);
+        MountObj.LogFile.writeLog(sprintf('call track, rate = %.f',rate))
     end
 end

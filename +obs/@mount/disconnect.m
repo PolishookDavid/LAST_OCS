@@ -1,3 +1,4 @@
 function disconnect(MountObj)
-    MountObj.MountDriverHndl.disconnect();
+    MountObj.MouHn.disconnect();
+    MountObj.LogFile.writeLog('Disconnecting mount')
 end

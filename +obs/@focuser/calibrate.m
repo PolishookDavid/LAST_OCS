@@ -7,10 +7,10 @@ function calibrate(F)
 % assigned USB resource.
 % Or to say it better: doesnt't matter, take for granted that the focuser
 % will disconnect itself, just reconnect it after a few minutes.
-    F.FocuserDriverHndl.calibrate;
-    if(strfind(F.FocuserDriverHndl.lastError, 'Calibration failed')),
-       F.lastError = F.FocuserDriverHndl.lastError;
-    elseif (strfind(F.FocuserDriverHndl.lastError, 'Calibration timed out!')),
-       F.lastError = F.FocuserDriverHndl.lastError;
+    F.FocHn.calibrate;
+    if(strfind(F.FocHn.lastError, 'Calibration failed')),
+       F.lastError = F.FocHn.lastError;
+    elseif (strfind(F.FocHn.lastError, 'Calibration timed out!')),
+       F.lastError = F.FocHn.lastError;
     end
 end

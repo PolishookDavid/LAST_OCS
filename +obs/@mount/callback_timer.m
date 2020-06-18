@@ -1,10 +1,9 @@
 function callback_timer(MountObj, ~, ~)
 % After slewing, check if mount is in Idle status 
 
-flag = 'no';
 if (~strcmp(MountObj.Status, 'slewing'))
    stop(MountObj.SlewingTimer);
    beep
-   fprintf('Slewing is complete\n')
-   flag = 'yes';
+   MountObj.LogFile.writeLog('Slewing is complete')
+   if MountObj.Verbose, fprintf('Slewing is complete\n'); end
 end

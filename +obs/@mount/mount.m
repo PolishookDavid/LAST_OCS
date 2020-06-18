@@ -20,9 +20,8 @@ classdef mount <handle
     end
 
     properties(Hidden)
-        MountDriverHndl = NaN;
-        Port = '';
-        Log = '';
+        MouHn;
+        LogFile;
         
         MountPos=[NaN,NaN,NaN];
         MountCoo = struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
@@ -44,7 +43,7 @@ classdef mount <handle
     
     % non-API-demanded properties, Enrico's judgement
     properties (Hidden) 
-        verbose = true; % for stdin debugging
+        Verbose = true; % for stdin debugging
         serial_resource % the serial object corresponding to Port
     end
     
@@ -64,18 +63,24 @@ classdef mount <handle
     methods
         % constructor and destructor
         function MountObj=mount()
+       
+           DirName = util.constructDirName();
+           cd(DirName);
 
-            % Open a driver object for the mount
-            MountObj.MountDriverHndl=inst.iOptronCEM120();
+           % Opens Log for the camera
+           MountObj.LogFile = logFile;
+           MountObj.LogFile.Dir = DirName;
+           MountObj.LogFile.FileNameTemplate = 'LAST_%s.log';
+           MountObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Mount', ...
+                                       util.readSystemConfigFile('ObservatoryNode'), util.readSystemConfigFile('MountGeoName'), util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
-            % Update mount details
-            MountObj.Port = MountObj.MountDriverHndl.Port;
-            MountObj.Log = '???';
-
+            
+           % Open a driver object for the mount
+           MountObj.MouHn=inst.iOptronCEM120();
         end
         
         function delete(MountObj)
-            MountObj.MountDriverHndl.delete;
+            MountObj.MouHn.delete;
             % Delete the timer
             delete(MountObj.SlewingTimer);
 %            fclose(MountObj);
@@ -109,7 +114,7 @@ classdef mount <handle
 
         % setters and getters
         function Az=get.Az(MountObj)
-            Az = MountObj.MountDriverHndl.Az;
+            Az = MountObj.MouHn.Az;
         end
 
         function set.Az(MountObj,Az)
@@ -119,19 +124,22 @@ classdef mount <handle
                MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
                start(MountObj.SlewingTimer);
 
-               MountObj.MountDriverHndl.Az = Az;
-               switch MountObj.MountDriverHndl.lastError
+               MountObj.MouHn.Az = Az;
+               switch MountObj.MouHn.lastError
                    case "target Az beyond limits"
                        MountObj.lastError = "target Az beyond limits";
+                       MountObj.LogFile.writeLog(MountObj.lastError)
+                       if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
                end
             else
-               MountObj.lastError = "Telescope is parking. Run: park(0)";
-               fprintf('%s\n', MountObj.lastError)
+               MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0)";
+               MountObj.LogFile.writeLog(MountObj.lastError)
+               if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
         end
         
         function Alt=get.Alt(MountObj)
-            Alt = MountObj.MountDriverHndl.Alt;
+            Alt = MountObj.MouHn.Alt;
         end
         
         function set.Alt(MountObj,Alt)
@@ -142,23 +150,27 @@ classdef mount <handle
                   MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
                   start(MountObj.SlewingTimer);
 
-                  MountObj.MountDriverHndl.Alt = Alt;
-                  switch MountObj.MountDriverHndl.lastError
+                  MountObj.MouHn.Alt = Alt;
+                  switch MountObj.MouHn.lastError
                       case "target Alt beyond limits"
                           MountObj.lastError = "target Alt beyond limits";
+                          MountObj.LogFile.writeLog(MountObj.lastError)
+                          if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
                   end            
                else
                   MountObj.lastError = "target Alt beyond limits";
-                  fprintf('%s\n', MountObj.lastError)
+                  MountObj.LogFile.writeLog(MountObj.lastError)
+                  if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
                end
             else
-               MountObj.lastError = "Telescope is parking. Run: park(0)";
-               fprintf('%s\n', MountObj.lastError)
+               MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0)";
+               MountObj.LogFile.writeLog(MountObj.lastError)
+               if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
         end
         
         function RA=get.RA(MountObj)
-            RA = MountObj.MountDriverHndl.RA;
+            RA = MountObj.MouHn.RA;
         end
 
         function set.RA(MountObj,RA)
@@ -166,7 +178,7 @@ classdef mount <handle
         end
 
         function Dec=get.Dec(MountObj)
-            Dec = MountObj.MountDriverHndl.Dec;
+            Dec = MountObj.MouHn.Dec;
         end
         
         function set.Dec(MountObj,Dec)
@@ -176,31 +188,31 @@ classdef mount <handle
         function EastOfPier=get.isEastOfPier(MountObj)
             % true if east, false if west.
             %  Assuming that the mount is polar aligned
-            EastOfPier = MountObj.MountDriverHndl.isEastOfPier;
+            EastOfPier = MountObj.MouHn.isEastOfPier;
         end
 
         function CounterWeightDown=get.isCounterWeightDown(MountObj)
-            CounterWeightDown = MountObj.MountDriverHndl.isCounterweightDown;
+            CounterWeightDown = MountObj.MouHn.isCounterweightDown;
         end
         
         function S=get.fullStatus(MountObj)
-            S = MountObj.MountDriverHndl.fullStatus;
+            S = MountObj.MouHn.fullStatus;
         end
         
         function flag=get.TimeFromGPS(MountObj)
-            flag=MountObj.MountDriverHndl.TimeFromGPS;
+            flag=MountObj.MouHn.TimeFromGPS;
         end
         
         function S=get.Status(MountObj)
             % Status of the mount: idle, slewing, park, home, tracking, unknown
-            S = MountObj.MountDriverHndl.Status;
+            S = MountObj.MouHn.Status;
         end
         
         % tracking implemented by setting the property TrackingSpeed.
         %  using custom tracking mode, which allows the broadest range
         
         function TrackSpeed=get.TrackingSpeed(MountObj)
-            TrackSpeed = MountObj.MountDriverHndl.TrackingSpeed;
+            TrackSpeed = MountObj.MouHn.TrackingSpeed;
         end
 
         function set.TrackingSpeed(MountObj,Speed)
@@ -208,45 +220,51 @@ classdef mount <handle
                Speed=MountObj.SiderealRate;
             end
             MountObj.lastError = '';
-            MountObj.MountDriverHndl.TrackingSpeed = Speed;
-            MountObj.lastError = MountObj.MountDriverHndl.lastError;
+            MountObj.MouHn.TrackingSpeed = Speed;
+            MountObj.lastError = MountObj.MouHn.lastError;
         end
 
 % functioning parameters getters/setters & misc
         
         function flip=get.MeridianFlip(MountObj)
-            flip = MountObj.MountDriverHndl.MeridianFlip;
+            flip = MountObj.MouHn.MeridianFlip;
         end
         
         function set.MeridianFlip(MountObj,flip)
-            MountObj.MountDriverHndl.MeridianFlip = flip;
-            switch MountObj.MountDriverHndl.lastError
+            MountObj.MouHn.MeridianFlip = flip;
+            switch MountObj.MouHn.lastError
                 case "failed"
                     MountObj.lastError = "failed";
+                    MountObj.LogFile.writeLog(MountObj.lastError)
+                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
         end
 
         function limit=get.MeridianLimit(MountObj)
-            limit = MountObj.MountDriverHndl.MeridianLimit;
+            limit = MountObj.MouHn.MeridianLimit;
         end
         
         function set.MeridianLimit(MountObj,limit)
-            MountObj.MountDriverHndl.MeridianLimit = limit;
-            switch MountObj.MountDriverHndl.lastError
+            MountObj.MouHn.MeridianLimit = limit;
+            switch MountObj.MouHn.lastError
                 case "failed"
                     MountObj.lastError = "failed";
+                    MountObj.LogFile.writeLog(MountObj.lastError)
+                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
         end
         
         function MinAlt=get.MinAlt(MountObj)
-            MinAlt = MountObj.MountDriverHndl.MinAlt;
+            MinAlt = MountObj.MouHn.MinAlt;
         end
         
         function set.MinAlt(MountObj,MinAlt)
-            MountObj.MountDriverHndl.MinAlt = MinAlt;
-            switch MountObj.MountDriverHndl.lastError
+            MountObj.MouHn.MinAlt = MinAlt;
+            switch MountObj.MouHn.lastError
                 case "failed"
                     MountObj.lastError = "failed";
+                    MountObj.LogFile.writeLog(MountObj.lastError)
+                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
         end
        
@@ -260,34 +278,36 @@ classdef mount <handle
                MountObj.MinAzAltMap = MinAzAltMap;
             else
                fprintf('Format is 2-column table: Az, Alt\n')
+               if MountObj.Verbose, fprintf('Format is 2-column table: Az, Alt\n'); end
             end
         end
        
         function ParkPosition=get.ParkPos(MountObj)
-            ParkPosition = MountObj.MountDriverHndl.ParkPos;
+            ParkPosition = MountObj.MouHn.ParkPos;
         end
 
         function set.ParkPos(MountObj,pos)
-            MountObj.MountDriverHndl.ParkPos = pos;
-            switch MountObj.MountDriverHndl.lastError
+            MountObj.MouHn.ParkPos = pos;
+            switch MountObj.MouHn.lastError
                 case "invalid parking position"
                     MountObj.lastError = "invalid parking position";
+                    MountObj.LogFile.writeLog(MountObj.lastError)
+                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
         end
         
         function MountPosition=get.MountPos(MountObj)
-            MountPosition = MountObj.MountDriverHndl.MountPos
+            MountPosition = MountObj.MouHn.MountPos
         end
             
         function set.MountPos(MountObj,Position)
-            MountObj.MountDriverHndl.MountPos = Position;
-            switch MountObj.MountDriverHndl.lastError
+            MountObj.MouHn.MountPos = Position;
+            switch MountObj.MouHn.lastError
                 case "invalid position for mount"
                     MountObj.lastError = "invalid position for mount";
+                    MountObj.LogFile.writeLog(MountObj.lastError)
+                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
-
         end
-
     end
-
 end

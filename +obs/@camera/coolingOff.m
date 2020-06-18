@@ -1,4 +1,5 @@
 function coolingOff(CameraObj)
-% Turn cooling off by commanding PWM to 0
-   CameraObj.CameraDriverHndl.coolingOff;
+   % Turn camera cooling off
+   CameraObj.CamHn.coolingOff;
+   CameraObj.LogFile.writeLog('Call Cooling off')
 end

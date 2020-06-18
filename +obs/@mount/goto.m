@@ -69,25 +69,30 @@ if (~strcmp(MountObj.Status, 'park'))
          start(MountObj.SlewingTimer);
 
          % Start slewing
-         MountObj.MountDriverHndl.GoTo(RA, Dec, 'eq');
+         MountObj.MouHn.GoTo(RA, Dec, 'eq');
       
          % Get error
-         MountObj.lastError = MountObj.MountDriverHndl.lastError;
+         MountObj.lastError = MountObj.MouHn.lastError;
       else
          if (~FlagRes.Alt)
             MountObj.lastError = 'Target Alt too low';
-            fprintf('%s\n',MountObj.lastError)
+            MountObj.LogFile.writeLog(MountObj.lastError)
+            if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
          else
             if (~FlagRes.AzAlt)
                MountObj.lastError = 'Target Alt too low for the local Az';
-               fprintf('%s\n',MountObj.lastError)
+               MountObj.LogFile.writeLog(MountObj.lastError)
+               if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
          end
       end
    else
-      fprintf('Could not find coordinates\n')
+      MountObj.lastError = 'Could not find coordinates';
+      MountObj.LogFile.writeLog(MountObj.lastError)
+      if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
    end
 else
-   MountObj.lastError = "Telescope is parking. Run: park(0) to unpark";
-   fprintf('%s\n', MountObj.lastError)
+   MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
+   MountObj.LogFile.writeLog(MountObj.lastError)
+   if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
 end          

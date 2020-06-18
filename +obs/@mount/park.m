@@ -3,6 +3,8 @@ function park(MountObj,parking)
     if ~exist('parking','var')
         parking=true;
     end
+    MountObj.LogFile.writeLog(sprintf('call parking = %d',parking))
+
     MountObj.lastError='';
     if (parking)
        MountObj.MinAltPrev = MountObj.MinAlt;
@@ -18,6 +20,10 @@ function park(MountObj,parking)
           MountObj.MinAltPrev = NaN;
        end
     end
-   MountObj.MountDriverHndl.park(parking);
-   MountObj.lastError=MountObj.MountDriverHndl.lastError;
+   MountObj.MouHn.park(parking);
+   if (~isempty(MountObj.MouHn.lastError))
+      MountObj.lastError=MountObj.MouHn.lastError;
+      MountObj.LogFile.writeLog(MountObj.lastError)
+      if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+   end
 end
