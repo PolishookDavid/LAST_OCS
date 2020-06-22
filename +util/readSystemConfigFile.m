@@ -6,7 +6,7 @@ function Output = readSystemConfigFile(Keyword)
 ConfigDirectory = '/home/last/config/';
 ConfigTable=readtable([ConfigDirectory,'ObsSystemConfig.txt']);
 
-if ~exist('Keyword','var')
+if nargin < 1
    Output=ConfigTable;
 else
    Mask = ismember(ConfigTable.Keyword, Keyword);

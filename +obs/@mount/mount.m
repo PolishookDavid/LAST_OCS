@@ -16,6 +16,7 @@ classdef mount <handle
         TelescopeEastUniqueName = NaN;
         TelescopeWestUniqueName = NaN;
         isEastOfPier = NaN;
+        isConnected = false;
         Status = 'unknown';
     end
 
@@ -114,12 +115,14 @@ classdef mount <handle
 
         % setters and getters
         function Az=get.Az(MountObj)
-            Az = MountObj.MouHn.Az;
+           MountObj.checkIfConnected
+           Az = MountObj.MouHn.Az;
         end
 
         function set.Az(MountObj,Az)
+            MountObj.checkIfConnected
             if (~strcmp(MountObj.Status, 'park'))
-                  
+
                % Start timer to notify when slewing is complete
                MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
                start(MountObj.SlewingTimer);
@@ -139,72 +142,83 @@ classdef mount <handle
         end
         
         function Alt=get.Alt(MountObj)
-            Alt = MountObj.MouHn.Alt;
+           MountObj.checkIfConnected
+           Alt = MountObj.MouHn.Alt;
         end
         
         function set.Alt(MountObj,Alt)
-            if (~strcmp(MountObj.Status, 'park'))
-               if (Alt >= MountObj.MinAlt)
-                  
-                  % Start timer to notify when slewing is complete
-                  MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-                  start(MountObj.SlewingTimer);
+           MountObj.checkIfConnected
+           if (~strcmp(MountObj.Status, 'park'))
+              if (Alt >= MountObj.MinAlt)
 
-                  MountObj.MouHn.Alt = Alt;
-                  switch MountObj.MouHn.lastError
-                      case "target Alt beyond limits"
-                          MountObj.lastError = "target Alt beyond limits";
-                          MountObj.LogFile.writeLog(MountObj.lastError)
-                          if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
-                  end            
-               else
-                  MountObj.lastError = "target Alt beyond limits";
-                  MountObj.LogFile.writeLog(MountObj.lastError)
-                  if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
-               end
-            else
-               MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0)";
-               MountObj.LogFile.writeLog(MountObj.lastError)
-               if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
-            end
+                 % Start timer to notify when slewing is complete
+                 MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+                 start(MountObj.SlewingTimer);
+
+                 MountObj.MouHn.Alt = Alt;
+                 switch MountObj.MouHn.lastError
+                    case "target Alt beyond limits"
+                       MountObj.lastError = "target Alt beyond limits";
+                       MountObj.LogFile.writeLog(MountObj.lastError)
+                       if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+                 end
+              else
+                 MountObj.lastError = "target Alt beyond limits";
+                 MountObj.LogFile.writeLog(MountObj.lastError)
+                 if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+              end
+           else
+              MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0)";
+              MountObj.LogFile.writeLog(MountObj.lastError)
+              if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+           end
         end
-        
+
         function RA=get.RA(MountObj)
-            RA = MountObj.MouHn.RA;
+           MountObj.checkIfConnected
+           RA = MountObj.MouHn.RA;
         end
 
         function set.RA(MountObj,RA)
+           MountObj.checkIfConnected
            MountObj.goto(RA, MountObj.Dec)
         end
 
         function Dec=get.Dec(MountObj)
+            MountObj.checkIfConnected
             Dec = MountObj.MouHn.Dec;
         end
         
         function set.Dec(MountObj,Dec)
+           MountObj.checkIfConnected
            MountObj.goto(MountObj.RA, Dec)
         end
                 
         function EastOfPier=get.isEastOfPier(MountObj)
-            % true if east, false if west.
-            %  Assuming that the mount is polar aligned
-            EastOfPier = MountObj.MouHn.isEastOfPier;
+           MountObj.checkIfConnected
+           % true if east, false if west.
+           %  Assuming that the mount is polar aligned
+           EastOfPier = MountObj.MouHn.isEastOfPier;
         end
 
         function CounterWeightDown=get.isCounterWeightDown(MountObj)
-            CounterWeightDown = MountObj.MouHn.isCounterweightDown;
+           MountObj.checkIfConnected
+           CounterWeightDown = MountObj.MouHn.isCounterweightDown;
         end
         
         function S=get.fullStatus(MountObj)
+            MountObj.checkIfConnected
             S = MountObj.MouHn.fullStatus;
         end
         
         function flag=get.TimeFromGPS(MountObj)
+            MountObj.checkIfConnected
             flag=MountObj.MouHn.TimeFromGPS;
         end
         
         function S=get.Status(MountObj)
             % Status of the mount: idle, slewing, park, home, tracking, unknown
+            MountObj.checkIfConnected
             S = MountObj.MouHn.Status;
         end
         
@@ -212,10 +226,12 @@ classdef mount <handle
         %  using custom tracking mode, which allows the broadest range
         
         function TrackSpeed=get.TrackingSpeed(MountObj)
+            MountObj.checkIfConnected
             TrackSpeed = MountObj.MouHn.TrackingSpeed;
         end
 
         function set.TrackingSpeed(MountObj,Speed)
+            MountObj.checkIfConnected
             if (strcmp(Speed,'Sidereal'))
                Speed=MountObj.SiderealRate;
             end
@@ -227,10 +243,12 @@ classdef mount <handle
 % functioning parameters getters/setters & misc
         
         function flip=get.MeridianFlip(MountObj)
+            MountObj.checkIfConnected
             flip = MountObj.MouHn.MeridianFlip;
         end
         
         function set.MeridianFlip(MountObj,flip)
+            MountObj.checkIfConnected
             MountObj.MouHn.MeridianFlip = flip;
             switch MountObj.MouHn.lastError
                 case "failed"
@@ -241,10 +259,12 @@ classdef mount <handle
         end
 
         function limit=get.MeridianLimit(MountObj)
+            MountObj.checkIfConnected
             limit = MountObj.MouHn.MeridianLimit;
         end
         
         function set.MeridianLimit(MountObj,limit)
+            MountObj.checkIfConnected
             MountObj.MouHn.MeridianLimit = limit;
             switch MountObj.MouHn.lastError
                 case "failed"
@@ -255,10 +275,12 @@ classdef mount <handle
         end
         
         function MinAlt=get.MinAlt(MountObj)
+            MountObj.checkIfConnected
             MinAlt = MountObj.MouHn.MinAlt;
         end
         
         function set.MinAlt(MountObj,MinAlt)
+            MountObj.checkIfConnected
             MountObj.MouHn.MinAlt = MinAlt;
             switch MountObj.MouHn.lastError
                 case "failed"
@@ -283,10 +305,12 @@ classdef mount <handle
         end
        
         function ParkPosition=get.ParkPos(MountObj)
+            MountObj.checkIfConnected
             ParkPosition = MountObj.MouHn.ParkPos;
         end
 
         function set.ParkPos(MountObj,pos)
+            MountObj.checkIfConnected
             MountObj.MouHn.ParkPos = pos;
             switch MountObj.MouHn.lastError
                 case "invalid parking position"
@@ -297,10 +321,12 @@ classdef mount <handle
         end
         
         function MountPosition=get.MountPos(MountObj)
-            MountPosition = MountObj.MouHn.MountPos
+            MountObj.checkIfConnected
+            MountPosition = MountObj.MouHn.MountPos;
         end
             
         function set.MountPos(MountObj,Position)
+            MountObj.checkIfConnected
             MountObj.MouHn.MountPos = Position;
             switch MountObj.MouHn.lastError
                 case "invalid position for mount"

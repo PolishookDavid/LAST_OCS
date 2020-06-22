@@ -1,6 +1,7 @@
 Texp  = [0.1 , 1 , 3 , 10 , 30, 100];
-Temp  = [15, 0 , -5,-15 ];
+Temp  = [15, 0 , -5,-10,-15];
 TempTresh=  0.2;
+C=Cq;
 for Tempind = 1:numel(Temp)
     C.Temperature = Temp(Tempind);
     while (abs(C.Temperature-Temp(Tempind))>TempTresh)
@@ -18,6 +19,6 @@ for Tempind = 1:numel(Temp)
     for Texpind  = 1:numel(Texp)
         disp(['Start Texp = ' num2str(Texp(Texpind)) ', Temperature' num2str(Temp(Tempind))])
         C.takeDarkImages(5,Texp(Texpind))
-        pause(10)   
+        pause(5)   
     end
 end

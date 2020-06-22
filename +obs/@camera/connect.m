@@ -4,16 +4,14 @@ function success=connect(CameraObj, MountHn, FocusHn)
     %  physical dimensions, etc.
     %  cameranum: int, number of the camera to open (as enumerated by the SDK)
     %     May be omitted. In that case the last camera is referred to
-   
+
    % Open handle to mount
-   if exist('MountHn','var')
+   if nargin>1
       CameraObj.MouHn=MountHn;
       MountConSuccess = CameraObj.MouHn.connect;
       CameraObj.LogFile.writeLog('Camera connects to mount to get details.')
       if(~MountConSuccess), fprintf('Failed to connect to Mount\n'); end
-   end
-   % Open handle to focuser
-   if exist('FocusHn','var')
+   elseif nargin>2
       CameraObj.FocHn=FocusHn;
       FocuserConSuccess = CameraObj.FocHn.connect;
       CameraObj.LogFile.writeLog('Camera connects to mount to derive details.')
@@ -23,12 +21,20 @@ function success=connect(CameraObj, MountHn, FocusHn)
    % Update computer clock using the Network Time Protocol (NTP)
    if CameraObj.Verbose, fprintf('>>> Updating computer clock with the Network Time Protocol (NTP).\n Wait for a few seconds\n'); end
    CameraObj.LogFile.writeLog('Updating computer clock with the Network Time Protocol (NTP).')
-   util.update_time_NTP;
-
+   util.update_time_NTP;   
+   
    success = CameraObj.CamHn.connect;
+   CameraObj.IsConnected = success;
    CameraObj.LogFile.writeLog('Connecting to camera.')
 
    if (success)
+
+      % NEEDS TO ADD HERE AN ALGORITM TO CHOOSE WHICH CAMERA TO CONNECT TO. DP 22 Jun 2020
+      % - Read 2 Unique names from config file,
+      % - Compare with Unique Name read from camera.
+      % - Define camera class instance as East or West
+
+      
       CameraObj.cameranum = CameraObj.CamHn.cameranum;
 
       % Naming of instruments

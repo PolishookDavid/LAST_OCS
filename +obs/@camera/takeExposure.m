@@ -1,6 +1,8 @@
 function takeExposure(CameraObj,ExpTime)
 
-   if exist('expTime','var')
+   CameraObj.checkIfConnected
+   
+   if nargin == 2
       CameraObj.ExpTime=ExpTime;
    end
    

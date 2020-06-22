@@ -1,10 +1,13 @@
 function success=connect(MountObj)
 % connect to a focus motor on the specified Port, try all ports if
 %  Port omitted
-    success = MountObj.MouHn.connect;
     MountObj.LogFile.writeLog('Connecting to mount.')
-    MountObj.lastError = MountObj.MouHn.lastError;
-%     if (success) % DP: WHY the mount driver connect method returns zero??? 2020, Jun 1
+    success = MountObj.MouHn.connect;
+    MountObj.isConnected = success;
+    
+    if success
+       MountObj.LogFile.writeLog('Mount is connected.')
+%    MountObj.lastError = MountObj.MouHn.lastError;
 %        MountObj.Port = MountObj.MouHn.Port;
         % Naming of instruments
         MountObj.MountType = MountObj.MouHn.MountType;
@@ -46,7 +49,12 @@ function success=connect(MountObj)
         MountObj.LogFile.writeLog(sprintf('Minimal Alt: %.1f',MountObj.MinAlt))
         MountObj.LogFile.writeLog(sprintf('Park position: %.1f %.1f',MountObj.ParkPos(1), MountObj.ParkPos(2)))
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
-
-%     end
+    else
+       Text = sprintf("Mount %s is disconnected", util.readSystemConfigFile('MountGeoName'));
+       MountObj.lastError = Text;
+       MountObj.LogFile.writeLog(Text)
+       if MountObj.Verbose, fprintf('%s\n', Text); end
+       % Send email to user
+    end
 
 end

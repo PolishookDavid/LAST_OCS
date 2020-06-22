@@ -1,4 +1,6 @@
 function disconnect(MountObj)
-    MountObj.MouHn.disconnect();
-    MountObj.LogFile.writeLog('Disconnecting mount')
+   MountObj.checkIfConnected
+   MountObj.MouHn.disconnect;
+   MountObj.isConnected = false;
+   MountObj.LogFile.writeLog('Disconnecting mount')
 end

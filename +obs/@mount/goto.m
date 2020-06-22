@@ -52,6 +52,8 @@ if nargin<3
     Lat = [];
 end
 
+MountObj.checkIfConnected
+
 if (~strcmp(MountObj.Status, 'park'))
    % Convert input into RA/Dec [input deg, output deg]
    [RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin{:});

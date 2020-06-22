@@ -8,6 +8,7 @@ function abort(MountObj)
    % Delete the timer
    delete(MountObj.SlewingTimer);
    % Stop the mount motion
+   MountObj.checkIfConnected
    MountObj.MouHn.abort;
    MountObj.LogFile.writeLog('Abort slewing')
 end
