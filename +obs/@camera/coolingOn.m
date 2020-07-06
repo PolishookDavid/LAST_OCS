@@ -4,7 +4,7 @@ function coolingOn(CameraObj,Temp)
       Temp = CameraObj.Temperature;
    end
 
-   CameraObj.checkIfConnected
+%    CameraObj.checkIfConnected;
    CameraObj.CamHn.coolingOn(Temp);
    CameraObj.LogFile.writeLog(sprintf('Call Cooling on, temperarture=%.1f', Temp))
 end

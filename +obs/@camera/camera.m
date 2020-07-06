@@ -94,7 +94,7 @@ classdef camera < handle
               CameraObj.CamType = 'ZWO';
            end
 
-           DirName = util.constructDirName();
+           DirName = util.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the camera
@@ -142,18 +142,18 @@ classdef camera < handle
         end
 
         function status=get.CamStatus(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             status=CameraObj.CamHn.CamStatus;
         end
         
         function status=get.CoolingStatus(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             status = CameraObj.CamHn.CoolingStatus;
         end
         
         
         function Temp=get.Temperature(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             Temp = CameraObj.CamHn.Temperature;
             switch CameraObj.CamHn.lastError
                 case "could not get temperature"
@@ -164,7 +164,7 @@ classdef camera < handle
         end
 
         function set.Temperature(CameraObj,Temp)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             CameraObj.CamHn.Temperature = Temp;
             switch CameraObj.CamHn.lastError
                 case "could not get temperature"
@@ -176,14 +176,14 @@ classdef camera < handle
         end
         
         function Percentage=get.CoolingPercentage(CameraObj)
-           CameraObj.checkIfConnected
+%            CameraObj.checkIfConnected;
            Percentage = CameraObj.CamHn.CoolingPercentage;
         end
 
 
         
         function ExpTime=get.ExpTime(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             % ExpTime in seconds
             ExpTime = CameraObj.CamHn.ExpTime;
             switch CameraObj.CamHn.lastError
@@ -195,7 +195,7 @@ classdef camera < handle
         end
 
         function set.ExpTime(CameraObj,ExpTime)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             % ExpTime in seconds
             CameraObj.CamHn.ExpTime = ExpTime;
             switch CameraObj.CamHn.lastError
@@ -209,7 +209,7 @@ classdef camera < handle
 
         
         function Gain=get.Gain(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             Gain = CameraObj.CamHn.Gain;
             switch CameraObj.CamHn.lastError
                 case "could not get gain"
@@ -220,7 +220,7 @@ classdef camera < handle
         end
         
         function set.Gain(CameraObj,Gain)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             % for an explanation of gain & offset vs. dynamics, see
             %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
             %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
@@ -240,7 +240,7 @@ classdef camera < handle
             % resolution is [x1,y1,sizex,sizey]
             %  I highly suspect that this setting is very problematic
             %   especially in color mode.
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             CameraObj.CamHn.ROI = roi;
             switch CameraObj.CamHn.lastError
                 case "could not set ROI"
@@ -253,7 +253,7 @@ classdef camera < handle
 
         
         function offset=get.Offset(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             % Offset seems to be a sort of bias, black level
             offset = CameraObj.CamHn.offset;
             switch CameraObj.CamHn.lastError
@@ -265,7 +265,7 @@ classdef camera < handle
         end
         
         function set.Offset(CameraObj,offset)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             CameraObj.CamHn.offset = offset;
             switch CameraObj.CamHn.lastError
                 case "could not set offset"
@@ -278,7 +278,7 @@ classdef camera < handle
 
         
         function readMode=get.ReadMode(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             readMode = CameraObj.CamHn.readMode;
             switch CameraObj.CamHn.lastError
                 case "could not get the read mode"
@@ -289,7 +289,7 @@ classdef camera < handle
         end
 
         function set.ReadMode(CameraObj,readMode)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             CameraObj.CamHn.readMode = readMode;
             switch CameraObj.CamHn.lastError
                 case "could not set the read mode"
@@ -305,7 +305,7 @@ classdef camera < handle
             % default is 1x1
             % for the QHY367, 1x1 and 2x2 seem to work; NxN with N>2 gives
             % error.
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             CameraObj.CamHn.binning = binning;
             switch CameraObj.CamHn.lastError
                 case "could not set the binning"
@@ -321,7 +321,7 @@ classdef camera < handle
 
         function set.color(CameraObj,ColorMode)
             % default has to be bw
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             CameraObj.CamHn.binning = ColorMode;
             switch CameraObj.CamHn.lastError
                 case "could not set the binning"
@@ -340,7 +340,7 @@ classdef camera < handle
             % Constrain BitDepth to 8|16, the functions wouldn't give any
             %  error anyway for different values.
             % default has to be bw
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             CameraObj.CamHn.binning = BitDepth;
             switch CameraObj.CamHn.lastError
                 case "could not set bit depth"
@@ -352,7 +352,7 @@ classdef camera < handle
         end
 
         function bitDepth=get.bitDepth(CameraObj)
-            CameraObj.checkIfConnected
+%             CameraObj.checkIfConnected;
             bitDepth = CameraObj.CamHn.bitDepth;
             switch CameraObj.CamHn.lastError
                 case "could not get bit depth"

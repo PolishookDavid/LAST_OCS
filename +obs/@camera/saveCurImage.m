@@ -2,7 +2,7 @@ function saveCurImage(CameraObj)
 % Save last image to disk according the user's settings
 
    % Construct directory name to save image in
-   DirName = util.constructDirName();
+   DirName = util.constructDirName('raw');
    cd(DirName);
    CameraObj.LogFile.writeLog(sprintf('cd %s',DirName))
 

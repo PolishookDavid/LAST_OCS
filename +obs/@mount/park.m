@@ -4,7 +4,7 @@ function park(MountObj,parking)
       parking=true;
    end
    
-   MountObj.checkIfConnected
+   MountObj.checkIfConnected;
    MountObj.LogFile.writeLog(sprintf('call parking = %d',parking))
 
    MountObj.lastError='';

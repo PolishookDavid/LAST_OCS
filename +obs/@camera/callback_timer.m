@@ -10,8 +10,9 @@ if (strcmp(CameraObj.CamStatus, 'idle'))
       CameraObj.saveCurImage;
    end
 
-   % Notify the user by sound and comment
-   CameraObj.notifyUser;
+   % DP: remove from here and enter to waitFinish
+%   % Notify the user by sound and comment
+%   CameraObj.notifyUser;
 
    % Display the image according to setting.
    if (CameraObj.Display)

@@ -5,24 +5,27 @@ function success=connect(CameraObj, MountHn, FocusHn)
     %  cameranum: int, number of the camera to open (as enumerated by the SDK)
     %     May be omitted. In that case the last camera is referred to
 
-   % Open handle to mount
+   % Update computer clock using the Network Time Protocol (NTP)
+   if CameraObj.Verbose, fprintf('>>> Updating computer clock with the Network Time Protocol (NTP).\n Wait for a few seconds\n'); end
+   CameraObj.LogFile.writeLog('Updating computer clock with the Network Time Protocol (NTP).')
+   util.update_time_NTP;
+       
    if nargin>1
+   % Open handle to mount
       CameraObj.MouHn=MountHn;
       MountConSuccess = CameraObj.MouHn.connect;
       CameraObj.LogFile.writeLog('Camera connects to mount to get details.')
       if(~MountConSuccess), fprintf('Failed to connect to Mount\n'); end
-   elseif nargin>2
+   end
+   if nargin>2
+   % Open handle to focuser
       CameraObj.FocHn=FocusHn;
       FocuserConSuccess = CameraObj.FocHn.connect;
       CameraObj.LogFile.writeLog('Camera connects to mount to derive details.')
       if(~FocuserConSuccess), fprintf('Failed to connect to Focuser\n'); end
    end
 
-   % Update computer clock using the Network Time Protocol (NTP)
-   if CameraObj.Verbose, fprintf('>>> Updating computer clock with the Network Time Protocol (NTP).\n Wait for a few seconds\n'); end
-   CameraObj.LogFile.writeLog('Updating computer clock with the Network Time Protocol (NTP).')
-   util.update_time_NTP;   
-   
+   % Connect to camera
    success = CameraObj.CamHn.connect;
    CameraObj.IsConnected = success;
    CameraObj.LogFile.writeLog('Connecting to camera.')

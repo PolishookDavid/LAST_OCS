@@ -17,8 +17,9 @@ function flag=checkIfConnected(MountObj, Text)
          % Mount is connected, continue with no action
       else
          % Wait for a minute and try again to connect
-         if MountObj.Verbose, fprintf('Wait 60 sec and try to reconnect to mount\n'); end
-         pause(60)
+         WaitingTime = 30;
+         if MountObj.Verbose, fprintf('Wait %.2f sec and try to reconnect to mount\n', WaitingTime); end
+         pause(WaitingTime)
          MountObj.connect;
          pause(5)
          flag = MountObj.isConnected;

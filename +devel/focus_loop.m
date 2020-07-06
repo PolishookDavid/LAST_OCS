@@ -2,16 +2,17 @@ function [Res] = focus_loop(CamObj,MountObj,FocObj)
 % Example: [Res] = devel.focus_loop(C,M,F)
 
 %ExpTime = 1;
-StartPos = 25500;
+StartPos = 23700;
+FocusGuess = 23500;
+
 PlotMarker = 'o';
 PlotMinMarker = 'p';
 PlotColor     = 'r';
 
-FocusGuess = 24920;
 HalfRange  = 120;
 Step       = 40;
 Limits = [FocusGuess - HalfRange, FocusGuess + HalfRange];
-Step   = 30;
+%Step   = 30;
 
 RangeY = (3001:4000);
 RangeX = (4001:5000);
@@ -46,19 +47,19 @@ for Ipos=1:1:Npos
     end
     
     CamObj.takeExposure;
-     while isempty(CamObj.lastImage)
+    while isempty(CamObj.CamHn.lastImage)
         pause(1);
     end
     pause(3);
-    CamObj
+%    CamObj
     
-    ds9(CamObj.lastImage);
+%    ds9(CamObj.lastImage);
     
-    devel.saveim(CamObj,MountObj,FocObj,'focus');
+%    devel.saveim(CamObj,MountObj,FocObj,'focus');
     
     % calculate focus:
     %Image = single(CamObj.lastImage(RangeY,RangeX));
-    Image = single(imUtil.image.trim(CamObj.lastImage,[800 800],'center'));
+    Image = single(imUtil.image.trim(CamObj.CamHn.lastImage,[800 800],'center'));
     SN = imUtil.filter.filter2_snBank(Image,[],[],@imUtil.kernel2.gauss,SigmaVec);
     [BW,Pos,MaxIsn]=imUtil.image.local_maxima(SN,1,5);
     
@@ -72,7 +73,9 @@ for Ipos=1:1:Npos
         FocVal(Ipos) = 2.35.*PixScale.*SigmaVec(mode(Pos(Pos(:,3)>50,4),'all'));
     end
     
-    H=plot(PosVec(Ipos),FocVal(Ipos),'ko','MarkerFaceColor','k')
+    % clear all matlab plots
+    close all
+    H=plot(PosVec(Ipos),FocVal(Ipos),'ko','MarkerFaceColor','k');
     H.Marker          = PlotMarker;
     H.Color           = PlotColor;
     H.MarkerFaceColor = PlotColor;
@@ -88,7 +91,7 @@ for Ipos=1:1:Npos
         hold on;
     end
     
-    CamObj.lastImage = [];
+    CamObj.CamHn.lastImage = [];
     
 end
     
@@ -115,7 +118,7 @@ fprintf('FWHM at best focus: %f\n',Res.BestFocFWHM);
 %Res.BestFocVal  = Extram(1);
 %Res.BestFocFWHM = Extram(2);
 
-H=plot(Res.BestFocVal,Res.BestFocdsFWHM,'rp','MarkerFaceColor','r')
+H=plot(Res.BestFocVal,Res.BestFocFWHM,'rp','MarkerFaceColor','r')
 H.Marker          = PlotMinMarker;
 H.Color           = PlotColor;
 H.MarkerFaceColor = PlotColor;

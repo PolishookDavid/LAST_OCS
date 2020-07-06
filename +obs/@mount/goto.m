@@ -52,7 +52,7 @@ if nargin<3
     Lat = [];
 end
 
-MountObj.checkIfConnected
+%%%MountObj.checkIfConnected
 
 if (~strcmp(MountObj.Status, 'park'))
    % Convert input into RA/Dec [input deg, output deg]
@@ -86,6 +86,11 @@ if (~strcmp(MountObj.Status, 'park'))
                MountObj.LogFile.writeLog(MountObj.lastError)
                if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
             end
+         end
+         if(~FlagRes.HA)
+            MountObj.lastError = 'HA too large. Check if mount is calibrated';
+            MountObj.LogFile.writeLog(MountObj.lastError)
+            if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
          end
       end
    else

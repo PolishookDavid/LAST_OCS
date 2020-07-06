@@ -1,6 +1,6 @@
 function flag=checkIfConnected(CameraObj, Text)
 % check if the camera is connected
-   flag = CameraObj.isConnected;
+   flag = CameraObj.IsConnected;
    if flag
       % Camera is connected, continue with no action
    else
@@ -12,16 +12,17 @@ function flag=checkIfConnected(CameraObj, Text)
       if CameraObj.Verbose, fprintf('Try to reconnect to camera\n'); end
       CameraObj.connect;
       pause(5)
-      flag = CameraObj.isConnected;
+      flag = CameraObj.IsConnected;
       if flag
          % Camera is connected, continue with no action
       else
          % Wait for a minute and try again to connect
-         if CameraObj.Verbose, fprintf('Wait 30 sec and try to reconnect to camera\n'); end
-         pause(30)
+         WaitingTime = 30;
+         if CameraObj.Verbose, fprintf('Wait %.2f sec and try to reconnect to camera\n', WaitingTime); end
+         pause(WaitingTime)
          CameraObj.connect;
          pause(5)
-         flag = CameraObj.isConnected;
+         flag = CameraObj.IsConnected;
          if flag
             % Camera is connected, continue with no action
          else

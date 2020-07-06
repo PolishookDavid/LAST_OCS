@@ -1,6 +1,6 @@
 function takeExposure(CameraObj,ExpTime)
 
-   CameraObj.checkIfConnected
+%    CameraObj.checkIfConnected;
    
    if nargin == 2
       CameraObj.ExpTime=ExpTime;

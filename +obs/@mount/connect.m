@@ -24,10 +24,12 @@ function success=connect(MountObj)
            MountObj.MountCoo.ObsLon = MountObj.MouHn.fullStatus.Lon;
            MountObj.MountCoo.ObsLat = MountObj.MouHn.fullStatus.Lat;
         else
-           % Take from computer
+           % Take coordinates from computer
            MountObj.MountCoo.ObsLon = util.readSystemConfigFile('MountLongitude');
            MountObj.MountCoo.ObsLat = util.readSystemConfigFile('MountLatitude');
            MountObj.MountCoo.ObsHeight = util.readSystemConfigFile('MountHeight');
+           MountObj.MountPos = [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat MountObj.MountCoo.ObsHeight];
+           % Update UTC clock on mount
            MountObj.MouHn.MountUTC = 'dummy';
         end
 

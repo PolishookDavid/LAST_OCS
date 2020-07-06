@@ -37,7 +37,7 @@ classdef focuser <handle
         % constructor and destructor
         function Foc=focuser(varargin)
 
-           DirName = util.constructDirName();
+           DirName = util.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the camera
