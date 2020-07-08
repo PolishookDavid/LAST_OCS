@@ -1,6 +1,6 @@
 function flag=checkIfConnected(MountObj, Text)
 % check if the mount is connected
-   flag = MountObj.isConnected;
+   flag = MountObj.IsConnected;
    if flag
       % Mount is connected, continue with no action
    else
@@ -12,7 +12,7 @@ function flag=checkIfConnected(MountObj, Text)
       if MountObj.Verbose, fprintf('Try to reconnect to mount\n'); end
       MountObj.connect;
       pause(5)
-      flag = MountObj.isConnected;
+      flag = MountObj.IsConnected;
       if flag
          % Mount is connected, continue with no action
       else
@@ -22,7 +22,7 @@ function flag=checkIfConnected(MountObj, Text)
          pause(WaitingTime)
          MountObj.connect;
          pause(5)
-         flag = MountObj.isConnected;
+         flag = MountObj.IsConnected;
          if flag
             % Mount is connected, continue with no action
          else

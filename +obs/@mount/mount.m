@@ -1,39 +1,43 @@
 classdef mount <handle
 
     properties (Dependent)
-        RA   % Deg
-        Dec  % Deg
-        Az   % Deg
-        Alt  % Deg
-        TrackingSpeed
+        % mount direction and motion
+        RA            % Deg
+        Dec           % Deg
+        Az            % Deg
+        Alt           % Deg
+        TrackingSpeed % Deg/s
     end
       
     properties(GetAccess=public, SetAccess=private)
+        % Mount and telescopes names and models
         MountType = NaN;
         MountModel = NaN;
         MountUniqueName = NaN;
         MountGeoName = NaN;
         TelescopeEastUniqueName = NaN;
         TelescopeWestUniqueName = NaN;
-        isEastOfPier = NaN;
-        isConnected = false;
+        
+        % Mount configuration
         Status = 'unknown';
+        IsConnected = false;
+        TimeFromGPS = 0; % default is no, take time and coordinates from computer
+        LogFile;
+        IsEastOfPier = NaN;
+        isCounterWeightDown=true; % Test that this works as expected
+        MinAlt = 15;
+        MinAzAltMap = NaN;
+        MountPos=[NaN,NaN,NaN];
+        MountCoo = struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
+        ParkPos = [NaN,NaN]; % park pos in [Az,Alt] (negative Alt is impossible)
     end
 
     properties(Hidden)
         MouHn;
-        LogFile;
         
-        MountPos=[NaN,NaN,NaN];
-        MountCoo = struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
-        TimeFromGPS = 0; % default is no, take time and coordinates from computer
-        ParkPos = [NaN,NaN]; % park pos in [Az,Alt] (negative Alt is impossible)
-        MinAlt = 15;
         MinAltPrev = NaN;
-        MinAzAltMap = NaN;
 %?        preferEastOfPier = true; % TO IMPLEMENT
 %?        flipPH=[92,92]; % ??? how to implement?
-        isCounterWeightDown=true; % Test that this works as expected
         MeridianFlip=true; % if false, stop at the meridian limit
         MeridianLimit=92; % Test that this works as expected, no idea what happens
         
@@ -49,8 +53,7 @@ classdef mount <handle
     end
     
     properties (Hidden, GetAccess=public, SetAccess=private, Transient)
-%         fullStatus % complete status as returned by the mount, including time, track, etc.
-        lastError='';
+        LastError='';
     end
     
     properties(Hidden,Constant)
@@ -116,7 +119,17 @@ classdef mount <handle
         % setters and getters
         function Az=get.Az(MountObj)
 %%%           MountObj.checkIfConnected
-           Az = MountObj.MouHn.Az;
+           try
+              Az = MountObj.MouHn.Az;
+           catch
+              pause(1);
+              try
+                 Az = MountObj.MouHn.Az;
+              catch
+                 Az = [];
+                 MountObj.LastError = "Cannot get Az";
+              end
+           end
         end
 
         function set.Az(MountObj,Az)
@@ -128,22 +141,27 @@ classdef mount <handle
                start(MountObj.SlewingTimer);
 
                MountObj.MouHn.Az = Az;
-               switch MountObj.MouHn.lastError
-                   case "target Az beyond limits"
-                       MountObj.lastError = "target Az beyond limits";
-                       MountObj.LogFile.writeLog(MountObj.lastError)
-                       if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+               if (~isempty(MountObj.MouHn.lastError))
+                  MountObj.LastError = MountObj.MouHn.lastError;
                end
             else
-               MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0)";
-               MountObj.LogFile.writeLog(MountObj.lastError)
-               if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+               MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0)";
             end
         end
         
         function Alt=get.Alt(MountObj)
 %%%           MountObj.checkIfConnected
-           Alt = MountObj.MouHn.Alt;
+           try
+              Alt = MountObj.MouHn.Alt;
+           catch
+              pause(1);
+              try
+                 Alt = MountObj.MouHn.Alt;
+              catch
+                 Alt = [];
+                 MountObj.LastError = "Cannot get Alt";
+              end
+           end
         end
         
         function set.Alt(MountObj,Alt)
@@ -156,27 +174,31 @@ classdef mount <handle
                  start(MountObj.SlewingTimer);
 
                  MountObj.MouHn.Alt = Alt;
-                 switch MountObj.MouHn.lastError
-                    case "target Alt beyond limits"
-                       MountObj.lastError = "target Alt beyond limits";
-                       MountObj.LogFile.writeLog(MountObj.lastError)
-                       if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+                 
+                 if (~isempty(MountObj.MouHn.lastError))
+                    MountObj.LastError = MountObj.MouHn.lastError;
                  end
               else
-                 MountObj.lastError = "target Alt beyond limits";
-                 MountObj.LogFile.writeLog(MountObj.lastError)
-                 if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+                 MountObj.LastError = "target Alt beyond limits";
               end
            else
-              MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0)";
-              MountObj.LogFile.writeLog(MountObj.lastError)
-              if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+              MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0)";
            end
         end
 
         function RA=get.RA(MountObj)
 %%%           MountObj.checkIfConnected
-           RA = MountObj.MouHn.RA;
+           try
+              RA = MountObj.MouHn.RA;
+           catch
+              pause(1);
+              try
+                 RA = MountObj.MouHn.RA;
+              catch
+                 RA = [];
+                 MountObj.LastError = "Cannot get RA";
+              end
+           end
         end
 
         function set.RA(MountObj,RA)
@@ -186,7 +208,17 @@ classdef mount <handle
 
         function Dec=get.Dec(MountObj)
 %%%            MountObj.checkIfConnected
-            Dec = MountObj.MouHn.Dec;
+           try
+              Dec = MountObj.MouHn.Dec;
+           catch
+               pause(1);
+               try
+                  Dec = MountObj.MouHn.Dec;
+               catch
+                  Dec = [];
+                  MountObj.LastError = "Cannot get Dec";
+               end
+           end
         end
         
         function set.Dec(MountObj,Dec)
@@ -194,7 +226,7 @@ classdef mount <handle
            MountObj.MouHn.Dec = Dec;
         end
                 
-        function EastOfPier=get.isEastOfPier(MountObj)
+        function EastOfPier=get.IsEastOfPier(MountObj)
 %%%           MountObj.checkIfConnected
            % true if east, false if west.
            %  Assuming that the mount is polar aligned
@@ -219,7 +251,17 @@ classdef mount <handle
         function S=get.Status(MountObj)
             % Status of the mount: idle, slewing, park, home, tracking, unknown
 %%%            MountObj.checkIfConnected
-            S = MountObj.MouHn.Status;
+           try
+              S = MountObj.MouHn.Status;
+           catch
+              pause(1);
+              try
+                 S = MountObj.MouHn.Status;
+              catch
+                 S = 'unknown';
+                 MountObj.LastError = "Cannot get Telescope status";
+              end
+           end
         end
         
         % tracking implemented by setting the property TrackingSpeed.
@@ -235,9 +277,11 @@ classdef mount <handle
             if (strcmp(Speed,'Sidereal'))
                Speed=MountObj.SiderealRate;
             end
-            MountObj.lastError = '';
             MountObj.MouHn.TrackingSpeed = Speed;
-            MountObj.lastError = MountObj.MouHn.lastError;
+            
+            if (~isempty(MountObj.MouHn.lastError))
+               MountObj.LastError = MountObj.MouHn.lastError;
+            end
         end
 
 % functioning parameters getters/setters & misc
@@ -250,11 +294,8 @@ classdef mount <handle
         function set.MeridianFlip(MountObj,flip)
 %%%            MountObj.checkIfConnected
             MountObj.MouHn.MeridianFlip = flip;
-            switch MountObj.MouHn.lastError
-                case "failed"
-                    MountObj.lastError = "failed";
-                    MountObj.LogFile.writeLog(MountObj.lastError)
-                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+            if (~isempty(MountObj.MouHn.lastError))
+               MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
 
@@ -266,11 +307,8 @@ classdef mount <handle
         function set.MeridianLimit(MountObj,limit)
 %%%            MountObj.checkIfConnected
             MountObj.MouHn.MeridianLimit = limit;
-            switch MountObj.MouHn.lastError
-                case "failed"
-                    MountObj.lastError = "failed";
-                    MountObj.LogFile.writeLog(MountObj.lastError)
-                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+            if (~isempty(MountObj.MouHn.lastError))
+               MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
         
@@ -282,11 +320,8 @@ classdef mount <handle
         function set.MinAlt(MountObj,MinAlt)
 %%%            MountObj.checkIfConnected
             MountObj.MouHn.MinAlt = MinAlt;
-            switch MountObj.MouHn.lastError
-                case "failed"
-                    MountObj.lastError = "failed";
-                    MountObj.LogFile.writeLog(MountObj.lastError)
-                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+            if (~isempty(MountObj.MouHn.lastError))
+               MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
        
@@ -299,8 +334,7 @@ classdef mount <handle
             if(co == 2)
                MountObj.MinAzAltMap = MinAzAltMap;
             else
-               fprintf('Format is 2-column table: Az, Alt\n')
-               if MountObj.Verbose, fprintf('Format is 2-column table: Az, Alt\n'); end
+               MountObj.LastError = 'Format is 2-column table: Az, Alt\n';
             end
         end
        
@@ -312,28 +346,55 @@ classdef mount <handle
         function set.ParkPos(MountObj,pos)
 %%%            MountObj.checkIfConnected
             MountObj.MouHn.ParkPos = pos;
-            switch MountObj.MouHn.lastError
-                case "invalid parking position"
-                    MountObj.lastError = "invalid parking position";
-                    MountObj.LogFile.writeLog(MountObj.lastError)
-                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+            if (~isempty(MountObj.MouHn.lastError))
+               MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
         
-        function MountPosition=get.MountPos(MountObj)
+        function MountPos=get.MountPos(MountObj)
 %%%            MountObj.checkIfConnected
-            MountPosition = MountObj.MouHn.MountPos;
+            MountPos = MountObj.MouHn.MountPos;
         end
             
         function set.MountPos(MountObj,Position)
 %%%            MountObj.checkIfConnected
             MountObj.MouHn.MountPos = Position;
-            switch MountObj.MouHn.lastError
-                case "invalid position for mount"
-                    MountObj.lastError = "invalid position for mount";
-                    MountObj.LogFile.writeLog(MountObj.lastError)
-                    if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+            if (~isempty(MountObj.MouHn.lastError))
+               MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
+
+        function MountCoo=get.MountCoo(MountObj)
+%            MountCoo           = MountObj.MouHn.MountPos;
+            MountCoo.ObsLon    = MountObj.MouHn.MountPos(1);
+            MountCoo.ObsLat    = MountObj.MouHn.MountPos(2);
+            MountCoo.ObsHeight = MountObj.MouHn.MountPos(3);
+        end
+        
+%         function set.MountCoo(MountObj,Position)
+% %%%            MountObj.checkIfConnected
+%            MountObj.MountCoo.ObsLon    = Position(1);
+%            MountObj.MountCoo.ObsLat    = Position(2);
+%            MountObj.MountCoo.ObsHeight = Position(3);
+% 
+%            MountObj.MouHn.MountPos = Position;
+%            if (~isempty(MountObj.MouHn.lastError))
+%               MountObj.LastError = MountObj.MouHn.lastError;
+%            end
+%         end
+
+        function LastError=get.LastError(MountObj)
+            LastError = MountObj.MouHn.lastError;
+            MountObj.LogFile.writeLog(LastError)
+            if MountObj.Verbose, fprintf('%s\n', LastError); end
+        end
+
+        function set.LastError(MountObj,LastError)
+            MountObj.LastError = LastError;
+            MountObj.LogFile.writeLog(MountObj.LastError)
+            if MountObj.Verbose, fprintf('%s\n', MountObj.LastError); end
+        end
+        
+        
     end
 end

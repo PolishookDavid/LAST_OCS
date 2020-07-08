@@ -7,7 +7,6 @@ function park(MountObj,parking)
    MountObj.checkIfConnected;
    MountObj.LogFile.writeLog(sprintf('call parking = %d',parking))
 
-   MountObj.lastError='';
    if (parking)
       MountObj.MinAltPrev = MountObj.MinAlt;
       MountObj.MinAlt = 0;
@@ -24,8 +23,6 @@ function park(MountObj,parking)
    end
    MountObj.MouHn.park(parking);
    if (~isempty(MountObj.MouHn.lastError))
-      MountObj.lastError=MountObj.MouHn.lastError;
-      MountObj.LogFile.writeLog(MountObj.lastError)
-      if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+      MountObj.LastError = MountObj.MouHn.lastError;
    end
 end

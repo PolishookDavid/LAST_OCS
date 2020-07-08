@@ -3,12 +3,10 @@ function success=connect(MountObj)
 %  Port omitted
     MountObj.LogFile.writeLog('Connecting to mount.')
     success = MountObj.MouHn.connect;
-    MountObj.isConnected = success;
+    MountObj.IsConnected = success;
     
     if success
        MountObj.LogFile.writeLog('Mount is connected.')
-%    MountObj.lastError = MountObj.MouHn.lastError;
-%        MountObj.Port = MountObj.MouHn.Port;
         % Naming of instruments
         MountObj.MountType = MountObj.MouHn.MountType;
         MountObj.MountModel = MountObj.MouHn.MountModel;
@@ -53,10 +51,7 @@ function success=connect(MountObj)
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
     else
        Text = sprintf("Mount %s is disconnected", util.readSystemConfigFile('MountGeoName'));
-       MountObj.lastError = Text;
-       MountObj.LogFile.writeLog(Text)
-       if MountObj.Verbose, fprintf('%s\n', Text); end
-       % Send email to user
+       MountObj.LastError = Text;
     end
 
 end

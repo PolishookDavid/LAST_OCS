@@ -9,8 +9,6 @@ function home(MountObj)
       MountObj.MouHn.home;
       MountObj.LogFile.writeLog('Slewing home')
    else
-      MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
-      MountObj.LogFile.writeLog(MountObj.lastError)
-      if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+      MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
    end
 end

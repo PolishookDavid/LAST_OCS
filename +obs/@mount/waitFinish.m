@@ -1,14 +1,33 @@
 function Flag = waitFinish(MountObj)
-% wait until the mount ended slewing and returned to idle mode
-   Flag = 0;
-   while(strcmp(MountObj.Status, 'slewing'))
-      pause(1);
-      if MountObj.Verbose, fprintf('.'); end
-   end
-   if (strcmp(MountObj.Status, 'idle') | strcmp(MountObj.Status, 'tracking'))
-      fprintf('\nSlewing is complete\n');
-      Flag = 1;
-   else
-      fprintf('A problem has occurd with the mount. Status: %s\n', MountObj.Status)
+% wait (blocking) until the mount ended slewing and returned to idle mode
+   Flag = false;
+   pause(2)
+   Continue = true;
+   while Continue
+       pause(1)
+       try
+           Status = MountObj.Status;
+       catch
+           pause(1);
+           Status = MountObj.Status;
+       end
+      
+   
+       switch lower(Status)
+           case {'idle','tracking','home','park'}
+
+                if MountObj.Verbose
+                    fprintf('\nSlewing is complete\n');
+                end
+                Continue = false;
+                Flag = true;
+           case 'slewing'
+               if MountObj.Verbose
+                    fprintf('.');
+               end
+           otherwise
+               MountObj.LastError = ['A problem has occurd with the mount. Status: ', Status];
+               Continue = false;
+       end
    end
 end

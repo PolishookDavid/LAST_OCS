@@ -33,26 +33,19 @@ end
 
     
 FocObj.Pos = StartPos;
-while ~strcmp(FocObj.Status,'idle')
-    pause(1);
-end
-    
+FocObj.waitFinish;
+
+
 FocVal = nan(Npos,1);
 for Ipos=1:1:Npos
     [PosVec(Ipos), Ipos, Npos]
     
     FocObj.Pos = PosVec(Ipos);
-    while ~strcmp(FocObj.Status,'idle')
-        pause(1);
-    end
+    FocObj.waitFinish;
     
     CamObj.takeExposure;
-    while isempty(CamObj.CamHn.lastImage)
-        pause(1);
-    end
-    pause(3);
-%    CamObj
-    
+    CamObj.waitFinish;
+
 %    ds9(CamObj.lastImage);
     
 %    devel.saveim(CamObj,MountObj,FocObj,'focus');
@@ -132,9 +125,7 @@ end
 % go to best focus
 fprintf('Set focus to best value\n');
 FocObj.Pos = Res.BestFocVal;
-while ~strcmp(FocObj.Status,'idle')
-    pause(1);
-end
+FocObj.waitFinish;
 
     
 

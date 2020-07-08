@@ -5,5 +5,5 @@ if (strcmp(Foc.Status, 'idle'))
    stop(Foc.FocusMotionTimer);
    beep
    Foc.LogFile.writeLog('Focuser reached destination')
-   if Foc.Verbose, fprintf('Focuser reached destination\n'); end
+%   if Foc.Verbose, fprintf('Focuser reached destination\n'); end
 end

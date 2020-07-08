@@ -74,32 +74,24 @@ if (~strcmp(MountObj.Status, 'park'))
          MountObj.MouHn.GoTo(RA, Dec, 'eq');
       
          % Get error
-         MountObj.lastError = MountObj.MouHn.lastError;
+         if (~isempty(MountObj.MouHn.lastError))
+            MountObj.LastError = MountObj.MouHn.lastError;
+         end
       else
          if (~FlagRes.Alt)
-            MountObj.lastError = 'Target Alt too low';
-            MountObj.LogFile.writeLog(MountObj.lastError)
-            if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+            MountObj.LastError = 'Target Alt too low';
          else
             if (~FlagRes.AzAlt)
-               MountObj.lastError = 'Target Alt too low for the local Az';
-               MountObj.LogFile.writeLog(MountObj.lastError)
-               if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+               MountObj.LastError = 'Target Alt too low for the local Az';
             end
          end
          if(~FlagRes.HA)
-            MountObj.lastError = 'HA too large. Check if mount is calibrated';
-            MountObj.LogFile.writeLog(MountObj.lastError)
-            if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+            MountObj.LastError = 'HA too large. Check if mount is calibrated';
          end
       end
    else
-      MountObj.lastError = 'Could not find coordinates';
-      MountObj.LogFile.writeLog(MountObj.lastError)
-      if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+      MountObj.LastError = 'Could not find coordinates';
    end
 else
-   MountObj.lastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
-   MountObj.LogFile.writeLog(MountObj.lastError)
-   if MountObj.Verbose, fprintf('%s\n', MountObj.lastError); end
+   MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
 end          

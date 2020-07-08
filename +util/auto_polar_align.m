@@ -37,10 +37,11 @@ for Itarget=1:1:Ntarget
     
     %--- point telescope to RA/Dec ---
     M.RA = RA;
-%    wait
+    M.waitFinish;
+
     M.Dec = Dec;
-%    wait
-    
+    M.waitFinish;
+  
     %--- read actual telescope coordinates from mount
     Res(Itarget).MountRA  = M.RA;
     Res(Itarget).MountDec = M.Dec;
@@ -54,9 +55,7 @@ for Itarget=1:1:Ntarget
         C.takeExposure;
 
         %--- wait for image ---
-        ReadoutTime = 10; % seconds
-        % calculate wait
-        pause(C.ExpTime + ReadoutTime)
+        C.waitFinish;
         FileName = C.LastImageName;
 
         %--- load image ---

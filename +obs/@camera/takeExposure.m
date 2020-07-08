@@ -1,6 +1,7 @@
-function takeExposure(CameraObj,ExpTime)
+function Flag = takeExposure(CameraObj,ExpTime)
 
 %    CameraObj.checkIfConnected;
+   Flag = false;
    
    if nargin == 2
       CameraObj.ExpTime=ExpTime;
@@ -19,9 +20,11 @@ function takeExposure(CameraObj,ExpTime)
       CameraObj.ReadoutTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'camera-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @CameraObj.callback_timer, 'ErrorFcn', 'beep');
       start(CameraObj.ReadoutTimer);
       CameraObj.LogFile.writeLog('Start image readout timer')
+      Flag = true;
 %   end
    else
       if CameraObj.Verbose, fprintf('Cannot take exposure, still processing previous image. Please wait\n'); end
       CameraObj.LogFile.writeLog('Cannot take exposure, still processing previous image. Please wait')
+      Flag = false;
    end
 end
