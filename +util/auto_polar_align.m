@@ -5,14 +5,14 @@ function auto_polar_align(CamObj,MountObj)
 M = MountObj; % mount object;
 C = CamObj; % camera object;
     
-
+%%
 RAD = 180./pi;
 SEC_IN_DAY = 86400;
 
-Lon = 35;
-Lat = 32;
+Lon = M.MountPos(1);
+Lat = M.MountPos(2);
 WaitTime = 60;   % wait time between position measurments
-Nimage   = 5;    % number of images per field
+Nimage   = 3;    % number of images per field
 Plot     = true;
 
 %
@@ -21,7 +21,10 @@ VecHA  = [-60:30:60].';
 VecDec = 0.*ones(size(VecHA));
 
 Ntarget = numel(VecHA);
+clear Res;
+
 for Itarget=1:1:Ntarget
+    Itarget
     % for each field
     HA  = VecHA(Itarget);
     Dec = VecDec(Itarget);
@@ -49,6 +52,7 @@ for Itarget=1:1:Ntarget
     
     
     for Iimage=1:1:Nimage
+        Iimage
         Res(Itarget).JD(Iimage) = celestial.time.julday;
         
         %--- take image ---
@@ -71,24 +75,30 @@ for Itarget=1:1:Ntarget
         S = trim_image(S,CCDSEC);
 
         %--- solve astrometry ---
-        A
-        [AstR,S] = astrometry(S,'RA',RA,...
-                                'Dec',Dec,...
+        %
+        S = mextractor(S);
+        
+        [AstR,S] = astrometry(S,'RA',RA./RAD,...
+                                'Dec',Dec./RAD,...
                                 'Scale',1.25,...
-                                'Niter',1,...
                                 'Flip',[1 1],...
-                                'RefCatMagRange',[8 16],...
+                                'RefCatMagRange',[9 16],...
                                 'RCrad',1.5./RAD,...
                                 'BlockSize',[3000 3000],...
                                 'SearchRangeX',[-4000 4000],...
                                 'SearchRangeY',[-4000 4000]);
 
-        
+        Res(Itarget).S(Iimage) = S;
+        Res(Itarget).FileName{Iimage} = FileName;
+        Res(Itarget).AstR(Iimage) = AstR;
         Res(Itarget).AstAssymRMS(Iimage) = AstR.AssymErr;
-        Res(Itahet).AstNsrc(Iimage)      = AstR.NsrcN;
+        Res(Itarget).AstNsrc(Iimage)      = AstR.NsrcN;
 
-        %--- calc center of field of view ---
-        [Res(Itarget).AstRA(Iimage),Res(Itarget).AstDec(Iimage)] = xy2coo(S,Xcenter,Ycenter);
+        %--- calc center of field of view ---ope
+        W = ClassWCS.populate(S);
+        [Res(Itarget).AstRA(Iimage),Res(Itarget).AstDec(Iimage)] = xy2coo(W,[HalfSize,HalfSize]);
+        Res(Itarget).AstRA(Iimage)  = Res(Itarget).AstRA(Iimage).*RAD;
+        Res(Itarget).AstDec(Iimage) = Res(Itarget).AstDec(Iimage).*RAD;
 
         if I~=Nimage
             pause(WaitTime);
@@ -96,23 +106,25 @@ for Itarget=1:1:Ntarget
     end
     
     % measure field drift
-    Time = Res(Itarget).JD-mean(Res(Itarget).JD).*SEC_IN_DAY;
+    Time = (Res(Itarget).JD-mean(Res(Itarget).JD)).*SEC_IN_DAY;
+    
     % Drift in Declination
-    PolyPar  = polyfit(Time,Res(Itarget).AstDec,1);
+    PolyPar  = polyfit(Time,Res(Itarget).AstDec,1);  % deg/s
     PolyPred = polyval(PolyPar,Time);
     Resid    = Res(Itarget).AstDec - PolyPred;
-    Res(Itarget).DecDriftRMS = std(Resid);  % ["/s]
-    Res(Itarget).DecDrift    = PolyPar(2);
+    Res(Itarget).DecDriftRMS = std(Resid.*3600);  % ["/s]
+    Res(Itarget).DecDrift    = PolyPar(1).*3600;
     
     % Drift in R.A.
     PolyPar  = polyfit(Time,Res(Itarget).AstRA,1);
     PolyPred = polyval(PolyPar,Time);
     Resid    = Res(Itarget).AstRA - PolyPred;
-    Res(Itarget).RADriftRMS = std(Resid);  % ["/s]
-    Res(Itarget).RADrift    = PolyPar(2);
+    Res(Itarget).RADriftRMS = std(Resid.*3600);  % ["/s]
+    Res(Itarget).RADrift    = PolyPar(1).*3600;
     
 end
 
+%%
 
 [ResPolarAlign] = celestial.coo.polar_alignment([Res.MountHA],[Res.MountDec],[Res.DecDrift],(90-Lat)./RAD,Plot);
 

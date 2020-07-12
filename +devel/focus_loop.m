@@ -1,9 +1,9 @@
 function [Res] = focus_loop(CamObj,MountObj,FocObj)
-% Example: [Res] = devel.focus_loop(C,M,F)
+% Example: [FocRes] = devel.focus_loop(C,M,F)
 
 %ExpTime = 1;
-StartPos = 23700;
-FocusGuess = 23500;
+StartPos = 23800;
+FocusGuess = 23600;
 
 PlotMarker = 'o';
 PlotMinMarker = 'p';
@@ -67,7 +67,7 @@ for Ipos=1:1:Npos
     end
     
     % clear all matlab plots
-    close all
+    %close all
     H=plot(PosVec(Ipos),FocVal(Ipos),'ko','MarkerFaceColor','k');
     H.Marker          = PlotMarker;
     H.Color           = PlotColor;

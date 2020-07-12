@@ -8,8 +8,32 @@ classdef mount <handle
         Alt           % Deg
         TrackingSpeed % Deg/s
     end
-      
+
     properties(GetAccess=public, SetAccess=private)
+        % Mount configuration
+        Status      = 'unknown';
+        IsConnected = false; % Connection status between class to camera
+        TimeFromGPS = false; % default is no, take time and coordinates from computer
+        IsEastOfPier = NaN;
+        IsCounterWeightDown=true; % Test that this works as expected
+        
+        MinAlt = 15;
+        MinAzAltMap = NaN;
+        
+        MountPos=[NaN,NaN,NaN];
+        MountCoo = struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
+        MountUTC
+        ParkPos = [NaN,NaN]; % park pos in [Az,Alt] (negative Alt is impossible)
+    end
+
+    properties(Hidden)
+        MouHn;
+        LogFile;
+        Verbose = true; % for stdin debugging
+
+        Port
+        Serial_resource % the serial object corresponding to Port
+
         % Mount and telescopes names and models
         MountType = NaN;
         MountModel = NaN;
@@ -18,37 +42,17 @@ classdef mount <handle
         TelescopeEastUniqueName = NaN;
         TelescopeWestUniqueName = NaN;
         
-        % Mount configuration
-        Status = 'unknown';
-        IsConnected = false;
-        TimeFromGPS = 0; % default is no, take time and coordinates from computer
-        LogFile;
-        IsEastOfPier = NaN;
-        isCounterWeightDown=true; % Test that this works as expected
-        MinAlt = 15;
-        MinAzAltMap = NaN;
-        MountPos=[NaN,NaN,NaN];
-        MountCoo = struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
-        ParkPos = [NaN,NaN]; % park pos in [Az,Alt] (negative Alt is impossible)
-    end
-
-    properties(Hidden)
-        MouHn;
-        
         MinAltPrev = NaN;
-%?        preferEastOfPier = true; % TO IMPLEMENT
-%?        flipPH=[92,92]; % ??? how to implement?
         MeridianFlip=true; % if false, stop at the meridian limit
         MeridianLimit=92; % Test that this works as expected, no idea what happens
         
         SlewingTimer;
         DistortionFile = '';
-        SafetyTimer = NaN; % ???
+
     end
     
     % non-API-demanded properties, Enrico's judgement
     properties (Hidden) 
-        Verbose = true; % for stdin debugging
 %?        serial_resource % the serial object corresponding to Port
     end
     
@@ -57,21 +61,23 @@ classdef mount <handle
     end
     
     properties(Hidden,Constant)
-        SiderealRate=360/86164.0905; %sidereal tracking rate, degrees/sec
-         % empirical slewing rate (fixed?), degrees/sec, excluding accelerations
-         % if it could be varied (see ':GSR#'/':MSRn#'), this won't be a 
-         % Constant property
-        slewRate=2.5;
+        SiderealRate = 360/86164.0905; %sidereal tracking rate, degrees/sec
+        
+%          % empirical slewing rate (fixed?), degrees/sec, excluding accelerations
+%          % if it could be varied (see ':GSR#'/':MSRn#'), this won't be a 
+%          % Constant property
+%         slewRate = 2.5;
     end
 
     methods
         % constructor and destructor
         function MountObj=mount()
        
+           % Construct directory for log file
            DirName = util.constructDirName('log');
            cd(DirName);
 
-           % Opens Log for the camera
+           % Opens Log for the mount
            MountObj.LogFile = logFile;
            MountObj.LogFile.Dir = DirName;
            MountObj.LogFile.FileNameTemplate = 'LAST_%s.log';
@@ -87,8 +93,8 @@ classdef mount <handle
             MountObj.MouHn.delete;
             % Delete the timer
             delete(MountObj.SlewingTimer);
-%            fclose(MountObj);
-            % shall we try-catch and report success/failure?
+% %            fclose(MountObj);
+%             % shall we try-catch and report success/failure?
         end
         
     end
@@ -228,12 +234,12 @@ classdef mount <handle
                 
         function EastOfPier=get.IsEastOfPier(MountObj)
 %%%           MountObj.checkIfConnected
-           % true if east, false if west.
-           %  Assuming that the mount is polar aligned
+           % True if east, false if west.
+           % Assuming that the mount is polar aligned
            EastOfPier = MountObj.MouHn.isEastOfPier;
         end
 
-        function CounterWeightDown=get.isCounterWeightDown(MountObj)
+        function CounterWeightDown=get.IsCounterWeightDown(MountObj)
 %%%           MountObj.checkIfConnected
            CounterWeightDown = MountObj.MouHn.isCounterweightDown;
         end
@@ -383,18 +389,40 @@ classdef mount <handle
 %            end
 %         end
 
+        % Get the last error reported by the driver code
         function LastError=get.LastError(MountObj)
             LastError = MountObj.MouHn.lastError;
             MountObj.LogFile.writeLog(LastError)
             if MountObj.Verbose, fprintf('%s\n', LastError); end
         end
 
+        % Set an error, update log and print to command line
         function set.LastError(MountObj,LastError)
             MountObj.LastError = LastError;
             MountObj.LogFile.writeLog(MountObj.LastError)
             if MountObj.Verbose, fprintf('%s\n', MountObj.LastError); end
         end
         
-        
+        % Get the computer port connected to the mount
+        function Port=get.Port(MountObj)
+            Port = MountObj.MouHn.Port;
+        end
+
+        % Get the serial object corresponding to Port
+        function Serial_resource=get.Serial_resource(MountObj)
+            Serial_resource = MountObj.MouHn.serial_resource;
+        end
+
+        function MountUTC=get.MountUTC(MountObj)
+            % Returns mount UTC clock. Units: Julian Date
+            MountUTC = MountObj.MouHn.MountUTC;
+        end
+            
+        function set.MountUTC(MountObj, dummy)
+           % Set the mount UTC clock from the computer clock. Units: Julian Date - use with care
+           % dummy argument is not used.
+           MountObj.MouHn.MountUTC = dummy;
+        end
+
     end
 end
