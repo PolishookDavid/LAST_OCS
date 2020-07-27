@@ -28,8 +28,10 @@ classdef mount <handle
 
     properties(Hidden)
         MouHn;
+        LastError = 'unknown';
+        LastRC    = '';
         LogFile;
-        Verbose = true; % for stdin debugging
+        Verbose   = true; % for stdin debugging
 
         Port
         Serial_resource % the serial object corresponding to Port
@@ -57,7 +59,6 @@ classdef mount <handle
     end
     
     properties (Hidden, GetAccess=public, SetAccess=private, Transient)
-        LastError='';
     end
     
     properties(Hidden,Constant)
@@ -74,7 +75,7 @@ classdef mount <handle
         function MountObj=mount()
        
            % Construct directory for log file
-           DirName = util.constructDirName('log');
+           DirName = obs.util.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the mount
@@ -82,7 +83,7 @@ classdef mount <handle
            MountObj.LogFile.Dir = DirName;
            MountObj.LogFile.FileNameTemplate = 'LAST_%s.log';
            MountObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Mount', ...
-                                       util.readSystemConfigFile('ObservatoryNode'), util.readSystemConfigFile('MountGeoName'), util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
+                                       obs.util.readSystemConfigFile('ObservatoryNode'), obs.util.readSystemConfigFile('MountGeoName'), obs.util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
             
            % Open a driver object for the mount
@@ -124,149 +125,160 @@ classdef mount <handle
 
         % setters and getters
         function Az=get.Az(MountObj)
-%%%           MountObj.checkIfConnected
-           try
-              Az = MountObj.MouHn.Az;
-           catch
-              pause(1);
-              try
-                 Az = MountObj.MouHn.Az;
-              catch
-                 Az = [];
-                 MountObj.LastError = "Cannot get Az";
-              end
+           if MountObj.checkIfConnected
+               try
+                  Az = MountObj.MouHn.Az;
+               catch
+                  pause(1);
+                  try
+                     Az = MountObj.MouHn.Az;
+                  catch
+                     Az = [];
+                     MountObj.LastError = "Cannot get Az";
+                  end
+               end
            end
         end
 
         function set.Az(MountObj,Az)
-%%%            MountObj.checkIfConnected
-            if (~strcmp(MountObj.Status, 'park'))
+           if MountObj.checkIfConnected
+                if (~strcmp(MountObj.Status, 'park'))
 
-               % Start timer to notify when slewing is complete
-               MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-               start(MountObj.SlewingTimer);
+                   % Start timer to notify when slewing is complete
+                   MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+                   start(MountObj.SlewingTimer);
 
-               MountObj.MouHn.Az = Az;
-               if (~isempty(MountObj.MouHn.lastError))
-                  MountObj.LastError = MountObj.MouHn.lastError;
-               end
-            else
-               MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0)";
-            end
-        end
-        
-        function Alt=get.Alt(MountObj)
-%%%           MountObj.checkIfConnected
-           try
-              Alt = MountObj.MouHn.Alt;
-           catch
-              pause(1);
-              try
-                 Alt = MountObj.MouHn.Alt;
-              catch
-                 Alt = [];
-                 MountObj.LastError = "Cannot get Alt";
-              end
+                   MountObj.MouHn.Az = Az;
+                   MountObj.LastError = MountObj.MouHn.lastError;
+                else
+                   MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0)";
+                end
            end
         end
         
+        function Alt=get.Alt(MountObj)
+           if MountObj.checkIfConnected
+               try
+                  Alt = MountObj.MouHn.Alt;
+               catch
+                  pause(1);
+                  try
+                     Alt = MountObj.MouHn.Alt;
+                  catch
+                     Alt = [];
+                     MountObj.LastError = "Cannot get Alt";
+                  end
+               end
+           end
+        end
+
         function set.Alt(MountObj,Alt)
-%%%           MountObj.checkIfConnected
-           if (~strcmp(MountObj.Status, 'park'))
-              if (Alt >= MountObj.MinAlt)
+           if MountObj.checkIfConnected
+               if (~strcmp(MountObj.Status, 'park'))
+                  if (Alt >= MountObj.MinAlt)
 
-                 % Start timer to notify when slewing is complete
-                 MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-                 start(MountObj.SlewingTimer);
+                     % Start timer to notify when slewing is complete
+                     MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+                     start(MountObj.SlewingTimer);
 
-                 MountObj.MouHn.Alt = Alt;
-                 
-                 if (~isempty(MountObj.MouHn.lastError))
-                    MountObj.LastError = MountObj.MouHn.lastError;
-                 end
-              else
-                 MountObj.LastError = "target Alt beyond limits";
-              end
-           else
-              MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0)";
+                     MountObj.MouHn.Alt = Alt;
+
+                     if (~isempty(MountObj.MouHn.lastError))
+                        MountObj.LastError = MountObj.MouHn.lastError;
+                     end
+                  else
+                     MountObj.LastError = "target Alt beyond limits";
+                  end
+               else
+                  MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0)";
+               end
            end
         end
 
         function RA=get.RA(MountObj)
-%%%           MountObj.checkIfConnected
-           try
-              RA = MountObj.MouHn.RA;
-           catch
-              pause(1);
-              try
-                 RA = MountObj.MouHn.RA;
-              catch
-                 RA = [];
-                 MountObj.LastError = "Cannot get RA";
-              end
+           if MountObj.checkIfConnected
+               try
+                  RA = MountObj.MouHn.RA;
+               catch
+                  pause(1);
+                  try
+                     RA = MountObj.MouHn.RA;
+                  catch
+                     RA = [];
+                     MountObj.LastError = "Cannot get RA";
+                  end
+               end
            end
         end
 
         function set.RA(MountObj,RA)
-%%%           MountObj.checkIfConnected
-           MountObj.MouHn.RA = RA;
+           if MountObj.checkIfConnected
+              MountObj.MouHn.RA = RA;
+           end
         end
 
         function Dec=get.Dec(MountObj)
-%%%            MountObj.checkIfConnected
-           try
-              Dec = MountObj.MouHn.Dec;
-           catch
-               pause(1);
+           if MountObj.checkIfConnected
                try
                   Dec = MountObj.MouHn.Dec;
                catch
-                  Dec = [];
-                  MountObj.LastError = "Cannot get Dec";
+                   pause(1);
+                   try
+                      Dec = MountObj.MouHn.Dec;
+                   catch
+                      Dec = [];
+                      MountObj.LastError = "Cannot get Dec";
+                   end
                end
            end
         end
-        
+
         function set.Dec(MountObj,Dec)
-%%%           MountObj.checkIfConnected
-           MountObj.MouHn.Dec = Dec;
+           if MountObj.checkIfConnected
+              MountObj.MouHn.Dec = Dec;
+           end
         end
-                
+
         function EastOfPier=get.IsEastOfPier(MountObj)
-%%%           MountObj.checkIfConnected
-           % True if east, false if west.
-           % Assuming that the mount is polar aligned
-           EastOfPier = MountObj.MouHn.isEastOfPier;
+           if MountObj.checkIfConnected
+               % True if east, false if west.
+               % Assuming that the mount is polar aligned
+               EastOfPier = MountObj.MouHn.isEastOfPier;
+           end
         end
 
         function CounterWeightDown=get.IsCounterWeightDown(MountObj)
-%%%           MountObj.checkIfConnected
-           CounterWeightDown = MountObj.MouHn.isCounterweightDown;
+           if MountObj.checkIfConnected
+              CounterWeightDown = MountObj.MouHn.isCounterweightDown;
+           end
         end
         
 %         function S=get.fullStatus(MountObj)
-% %%%            MountObj.checkIfConnected
+%             if MountObj.checkIfConnected
 %             S = MountObj.MouHn.fullStatus;
+%            end
 %         end
         
         function flag=get.TimeFromGPS(MountObj)
-%%%            MountObj.checkIfConnected
-            flag=MountObj.MouHn.TimeFromGPS;
+            if MountObj.checkIfConnected
+               flag=MountObj.MouHn.TimeFromGPS;
+            end
         end
         
         function S=get.Status(MountObj)
             % Status of the mount: idle, slewing, park, home, tracking, unknown
-%%%            MountObj.checkIfConnected
-           try
-              S = MountObj.MouHn.Status;
-           catch
-              pause(1);
-              try
-                 S = MountObj.MouHn.Status;
-              catch
-                 S = 'unknown';
-                 MountObj.LastError = "Cannot get Telescope status";
-              end
+           if MountObj.checkIfConnected
+               try
+                  S = MountObj.MouHn.Status;
+               catch
+                  pause(1);
+                  try
+                     S = MountObj.MouHn.Status;
+                  catch
+                     S = 'unknown';
+                     MountObj.LastError = "Cannot get Telescope status";
+                  end
+               end
            end
         end
         
@@ -274,60 +286,60 @@ classdef mount <handle
         %  using custom tracking mode, which allows the broadest range
         
         function TrackSpeed=get.TrackingSpeed(MountObj)
-%%%            MountObj.checkIfConnected
+           if MountObj.checkIfConnected
             TrackSpeed = MountObj.MouHn.TrackingSpeed;
+           end
         end
 
         function set.TrackingSpeed(MountObj,Speed)
-%%%            MountObj.checkIfConnected
-            if (strcmp(Speed,'Sidereal'))
-               Speed=MountObj.SiderealRate;
-            end
-            MountObj.MouHn.TrackingSpeed = Speed;
+           if MountObj.checkIfConnected
+              if (strcmp(Speed,'Sidereal'))
+                 Speed=MountObj.SiderealRate;
+              end
+              MountObj.MouHn.TrackingSpeed = Speed;
             
-            if (~isempty(MountObj.MouHn.lastError))
-               MountObj.LastError = MountObj.MouHn.lastError;
-            end
+              MountObj.LastError = MountObj.MouHn.lastError;
+           end
         end
 
 % functioning parameters getters/setters & misc
         
         function flip=get.MeridianFlip(MountObj)
-%%%            MountObj.checkIfConnected
+           if MountObj.checkIfConnected
             flip = MountObj.MouHn.MeridianFlip;
+           end
         end
         
         function set.MeridianFlip(MountObj,flip)
-%%%            MountObj.checkIfConnected
-            MountObj.MouHn.MeridianFlip = flip;
-            if (~isempty(MountObj.MouHn.lastError))
+            if MountObj.checkIfConnected
+               MountObj.MouHn.MeridianFlip = flip;
                MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
 
         function limit=get.MeridianLimit(MountObj)
-%%%            MountObj.checkIfConnected
-            limit = MountObj.MouHn.MeridianLimit;
+           if MountObj.checkIfConnected
+               limit = MountObj.MouHn.MeridianLimit;
+           end
         end
         
         function set.MeridianLimit(MountObj,limit)
-%%%            MountObj.checkIfConnected
-            MountObj.MouHn.MeridianLimit = limit;
-            if (~isempty(MountObj.MouHn.lastError))
-               MountObj.LastError = MountObj.MouHn.lastError;
-            end
+           if MountObj.checkIfConnected
+              MountObj.MouHn.MeridianLimit = limit;
+              MountObj.LastError = MountObj.MouHn.lastError;
+           end
         end
         
         function MinAlt=get.MinAlt(MountObj)
-%%%            MountObj.checkIfConnected
-            MinAlt = MountObj.MouHn.MinAlt;
+            if MountObj.checkIfConnected
+               MinAlt = MountObj.MouHn.MinAlt;
+            end
         end
         
         function set.MinAlt(MountObj,MinAlt)
-%%%            MountObj.checkIfConnected
-            MountObj.MouHn.MinAlt = MinAlt;
-            if (~isempty(MountObj.MouHn.lastError))
-               MountObj.LastError = MountObj.MouHn.lastError;
+           if MountObj.checkIfConnected
+              MountObj.MouHn.MinAlt = MinAlt;
+              MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
        
@@ -345,31 +357,32 @@ classdef mount <handle
         end
        
         function ParkPosition=get.ParkPos(MountObj)
-%%%            MountObj.checkIfConnected
+            if MountObj.checkIfConnected
             ParkPosition = MountObj.MouHn.ParkPos;
+            end
         end
 
         function set.ParkPos(MountObj,pos)
-%%%            MountObj.checkIfConnected
-            MountObj.MouHn.ParkPos = pos;
-            if (~isempty(MountObj.MouHn.lastError))
+            if MountObj.checkIfConnected
+               MountObj.MouHn.ParkPos = pos;
                MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
         
         function MountPos=get.MountPos(MountObj)
-%%%            MountObj.checkIfConnected
+            if MountObj.checkIfConnected
             MountPos = MountObj.MouHn.MountPos;
+            end
         end
             
         function set.MountPos(MountObj,Position)
-%%%            MountObj.checkIfConnected
-            MountObj.MouHn.MountPos = Position;
-            if (~isempty(MountObj.MouHn.lastError))
+            if MountObj.checkIfConnected
+               MountObj.MouHn.MountPos = Position;
                MountObj.LastError = MountObj.MouHn.lastError;
             end
         end
 
+        %%% NEEDS TO THINK HOW TO HANDLE MountCoo and MountPos - DP 2020 Jul
         function MountCoo=get.MountCoo(MountObj)
 %            MountCoo           = MountObj.MouHn.MountPos;
             MountCoo.ObsLon    = MountObj.MouHn.MountPos(1);
@@ -378,13 +391,12 @@ classdef mount <handle
         end
         
 %         function set.MountCoo(MountObj,Position)
-% %%%            MountObj.checkIfConnected
-%            MountObj.MountCoo.ObsLon    = Position(1);
-%            MountObj.MountCoo.ObsLat    = Position(2);
-%            MountObj.MountCoo.ObsHeight = Position(3);
+%            if MountObj.checkIfConnected
+%               MountObj.MountCoo.ObsLon    = Position(1);
+%               MountObj.MountCoo.ObsLat    = Position(2);
+%               MountObj.MountCoo.ObsHeight = Position(3);
 % 
-%            MountObj.MouHn.MountPos = Position;
-%            if (~isempty(MountObj.MouHn.lastError))
+%               MountObj.MouHn.MountPos = Position;
 %               MountObj.LastError = MountObj.MouHn.lastError;
 %            end
 %         end
@@ -398,11 +410,19 @@ classdef mount <handle
 
         % Set an error, update log and print to command line
         function set.LastError(MountObj,LastError)
-            MountObj.LastError = LastError;
-            MountObj.LogFile.writeLog(MountObj.LastError)
-            if MountObj.Verbose, fprintf('%s\n', MountObj.LastError); end
+           % If the LastError is empty (e.g. if the previous command did
+           % not fail), do not keep or print it,
+           if (~isempty(LastError))
+              % If the error message is taken from the driver object, do NOT
+              % update the driver object.
+              if (~strcmp(MountObj.MouHn.lastError, LastError))
+                 MountObj.MouHn.LastError = LastError;
+              end
+              MountObj.LogFile.writeLog(LastError)
+              if MountObj.Verbose, fprintf('%s\n', LastError); end
+           end
         end
-        
+
         % Get the computer port connected to the mount
         function Port=get.Port(MountObj)
             Port = MountObj.MouHn.Port;

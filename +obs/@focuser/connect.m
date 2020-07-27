@@ -7,7 +7,7 @@ function success=connect(Foc)
 
 
     % Get name and type
-    Foc.FocUniqueName = util.readSystemConfigFile('FocUniqueName');
+    Foc.FocUniqueName = obs.util.readSystemConfigFile('FocUniqueName');
     Foc.FocType = Foc.FocHn.FocType;
     
     if (~isempty(Foc.FocHn.lastError))

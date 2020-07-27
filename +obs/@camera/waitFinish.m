@@ -1,6 +1,7 @@
 function Flag = waitFinish(CameraObj)
 % wait until the camera ended exposing, readout, and writing image and returned to idle mode
    Flag = false;
+   % Wait for 2 seconds so the previous command will start
    pause(2);
    while(strcmp(CameraObj.CamStatus, 'exposing') || strcmp(CameraObj.CamStatus, 'reading'))
       pause(1);
@@ -12,6 +13,6 @@ function Flag = waitFinish(CameraObj)
       CameraObj.notifyUser
       Flag = true;
    else
-      if CameraObj.Verbose, fprintf('A problem occurd with the camera. Status: %s\n', CameraObj.CamStatus); end
+      CameraObj.LastError = ['A problem occurd with the camera. Status: ', C.CamStatus];
    end
 end

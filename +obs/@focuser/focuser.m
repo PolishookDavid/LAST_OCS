@@ -37,7 +37,7 @@ classdef focuser <handle
         % constructor and destructor
         function Foc=focuser(varargin)
 
-           DirName = util.constructDirName('log');
+           DirName = obs.util.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the camera
@@ -45,7 +45,7 @@ classdef focuser <handle
            Foc.LogFile.Dir = DirName;
            Foc.LogFile.FileNameTemplate = 'LAST_%s.log';
            Foc.LogFile.logOwner = sprintf('%s.%s.%s_%s_Foc', ...
-                                  util.readSystemConfigFile('ObservatoryNode'), util.readSystemConfigFile('MountGeoName'), util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
+                                  obs.util.readSystemConfigFile('ObservatoryNode'), obs.util.readSystemConfigFile('MountGeoName'), obs.util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
            if (isempty(varargin))
               Answer = input('Is the mirror unlock? [y/n]\n', 's');

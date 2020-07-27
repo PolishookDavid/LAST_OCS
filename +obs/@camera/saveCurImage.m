@@ -2,19 +2,19 @@ function saveCurImage(CameraObj)
 % Save last image to disk according the user's settings
 
    % Construct directory name to save image in
-   DirName = util.constructDirName('raw');
+   DirName = obs.util.constructDirName('raw');
    cd(DirName);
    CameraObj.LogFile.writeLog(sprintf('cd %s',DirName))
 
 
    % Construct image name   
    ImageDate = datestr(CameraObj.CamHn.time_start,'yyyymmdd.HHMMSS.FFF');
-   ObservatoryNode = util.readSystemConfigFile('ObservatoryNode');
-   MountGeoName = util.readSystemConfigFile('MountGeoName');
+   ObservatoryNode = obs.util.readSystemConfigFile('ObservatoryNode');
+   MountGeoName = obs.util.readSystemConfigFile('MountGeoName');
 
    % Image name legend:    LAST.Node.mount.camera_YYYYMMDD.HHMMSS.FFF_Filter_CCDnum_ImType.fits
    % Image name example:   LAST.1.1.e_20200603.063549.030_clear_0_science.fits
-   CameraObj.LastImageName = util.constructImageName(ObservatoryNode, MountGeoName, CameraObj.CamGeoName, ImageDate, CameraObj.Filter, CameraObj.CCDnum, CameraObj.ImType, CameraObj.ImageFormat);
+   CameraObj.LastImageName = obs.util.constructImageName(ObservatoryNode, MountGeoName, CameraObj.CamGeoName, ImageDate, CameraObj.Filter, CameraObj.CCDnum, CameraObj.ImType, CameraObj.ImageFormat);
 
 %    % Name with serial number - OBSELETE?
 %    SerialNum = CameraObj.LastImageSearialNum + 1;

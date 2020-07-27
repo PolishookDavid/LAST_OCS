@@ -1,6 +1,8 @@
 function abort(CameraObj)
    % Abort exposure
-%    CameraObj.checkIfConnected;
-   CameraObj.CamHn.abort;
-   CameraObj.LogFile.writeLog('Abort exposure')
+   if CameraObj.checkIfConnected
+      CameraObj.LogFile.writeLog('Abort exposure')
+      CameraObj.CamHn.abort;
+      CameraObj.LastError = CameraObj.CamHn.lastError;
+   end
 end

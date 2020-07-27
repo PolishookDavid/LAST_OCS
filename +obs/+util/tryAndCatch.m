@@ -1,6 +1,6 @@
 function varargout=tryAndCatch(Fun,FunPar,varargin)
 % try and catch generic function and messaging
-% Package: LAST_OCS/+util 
+% Package: LAST_OCS/+obs/+util 
 % Description: This function will attempt to execute a function inside a
 %              try catch block. If failed, will wait, and try again.
 %              If failed will return empty, and send an error message.
@@ -28,8 +28,8 @@ function varargout=tryAndCatch(Fun,FunPar,varargin)
 %                   updated with the sucess of the execution (true/false).
 %                   Default is ''.
 % Output : - Output arguments by the function.
-% Example: [a,b]=tryAndCatch(@myFun,{},'Message','Error message','NoutArg',2)
-% Example: tryAndCatch(@MountObj.RA, {RA}, 'NoutArg',0, 'Message','Error message', 'updateObj','MountObj', 'updateProp','LastError', 'updatePropRC','LastRC')
+% Example: [a,b]=obs.util.tryAndCatch(@myFun,{},'Message','Error message','NoutArg',2)
+% Example: obs.util.tryAndCatch(@MountObj.RA, {RA}, 'NoutArg',0, 'Message','Error message', 'updateObj','MountObj', 'updateProp','LastError', 'updatePropRC','LastRC')
 
 
 InPar = inputParser;
@@ -49,24 +49,23 @@ InPar = InPar.Results;
 
 
 
-
 try
-    [varargout{1:InPar.NargOut}]=Fun(FunPar{:});
+    [varargout{1:InPar.NoutArg}]=Fun(FunPar{:});
     
     % update RC
-    if ~isempty(InPar.updateObj) && ~isempty(InPar.updatePropRC)
+    if ~isempty(InPar.updateObj) && ~isempty(InPar.updatePropRC) && ~isempty(varargout{1:InPar.NoutArg})
         InPar.updateObj.(InPar.updatePropRC) = true;
     end
     
 catch
     % failed 1st time
     
-    pasue(InPar.Pause);
+    pause(InPar.Pause);
     
     % add an error to the Log ?
     
     try
-        [varargout{1:InPar.NargOut}]=Fun(FunPar);
+        [varargout{1:InPar.NoutArg}]=Fun(FunPar{:});
         
         % update RC
         if ~isempty(InPar.updateObj) && ~isempty(InPar.updatePropRC)
@@ -84,7 +83,7 @@ catch
         
         % update Obj/Prop
         if ~isempty(InPar.updateObj) && ~isempty(InPar.updateProp)
-            InPar.updateObj.(InPar.updateProp) = Message;
+            InPar.updateObj.(InPar.updateProp) = InPar.Message;
         end
         
         if ~isempty(InPar.updateObj) && ~isempty(InPar.updatePropRC)

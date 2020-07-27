@@ -5,39 +5,43 @@
 classdef camera < handle
  
     properties
-        CamType       = NaN;
-        CamModel      = NaN;
-        CamUniqueName = NaN;
-        CamGeoName    = NaN;
-        CamStatus     = NaN;
-        CoolingStatus = NaN;
-        IsConnected = false;
+        CamStatus     = 'unknown';
 
-        
-        
-        CoolingPercentage = NaN;
-        cameranum
-        binning=[1,1];
+        LastImageName = '';
+        LastImage
+
         ExpTime=10;
-        Gain=0;
+
+        CoolingStatus = 'unknown';
+        Temperature
+        CoolingPower = NaN;
+
+        IsConnected = false;        
         SaveOnDisk = false;
         Display    = false;
-        LastImageName
-        Filter
+
         CCDnum = 0;
         ImType = 'science';
-        Object;
+        Object = '';
         LogFile;
     end
 
-    properties(Transient)
+    properties(Hidden)
+        CamType       = '';
+        CamModel      = '';
+        CamUniqueName = '';
+        CamGeoName    = '';
+        cameranum
+        
+        ReadMode
+        Offset
+        Gain=0;
+        binning=[1,1];
+        Filter
     end
         
     properties(Dependent = true)
-        Temperature
         ROI % beware - SDK does not provide a getter for it, go figure
-        ReadMode
-        Offset
     end
     
     properties(GetAccess = public, SetAccess = private)
@@ -69,7 +73,7 @@ classdef camera < handle
         MouHn;      % Handle to mount driver class
         FocHn;      % Handle to focuser driver class
         ReadoutTimer;
-        lastError='';
+        LastError = '';
         ImageFormat = 'fits';
         LastImageSearialNum = 0;
         Verbose=true;
@@ -94,7 +98,7 @@ classdef camera < handle
               CameraObj.CamType = 'ZWO';
            end
 
-           DirName = util.constructDirName('log');
+           DirName = obs.util.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the camera
@@ -102,7 +106,7 @@ classdef camera < handle
            CameraObj.LogFile.Dir = DirName;
            CameraObj.LogFile.FileNameTemplate = 'LAST_%s.log';
            CameraObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Cam', ...
-                     util.readSystemConfigFile('ObservatoryNode'), util.readSystemConfigFile('MountGeoName'), util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
+                     obs.util.readSystemConfigFile('ObservatoryNode'), obs.util.readSystemConfigFile('MountGeoName'), obs.util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
             % Open a driver object for the camera
             if(strcmp(CameraObj.CamType, 'ZWO'))
@@ -111,21 +115,18 @@ classdef camera < handle
                CameraObj.CamHn=inst.QHYccd();
             end
 
-            switch CameraObj.CamHn.lastError
-                case "could not even get one camera id"
-                    CameraObj.lastError = "Could not even get one camera id";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
-            
-            CameraObj.Filter = util.readSystemConfigFile('Filter');
-            CameraObj.CCDnum = util.readSystemConfigFile('CCDnum');
+            % Check if a camera was found
+            CameraObj.LastError = CameraObj.CamHn.lastError;
+
+            % Update filter and ccd number from config file
+            CameraObj.Filter = obs.util.readSystemConfigFile('Filter');
+            CameraObj.CCDnum = obs.util.readSystemConfigFile('CCDnum');
             
         end
 
         % Destructor
         function delete(CameraObj)
-            
+           % Delete properly driver object
             CameraObj.CamHn.delete;
         end
     end
@@ -142,224 +143,191 @@ classdef camera < handle
         end
 
         function status=get.CamStatus(CameraObj)
-%             CameraObj.checkIfConnected;
-            status=CameraObj.CamHn.CamStatus;
+            status = 'unknown';
+            if CameraObj.checkIfConnected
+               status=CameraObj.CamHn.CamStatus;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
+            end
         end
         
         function status=get.CoolingStatus(CameraObj)
-%             CameraObj.checkIfConnected;
-            status = CameraObj.CamHn.CoolingStatus;
+            if CameraObj.checkIfConnected
+               status = CameraObj.CamHn.CoolingStatus;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
+            end
+        end        
+        
+        function LastImage=get.LastImage(CameraObj)
+            if CameraObj.checkIfConnected
+               LastImage = CameraObj.CamHn.lastImage;
+            end
         end
-        
-        
+
         function Temp=get.Temperature(CameraObj)
-%             CameraObj.checkIfConnected;
-            Temp = CameraObj.CamHn.Temperature;
-            switch CameraObj.CamHn.lastError
-                case "could not get temperature"
-                    CameraObj.lastError = "Could not get temperature";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
+            if CameraObj.checkIfConnected
+               Temp = CameraObj.CamHn.Temperature;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
             end
         end
 
         function set.Temperature(CameraObj,Temp)
-%             CameraObj.checkIfConnected;
-            CameraObj.CamHn.Temperature = Temp;
-            switch CameraObj.CamHn.lastError
-                case "could not get temperature"
-                    CameraObj.lastError = "Could not get temperature";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
+            if CameraObj.checkIfConnected
+               CameraObj.LogFile.writeLog(sprintf('call set.Temperature. Temperature=%f',Temp))
+               CameraObj.CamHn.Temperature = Temp;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
             end
-            CameraObj.LogFile.writeLog(sprintf('call set.Temperature. Temperature=%f',Temp))
         end
         
-        function Percentage=get.CoolingPercentage(CameraObj)
-%            CameraObj.checkIfConnected;
-           Percentage = CameraObj.CamHn.CoolingPercentage;
+        function CoolingPower=get.CoolingPower(CameraObj)
+            if CameraObj.checkIfConnected
+               CoolingPower = CameraObj.CamHn.CoolingPower;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
+            end
         end
-
-
         
         function ExpTime=get.ExpTime(CameraObj)
-%             CameraObj.checkIfConnected;
-            % ExpTime in seconds
-            ExpTime = CameraObj.CamHn.ExpTime;
-            switch CameraObj.CamHn.lastError
-                case "could not get exposure time"
-                    CameraObj.lastError = "Could not get exposure time";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
+            if CameraObj.checkIfConnected
+               % ExpTime in seconds
+               ExpTime = CameraObj.CamHn.ExpTime;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
             end
         end
 
         function set.ExpTime(CameraObj,ExpTime)
-%             CameraObj.checkIfConnected;
-            % ExpTime in seconds
-            CameraObj.CamHn.ExpTime = ExpTime;
-            switch CameraObj.CamHn.lastError
-                case "could not set exposure time"
-                    CameraObj.lastError = "Could not set exposure time";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
-            CameraObj.LogFile.writeLog(sprintf('call set.ExpTime. ExpTime=%f',ExpTime))
+           if CameraObj.checkIfConnected
+               % ExpTime in seconds
+               CameraObj.LogFile.writeLog(sprintf('call set.ExpTime. ExpTime=%f',ExpTime))
+               CameraObj.CamHn.ExpTime = ExpTime;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
         end
-
         
         function Gain=get.Gain(CameraObj)
-%             CameraObj.checkIfConnected;
-            Gain = CameraObj.CamHn.Gain;
-            switch CameraObj.CamHn.lastError
-                case "could not get gain"
-                    CameraObj.lastError = "Could not get gain";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
+           if CameraObj.checkIfConnected
+              Gain = CameraObj.CamHn.Gain;
+              CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
         end
         
         function set.Gain(CameraObj,Gain)
-%             CameraObj.checkIfConnected;
-            % for an explanation of gain & offset vs. dynamics, see
-            %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
-            %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
-            CameraObj.CamHn.Gain = Gain;
-            switch CameraObj.CamHn.lastError
-                case "could not set gain"
-                    CameraObj.lastError = "Could not set gain";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
-            CameraObj.LogFile.writeLog(sprintf('call set.Gain. Gain=%f',Gain))
+           if CameraObj.checkIfConnected
+               CameraObj.LogFile.writeLog(sprintf('call set.Gain. Gain=%f',Gain))
+               % for an explanation of gain & offset vs. dynamics, see
+               %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
+               %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
+               CameraObj.CamHn.Gain = Gain;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
         end
-        
         
         % ROI - assuming that this is what the SDK calls "Resolution"
         function set.ROI(CameraObj,roi)
             % resolution is [x1,y1,sizex,sizey]
             %  I highly suspect that this setting is very problematic
             %   especially in color mode.
-%             CameraObj.checkIfConnected;
-            CameraObj.CamHn.ROI = roi;
-            switch CameraObj.CamHn.lastError
-                case "could not set ROI"
-                    CameraObj.lastError = "Could not set ROI";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
-            CameraObj.LogFile.writeLog(sprintf('call set.ROI. roi=%f',roi))
+           if CameraObj.checkIfConnected
+              CameraObj.LogFile.writeLog(sprintf('call set.ROI. roi=%f',roi))
+              CameraObj.CamHn.ROI = roi;
+              CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
         end
 
-        
         function offset=get.Offset(CameraObj)
-%             CameraObj.checkIfConnected;
-            % Offset seems to be a sort of bias, black level
-            offset = CameraObj.CamHn.offset;
-            switch CameraObj.CamHn.lastError
-                case "could not get offset"
-                    CameraObj.lastError = "Could not get offset";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
+           if CameraObj.checkIfConnected
+              % Offset seems to be a sort of bias, black level
+              offset = CameraObj.CamHn.offset;
+              CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
         end
-        
+
         function set.Offset(CameraObj,offset)
-%             CameraObj.checkIfConnected;
-            CameraObj.CamHn.offset = offset;
-            switch CameraObj.CamHn.lastError
-                case "could not set offset"
-                    CameraObj.lastError = "Could not set offset";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
-            CameraObj.LogFile.writeLog(sprintf('call set.Offset. offset=%f',offset))
+           if CameraObj.checkIfConnected
+              CameraObj.LogFile.writeLog(sprintf('call set.Offset. offset=%f',offset))
+              CameraObj.CamHn.offset = offset;
+              CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
         end
 
-        
         function readMode=get.ReadMode(CameraObj)
-%             CameraObj.checkIfConnected;
-            readMode = CameraObj.CamHn.readMode;
-            switch CameraObj.CamHn.lastError
-                case "could not get the read mode"
-                    CameraObj.lastError = "Could not get read mode";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
-        end
+           if CameraObj.checkIfConnected
+              readMode = CameraObj.CamHn.ReadMode;
+              CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
+       end
 
-        function set.ReadMode(CameraObj,readMode)
-%             CameraObj.checkIfConnected;
-            CameraObj.CamHn.readMode = readMode;
-            switch CameraObj.CamHn.lastError
-                case "could not set the read mode"
-                    CameraObj.lastError = "Could not set read mode";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
-            CameraObj.LogFile.writeLog(sprintf('call set.ReadMode. readMode=%f',readMode))
+        function set.ReadMode(CameraObj,ReadMode)
+           if CameraObj.checkIfConnected
+              CameraObj.LogFile.writeLog(sprintf('call set.ReadMode. readMode=%f',readMode))
+              CameraObj.CamHn.ReadMode = ReadMode;
+              CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
         end
-
 
         function set.binning(CameraObj,binning)
-            % default is 1x1
-            % for the QHY367, 1x1 and 2x2 seem to work; NxN with N>2 gives
-            % error.
-%             CameraObj.checkIfConnected;
-            CameraObj.CamHn.binning = binning;
-            switch CameraObj.CamHn.lastError
-                case "could not set the binning"
-                    CameraObj.lastError = "Could not set binning";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
+            if CameraObj.checkIfConnected
+               CameraObj.LogFile.writeLog(sprintf('call set.binning. binning=%f',binning))
+               % default is 1x1
+               % for the QHY367, 1x1 and 2x2 seem to work; NxN with N>2 gives
+               % error.
+               CameraObj.CamHn.binning = binning;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
             end
-            CameraObj.LogFile.writeLog(sprintf('call set.binning. binning=%f',binning))
         end
         
         % The SDK doesn't provide a function for getting the current
         %  binning, go figure
 
         function set.color(CameraObj,ColorMode)
-            % default has to be bw
-%             CameraObj.checkIfConnected;
-            CameraObj.CamHn.binning = ColorMode;
-            switch CameraObj.CamHn.lastError
-                case "could not set the binning"
-                    CameraObj.lastError = "Could not set color mode";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
+            if CameraObj.checkIfConnected
+               CameraObj.LogFile.writeLog(sprintf('call set.color. ColorMode=%f',ColorMode))
+               % default has to be bw
+               CameraObj.CamHn.binning = ColorMode;
+               CameraObj.LastError = CameraObj.CamHn.lastError;
             end
-            CameraObj.LogFile.writeLog(sprintf('call set.color. ColorMode=%f',ColorMode))
         end
 
         function set.bitDepth(CameraObj,BitDepth)
-            % BitDepth: 8 or 16 (bit). My understanding is that this is in
-            %  first place a communication setting, which however implies
-            %  the scaling of the raw ADC readout. IIUC, e.g. a 14bit ADC
-            %  readout is upshifted to full 16 bit range in 16bit mode.
-            % Constrain BitDepth to 8|16, the functions wouldn't give any
-            %  error anyway for different values.
-            % default has to be bw
-%             CameraObj.checkIfConnected;
-            CameraObj.CamHn.binning = BitDepth;
-            switch CameraObj.CamHn.lastError
-                case "could not set bit depth"
-                    CameraObj.lastError = "Could not set bit depth";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end    
-            CameraObj.LogFile.writeLog(sprintf('call set.bitDepth. BitDepth=%f',BitDepth))
+            if CameraObj.checkIfConnected
+                CameraObj.LogFile.writeLog(sprintf('call set.bitDepth. BitDepth=%f',BitDepth))
+                % BitDepth: 8 or 16 (bit). My understanding is that this is in
+                %  first place a communication setting, which however implies
+                %  the scaling of the raw ADC readout. IIUC, e.g. a 14bit ADC
+                %  readout is upshifted to full 16 bit range in 16bit mode.
+                % Constrain BitDepth to 8|16, the functions wouldn't give any
+                %  error anyway for different values.
+                % default has to be bw
+                CameraObj.CamHn.binning = BitDepth;
+                CameraObj.LastError = CameraObj.CamHn.lastError;
+            end
         end
 
         function bitDepth=get.bitDepth(CameraObj)
-%             CameraObj.checkIfConnected;
-            bitDepth = CameraObj.CamHn.bitDepth;
-            switch CameraObj.CamHn.lastError
-                case "could not get bit depth"
-                    CameraObj.lastError = "Could not get bit depth";
-                    if CameraObj.Verbose, fprintf('%s\n', CameraObj.lastError); end
-                    CameraObj.LogFile.writeLog(CameraObj.lastError)
-            end
+           if CameraObj.checkIfConnected
+              bitDepth = CameraObj.CamHn.bitDepth;
+              CameraObj.LastError = CameraObj.CamHn.lastError;
+           end
+        end
+
+        % Get the last error reported by the driver code
+        function LastError=get.LastError(CameraObj)
+            LastError = CameraObj.CamHn.lastError;
+            CameraObj.LogFile.writeLog(LastError)
+            if CameraObj.Verbose, fprintf('%s\n', LastError); end
+        end
+
+        % Set an error message, update log and print to command line
+        function set.LastError(CameraObj,LastError)
+           % If the LastError is empty (e.g. if the previous command did
+           % not fail), do not keep or print it,
+           if (~isempty(LastError))
+              % If the error message is taken from the driver object, do NOT
+              % update the driver object.
+              if (~strcmp(CameraObj.CamHn.lastError, LastError))
+                 CameraObj.CamHn.lastError = LastError;
+              end
+              CameraObj.LogFile.writeLog(LastError)
+              if CameraObj.Verbose, fprintf('%s\n', LastError); end
+           end
         end
 
     end

@@ -2,7 +2,7 @@ function [Res] = focus_loop(CamObj,MountObj,FocObj)
 % Example: [FocRes] = devel.focus_loop(C,M,F)
 
 %ExpTime = 1;
-StartPos = 23800;
+StartPos = 23720;
 FocusGuess = 23600;
 
 PlotMarker = 'o';

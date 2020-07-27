@@ -1,5 +1,5 @@
 function success=connect(MountObj)
-% connect to a focus motor on the specified Port, try all ports if
+% connect to a mount on the specified Port, try all ports if
 %  Port omitted
     MountObj.LogFile.writeLog('Connecting to mount.')
     success = MountObj.MouHn.connect;
@@ -11,10 +11,10 @@ function success=connect(MountObj)
         MountObj.MountType = MountObj.MouHn.MountType;
         MountObj.MountModel = MountObj.MouHn.MountModel;
         % Read mount unique and Geo name from config file
-        MountObj.MountUniqueName =         util.readSystemConfigFile('MountUniqueName');
-        MountObj.MountGeoName =            util.readSystemConfigFile('MountGeoName');
-        MountObj.TelescopeEastUniqueName = util.readSystemConfigFile('TelescopeEastUniqueName');
-        MountObj.TelescopeWestUniqueName = util.readSystemConfigFile('TelescopeWestUniqueName');
+        MountObj.MountUniqueName =         obs.util.readSystemConfigFile('MountUniqueName');
+        MountObj.MountGeoName =            obs.util.readSystemConfigFile('MountGeoName');
+        MountObj.TelescopeEastUniqueName = obs.util.readSystemConfigFile('TelescopeEastUniqueName');
+        MountObj.TelescopeWestUniqueName = obs.util.readSystemConfigFile('TelescopeWestUniqueName');
 
         % Mount location coordinates and UTC
         if (MountObj.TimeFromGPS)
@@ -23,22 +23,22 @@ function success=connect(MountObj)
            MountObj.MountCoo.ObsLat = MountObj.MouHn.fullStatus.Lat;
         else
            % Take coordinates from computer
-           MountObj.MountCoo.ObsLon = util.readSystemConfigFile('MountLongitude');
-           MountObj.MountCoo.ObsLat = util.readSystemConfigFile('MountLatitude');
-           MountObj.MountCoo.ObsHeight = util.readSystemConfigFile('MountHeight');
+           MountObj.MountCoo.ObsLon = obs.util.readSystemConfigFile('MountLongitude');
+           MountObj.MountCoo.ObsLat = obs.util.readSystemConfigFile('MountLatitude');
+           MountObj.MountCoo.ObsHeight = obs.util.readSystemConfigFile('MountHeight');
            MountObj.MountPos = [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat MountObj.MountCoo.ObsHeight];
            % Update UTC clock on mount
            MountObj.MouHn.MountUTC = 'dummy';
         end
 
         % Read mount parking position from the config file
-        MountObj.ParkPos = [util.readSystemConfigFile('MountParkAz'), util.readSystemConfigFile('MountParkAlt')];
+        MountObj.ParkPos = [obs.util.readSystemConfigFile('MountParkAz'), obs.util.readSystemConfigFile('MountParkAlt')];
 
         % Read Alt minimal limitation from the config file
-        MountObj.MinAlt = util.readSystemConfigFile('MountMinAlt');
+        MountObj.MinAlt = obs.util.readSystemConfigFile('MountMinAlt');
 
         % Read Alt minimal limitation map from the config file
-        MountObj.MinAzAltMap = util.readSystemConfigFile('MountMinAzAltMap');
+        MountObj.MinAzAltMap = obs.util.readSystemConfigFile('MountMinAzAltMap');
         
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
         MountObj.LogFile.writeLog('Details:')
@@ -50,7 +50,7 @@ function success=connect(MountObj)
         MountObj.LogFile.writeLog(sprintf('Park position: %.1f %.1f',MountObj.ParkPos(1), MountObj.ParkPos(2)))
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
     else
-       Text = sprintf("Mount %s is disconnected", util.readSystemConfigFile('MountGeoName'));
+       Text = sprintf("Mount %s is disconnected", obs.util.readSystemConfigFile('MountGeoName'));
        MountObj.LastError = Text;
     end
 
