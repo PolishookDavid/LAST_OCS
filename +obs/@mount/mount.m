@@ -12,18 +12,7 @@ classdef mount <handle
     properties(GetAccess=public, SetAccess=private)
         % Mount configuration
         Status      = 'unknown';
-        IsConnected = false; % Connection status between class to camera
-        TimeFromGPS = false; % default is no, take time and coordinates from computer
         IsEastOfPier = NaN;
-        IsCounterWeightDown=true; % Test that this works as expected
-        
-        MinAlt = 15;
-        MinAzAltMap = NaN;
-        
-        MountPos=[NaN,NaN,NaN];
-        MountCoo = struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
-        MountUTC
-        ParkPos = [NaN,NaN]; % park pos in [Az,Alt] (negative Alt is impossible)
     end
 
     properties(Hidden)
@@ -32,6 +21,10 @@ classdef mount <handle
         LastRC    = '';
         LogFile;
         Verbose   = true; % for stdin debugging
+
+        IsConnected = false; % Connection status between class to camera
+        TimeFromGPS = false; % default is no, take time and coordinates from computer
+        IsCounterWeightDown=true; % Test that this works as expected
 
         Port
         Serial_resource % the serial object corresponding to Port
@@ -44,6 +37,8 @@ classdef mount <handle
         TelescopeEastUniqueName = NaN;
         TelescopeWestUniqueName = NaN;
         
+        MinAlt = 15;
+        MinAzAltMap = NaN;
         MinAltPrev = NaN;
         MeridianFlip=true; % if false, stop at the meridian limit
         MeridianLimit=92; % Test that this works as expected, no idea what happens
@@ -51,6 +46,10 @@ classdef mount <handle
         SlewingTimer;
         DistortionFile = '';
 
+        MountPos=[NaN,NaN,NaN];
+        MountCoo = struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
+        MountUTC
+        ParkPos = [NaN,NaN]; % park pos in [Az,Alt] (negative Alt is impossible)
     end
     
     % non-API-demanded properties, Enrico's judgement
@@ -287,7 +286,7 @@ classdef mount <handle
         
         function TrackSpeed=get.TrackingSpeed(MountObj)
            if MountObj.checkIfConnected
-            TrackSpeed = MountObj.MouHn.TrackingSpeed;
+              TrackSpeed = MountObj.MouHn.TrackingSpeed;
            end
         end
 
@@ -306,7 +305,7 @@ classdef mount <handle
         
         function flip=get.MeridianFlip(MountObj)
            if MountObj.checkIfConnected
-            flip = MountObj.MouHn.MeridianFlip;
+              flip = MountObj.MouHn.MeridianFlip;
            end
         end
         
@@ -358,7 +357,7 @@ classdef mount <handle
        
         function ParkPosition=get.ParkPos(MountObj)
             if MountObj.checkIfConnected
-            ParkPosition = MountObj.MouHn.ParkPos;
+               ParkPosition = MountObj.MouHn.ParkPos;
             end
         end
 
@@ -371,7 +370,7 @@ classdef mount <handle
         
         function MountPos=get.MountPos(MountObj)
             if MountObj.checkIfConnected
-            MountPos = MountObj.MouHn.MountPos;
+               MountPos = MountObj.MouHn.MountPos;
             end
         end
             

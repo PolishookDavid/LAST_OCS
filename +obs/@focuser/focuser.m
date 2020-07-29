@@ -7,12 +7,12 @@ classdef focuser <handle
     properties (GetAccess=public, SetAccess=private)
         Status='unknown';
         LastPos=NaN;
-        FocType       = NaN;
-        FocUniqueName = NaN;
     end
         
     properties (SetAccess=public, GetAccess=private)
 %        RelPos=NaN;
+        FocType       = NaN;
+        FocUniqueName = NaN;
     end
         
     properties (Hidden=true)

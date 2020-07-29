@@ -12,18 +12,11 @@ classdef camera < handle
 
         ExpTime=10;
 
-        CoolingStatus = 'unknown';
-        Temperature
+        Temperature  % DP -> Put NAN if unknown.
         CoolingPower = NaN;
 
-        IsConnected = false;        
-        SaveOnDisk = false;
-        Display    = false;
-
-        CCDnum = 0;
         ImType = 'science';
         Object = '';
-        LogFile;
     end
 
     properties(Hidden)
@@ -38,6 +31,15 @@ classdef camera < handle
         Gain=0;
         binning=[1,1];
         Filter
+
+        CoolingStatus = 'unknown';
+
+        IsConnected = false;        
+        SaveOnDisk = true; %false;
+        Display    = 'ds9'; %'';
+
+        CCDnum = 0;         % ???? 
+        LogFile;
     end
         
     properties(Dependent = true)

@@ -1,14 +1,19 @@
 function abort(MountObj)
 % emergency stop
-   % restored limitation on minimal altitude
-   if(~isnan(MountObj.MinAltPrev))
-       MountObj.MinAlt = MountObj.MinAltPrev;
-       MountObj.MinAltPrev = NaN;
+   if MountObj.checkIfConnected
+
+      MountObj.LogFile.writeLog('Abort slewing')
+
+      % Stop the mount motion through the driver object
+      MountObj.MouHn.abort;
+
+      % restored limitation on minimal altitude
+      if(~isnan(MountObj.MinAltPrev))
+         MountObj.MinAlt = MountObj.MinAltPrev;
+         MountObj.MinAltPrev = NaN;
+      end
+      
+      % Delete the slewing timer
+      delete(MountObj.SlewingTimer);
    end
-   % Delete the timer
-   delete(MountObj.SlewingTimer);
-   % Stop the mount motion
-   MountObj.checkIfConnected;
-   MountObj.MouHn.abort;
-   MountObj.LogFile.writeLog('Abort slewing')
 end

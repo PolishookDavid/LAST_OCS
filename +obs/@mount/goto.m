@@ -52,46 +52,51 @@ if nargin<3
     Lat = [];
 end
 
-%%%MountObj.checkIfConnected
+if MountObj.checkIfConnected
 
-if (~strcmp(MountObj.Status, 'park'))
-   % Convert input into RA/Dec [input deg, output deg]
-   [RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin{:});
+   % Do not slew if parkign, first do unpark
+   if (~strcmp(MountObj.Status, 'park'))
 
-   if(~isnan(RA) && ~isnan(Dec))
-      % check that target is visible
-      % note that input is in [rad]
-      JD = celestial.time.julday;
-      [Flag,FlagRes,Data] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
-                                                           'Lon', MountObj.MountCoo.ObsLon./RAD, 'Lat', MountObj.MountCoo.ObsLat./RAD, ...
-                                                           'AltMinConst', MountObj.MinAlt./RAD, 'AzAltConst', MountObj.MinAzAltMap./RAD);
-      if (Flag)
-         % Start timer to notify when slewing is complete
-         MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-         start(MountObj.SlewingTimer);
+      % Convert input into RA/Dec [input deg, output deg]
+      [RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin{:});
 
-         % Start slewing
-         MountObj.MouHn.GoTo(RA, Dec, 'eq');
-      
-         % Get error
-         if (~isempty(MountObj.MouHn.lastError))
-            MountObj.LastError = MountObj.MouHn.lastError;
-         end
-      else
-         if (~FlagRes.Alt)
-            MountObj.LastError = 'Target Alt too low';
+      if(~isnan(RA) && ~isnan(Dec))
+
+         % check that target is visible
+         % note that input is in [rad]
+         JD = celestial.time.julday;
+         [Flag,FlagRes,Data] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
+                                                              'Lon', MountObj.MountCoo.ObsLon./RAD, 'Lat', MountObj.MountCoo.ObsLat./RAD, ...
+                                                              'AltMinConst', MountObj.MinAlt./RAD, 'AzAltConst', MountObj.MinAzAltMap./RAD);
+         if (Flag)
+
+            % Start timer to notify when slewing is complete
+            MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+            start(MountObj.SlewingTimer);
+
+            % Start slewing
+            MountObj.MouHn.GoTo(RA, Dec, 'eq');
+
+            % Get error
+            if (~isempty(MountObj.MouHn.lastError))
+               MountObj.LastError = MountObj.MouHn.lastError;
+            end
          else
-            if (~FlagRes.AzAlt)
-               MountObj.LastError = 'Target Alt too low for the local Az';
+            if (~FlagRes.Alt)
+               MountObj.LastError = 'Target Alt too low';
+            else
+               if (~FlagRes.AzAlt)
+                  MountObj.LastError = 'Target Alt too low for the local Az';
+               end
+            end
+            if(~FlagRes.HA)
+               MountObj.LastError = 'HA too large. Check if mount is calibrated';
             end
          end
-         if(~FlagRes.HA)
-            MountObj.LastError = 'HA too large. Check if mount is calibrated';
-         end
+      else
+         MountObj.LastError = 'Could not find coordinates';
       end
    else
-      MountObj.LastError = 'Could not find coordinates';
-   end
-else
-   MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
-end          
+      MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0) to unpark";
+   end          
+end
