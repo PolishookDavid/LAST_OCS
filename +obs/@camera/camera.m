@@ -24,12 +24,12 @@ classdef camera < handle
         CamModel      = '';
         CamUniqueName = '';
         CamGeoName    = '';
-        cameranum
+        CameraNum
         
         ReadMode
         Offset
         Gain=0;
-        binning=[1,1];
+        Binning=[1,1];
         Filter
 
         CoolingStatus = 'unknown';
@@ -37,6 +37,7 @@ classdef camera < handle
         IsConnected = false;        
         SaveOnDisk = true; %false;
         Display    = 'ds9'; %'';
+        DisplayMatlabFig = 0; % Will be updated after first image
 
         CCDnum = 0;         % ???? 
         LogFile;
@@ -66,8 +67,8 @@ classdef camera < handle
     % settings which have not been prescribed by the API,
     % but for which I have already made the code
     properties(Hidden)
-        color
-        bitDepth
+        Color
+        BitDepth
     end
     
     properties (Hidden,Transient)
@@ -87,42 +88,56 @@ classdef camera < handle
 
     methods
         % Constructor
-        function CameraObj=camera(CamType)
+        function CameraObj=camera(CamType, CameraNum)
 
-           if nargin >= 1
+           if nargin >= 2
+              CameraObj.CameraNum = CameraNum;
+           elseif nargin >= 1
+              % Use one camera as default
+              CameraObj.CameraNum = 1;
+              % Read model of camera
               if (strcmp(CamType,'QHY') | strcmp(CamType,'ZWO'))
                  CameraObj.CamType = CamType;   % 'QHY'; % 'ZWO';
               else
                  error('Use ZWO or QHY cameras only')
               end
            else
-              % Use ZWO camera as default
-              CameraObj.CamType = 'ZWO';
+              % Use one camera as default
+              CameraObj.CameraNum = 1;
+              % Use QHY camera as default
+              CameraObj.CamType = 'QHY';
            end
 
-           DirName = obs.util.constructDirName('log');
+           % Opens Log for the camera
+           DirName = obs.util.config.constructDirName('log');
            cd(DirName);
 
-           % Opens Log for the camera
            CameraObj.LogFile = logFile;
            CameraObj.LogFile.Dir = DirName;
            CameraObj.LogFile.FileNameTemplate = 'LAST_%s.log';
-           CameraObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Cam', ...
-                     obs.util.readSystemConfigFile('ObservatoryNode'), obs.util.readSystemConfigFile('MountGeoName'), obs.util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
+           CameraObj.LogFile.logOwner = sprintf('%s.%s_%s_Cam', ...
+                     obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+                     obs.util.config.readSystemConfigFile('MountGeoName'),...
+                     DirName(end-7:end));
+% Should the log be for 1 or 2 cameras??? Here is for a single camera:
+%           CameraObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Cam', ...
+%                     obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+%                     obs.util.config.readSystemConfigFile('MountGeoName'),...
+%                     obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
             % Open a driver object for the camera
             if(strcmp(CameraObj.CamType, 'ZWO'))
-               CameraObj.CamHn=inst.ZWOASICamera();
+               CameraObj.CamHn=inst.ZWOASICamera(CameraObj.CameraNum);
             elseif(strcmp(CameraObj.CamType, 'QHY'))
-               CameraObj.CamHn=inst.QHYccd();
+               CameraObj.CamHn=inst.QHYccd(CameraObj.CameraNum);
             end
 
             % Check if a camera was found
             CameraObj.LastError = CameraObj.CamHn.lastError;
 
             % Update filter and ccd number from config file
-            CameraObj.Filter = obs.util.readSystemConfigFile('Filter');
-            CameraObj.CCDnum = obs.util.readSystemConfigFile('CCDnum');
+            CameraObj.Filter = obs.util.config.readSystemConfigFile('Filter');
+            CameraObj.CCDnum = obs.util.config.readSystemConfigFile('CCDnum');
             
         end
 
@@ -265,13 +280,13 @@ classdef camera < handle
            end
         end
 
-        function set.binning(CameraObj,binning)
+        function set.Binning(CameraObj,Binning)
             if CameraObj.checkIfConnected
                CameraObj.LogFile.writeLog(sprintf('call set.binning. binning=%f',binning))
                % default is 1x1
                % for the QHY367, 1x1 and 2x2 seem to work; NxN with N>2 gives
                % error.
-               CameraObj.CamHn.binning = binning;
+               CameraObj.CamHn.binning = Binning;
                CameraObj.LastError = CameraObj.CamHn.lastError;
             end
         end
@@ -279,16 +294,16 @@ classdef camera < handle
         % The SDK doesn't provide a function for getting the current
         %  binning, go figure
 
-        function set.color(CameraObj,ColorMode)
+        function set.Color(CameraObj,ColorMode)
             if CameraObj.checkIfConnected
                CameraObj.LogFile.writeLog(sprintf('call set.color. ColorMode=%f',ColorMode))
                % default has to be bw
-               CameraObj.CamHn.binning = ColorMode;
+               CameraObj.CamHn.color = ColorMode;
                CameraObj.LastError = CameraObj.CamHn.lastError;
             end
         end
 
-        function set.bitDepth(CameraObj,BitDepth)
+        function set.BitDepth(CameraObj,BitDepth)
             if CameraObj.checkIfConnected
                 CameraObj.LogFile.writeLog(sprintf('call set.bitDepth. BitDepth=%f',BitDepth))
                 % BitDepth: 8 or 16 (bit). My understanding is that this is in
@@ -298,14 +313,14 @@ classdef camera < handle
                 % Constrain BitDepth to 8|16, the functions wouldn't give any
                 %  error anyway for different values.
                 % default has to be bw
-                CameraObj.CamHn.binning = BitDepth;
+                CameraObj.CamHn.bitDepth = BitDepth;
                 CameraObj.LastError = CameraObj.CamHn.lastError;
             end
         end
 
-        function bitDepth=get.bitDepth(CameraObj)
+        function BitDepth=get.BitDepth(CameraObj)
            if CameraObj.checkIfConnected
-              bitDepth = CameraObj.CamHn.bitDepth;
+              BitDepth = CameraObj.CamHn.bitDepth;
               CameraObj.LastError = CameraObj.CamHn.lastError;
            end
         end

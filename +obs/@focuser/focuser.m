@@ -28,8 +28,8 @@ classdef focuser <handle
     
     properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
         FocusMotionTimer;
-        lastError='';
-        limits=[NaN,NaN];
+        LastError='';
+        Limits=[NaN,NaN];
     end
 
     
@@ -37,7 +37,7 @@ classdef focuser <handle
         % constructor and destructor
         function Foc=focuser(varargin)
 
-           DirName = obs.util.constructDirName('log');
+           DirName = obs.util.config.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the camera
@@ -45,7 +45,7 @@ classdef focuser <handle
            Foc.LogFile.Dir = DirName;
            Foc.LogFile.FileNameTemplate = 'LAST_%s.log';
            Foc.LogFile.logOwner = sprintf('%s.%s.%s_%s_Foc', ...
-                                  obs.util.readSystemConfigFile('ObservatoryNode'), obs.util.readSystemConfigFile('MountGeoName'), obs.util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
+                                  obs.util.config.readSystemConfigFile('ObservatoryNode'), obs.util.config.readSystemConfigFile('MountGeoName'), obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
            if (isempty(varargin))
               Answer = input('Is the mirror unlock? [y/n]\n', 's');
@@ -79,21 +79,16 @@ classdef focuser <handle
         %getters and setters
         function focus=get.Pos(Foc)
             if (isnan(Foc.FocHn.Pos))
-               Foc.lastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
-               if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-               Foc.LogFile.writeLog(Foc.lastError)
+               Foc.LastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
             else
                focus = Foc.FocHn.Pos;
-               switch Foc.FocHn.lastError
-                  case "could not read focuser position"
-                     Foc.lastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
-                     if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-                     Foc.LogFile.writeLog(Foc.lastError)
-               end
+               Foc.LastError = Foc.FocHn.lastError;
             end
         end
 
         function set.Pos(Foc,focus)
+            Foc.LogFile.writeLog(sprintf('call set.Pos. focus=%d',focus))
+
             Foc.LastPos = Foc.FocHn.LastPos;
             Foc.FocHn.Pos = focus;
 
@@ -102,59 +97,51 @@ classdef focuser <handle
             start(Foc.FocusMotionTimer);
             Foc.LogFile.writeLog('Start focuser timer')            
             
-            Foc.LogFile.writeLog(sprintf('call set.Pos. focus=%d',focus))
-            switch Foc.FocHn.lastError
-                case "set new focus position failed"
-                    Foc.lastError = "set new focus position failed";
-                    if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-                    Foc.LogFile.writeLog(Foc.lastError)
-                case "Focuser commanded to move out of range!"
-                    Foc.lastError = "Focuser commanded to move out of range!";
-                    if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-                    Foc.LogFile.writeLog(Foc.lastError)
-            end       
+            Foc.LastError = Foc.FocHn.lastError;
         end
         
         % DOES NOT WORK !!! DP June 4, 2020
 %         function set.RelPos(Foc,incr)
 %             Foc.FocHn.RelPos(incr)
 %             Foc.LogFile.writeLog(sprintf('call set.RelPos. focues increase=%d',incr))
-%             switch Foc.FocHn.lastError
-%                 case "set new focus position failed"
-%                     Foc.lastError = "set new focus position failed";
-%                     if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-%                     Foc.LogFile.writeLog(Foc.lastError)
-%
-%                 case "Focuser commanded to move out of range!"
-%                     Foc.lastError = "Focuser commanded to move out of range!";
-%                     if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-%                     Foc.LogFile.writeLog(Foc.lastError)
-%             end
+%             Foc.LastError = Foc.FocHn.lastError;
 %         end
         
         function focus=get.LastPos(Foc)
             focus = Foc.FocHn.LastPos;
-            switch Foc.FocHn.lastError
-                case "could not read focuser position"
-                    Foc.lastError = "could not read focuser position";
-                    if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-                    Foc.LogFile.writeLog(Foc.lastError)
-            end
+            Foc.LastError = Foc.FocHn.lastError;
         end
 
-        function limits=get.limits(Foc)
-            limits = Foc.FocHn.limits;
+        function Limits=get.Limits(Foc)
+            Limits = Foc.FocHn.limits;
         end
-        
+
         function s=get.Status(Foc)
             s = Foc.FocHn.Status;
-            switch Foc.FocHn.lastError
-                case "could not get status, communication problem?"
-                    Foc.lastError = "could not get status, communication problem?";
-                     if Foc.Verbose, fprintf('%s\n', Foc.lastError); end
-                    Foc.LogFile.writeLog(Foc.lastError)
-           end            
+            Foc.LastError = Foc.FocHn.lastError;
         end
         
+        % Get the last error reported by the driver code
+        function LastError=get.LastError(Foc)
+            LastError = Foc.FocHn.lastError;
+            Foc.LogFile.writeLog(LastError)
+            if Foc.Verbose, fprintf('%s\n', LastError); end
+        end
+
+        % Set an error, update log and print to command line
+        function set.LastError(Foc,LastError)
+           % If the LastError is empty (e.g. if the previous command did
+           % not fail), do not keep or print it,
+           if (~isempty(LastError))
+              % If the error message is taken from the driver object, do NOT
+              % update the driver object.
+              if (~strcmp(Foc.FocHn.lastError, LastError))
+                 Foc.FocHn.lastError = LastError;
+              end
+              Foc.LogFile.writeLog(LastError)
+              if Foc.Verbose, fprintf('%s\n', LastError); end
+           end
+        end
+
     end
 end

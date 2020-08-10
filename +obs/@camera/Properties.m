@@ -30,7 +30,7 @@ function Properties(CameraObj)
         CameraObj.CamModel
         CameraObj.CamUniqueName
         CameraObj.CamGeoName
-        CameraObj.cameranum
+        CameraObj.CameraNum
         
         CameraObj.ReadMode
         CameraObj.Offset
@@ -50,14 +50,14 @@ function Properties(CameraObj)
     
     % settings which have not been prescribed by the API,
     % but for which I have already made the code
-        CameraObj.color
-        CameraObj.bitDepth
+        CameraObj.Color
+        CameraObj.BitDepth
     
         CameraObj.CamHn      % Handle to camera driver class
         CameraObj.MouHn      % Handle to mount driver class
         CameraObj.FocHn      % Handle to focuser driver class
         CameraObj.ReadoutTimer
-        CameraObj.lastError
+        CameraObj.LastError
         CameraObj.ImageFormat
         CameraObj.LastImageSearialNum
         CameraObj.Verbose

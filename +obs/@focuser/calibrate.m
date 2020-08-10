@@ -1,4 +1,4 @@
-function calibrate(F)
+function calibrate(Foc)
 % Run the calibration routine to find the movement limits.
 % Beware, the process takes a few minutes, like 3-4.
 % With less than perfect USB connection, this causes an almost certain disconnection
@@ -7,10 +7,6 @@ function calibrate(F)
 % assigned USB resource.
 % Or to say it better: doesnt't matter, take for granted that the focuser
 % will disconnect itself, just reconnect it after a few minutes.
-    F.FocHn.calibrate;
-    if(strfind(F.FocHn.lastError, 'Calibration failed')),
-       F.lastError = F.FocHn.lastError;
-    elseif (strfind(F.FocHn.lastError, 'Calibration timed out!')),
-       F.lastError = F.FocHn.lastError;
-    end
+    Foc.FocHn.calibrate;
+    Foc.LastError = Foc.FocHn.lastError;
 end

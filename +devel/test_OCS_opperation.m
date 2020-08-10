@@ -22,8 +22,10 @@ fprintf('>>> set Dec\n')
 M.Dec = 87; rc = M.waitFinish;
 if(~rc), fprintf('Mount: Dec setter failed\n'); end
 RA  = M.RA;
+fprintf('RA is %f\n', RA)
 fprintf('>>> set RA\n')
-M.RA = RA - 5; rc = M.waitFinish;
+LST=celestial.time.lst(celestial.time.julday,34/180*pi)*360
+M.RA = LST - 5; rc = M.waitFinish;
 if(~rc), fprintf('Mount: RA setter failed\n'); end
 Az = M.Az;
 fprintf('>>> set Az\n')
@@ -62,8 +64,6 @@ fprintf('Check focuser done\n')
 % Check camera
 fprintf('***************\n')
 fprintf('Checking camera\n')
-C.SaveOnDisk = true;
-C.Display = 'matlab';
 C.ExpTime = 5;
 % Take exposure
 rc = C.takeExposure;

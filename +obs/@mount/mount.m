@@ -74,7 +74,7 @@ classdef mount <handle
         function MountObj=mount()
        
            % Construct directory for log file
-           DirName = obs.util.constructDirName('log');
+           DirName = obs.util.config.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the mount
@@ -82,7 +82,9 @@ classdef mount <handle
            MountObj.LogFile.Dir = DirName;
            MountObj.LogFile.FileNameTemplate = 'LAST_%s.log';
            MountObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Mount', ...
-                                       obs.util.readSystemConfigFile('ObservatoryNode'), obs.util.readSystemConfigFile('MountGeoName'), obs.util.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
+                                       obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+                                       obs.util.config.readSystemConfigFile('MountGeoName'),...
+                                       obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
             
            % Open a driver object for the mount
@@ -181,10 +183,7 @@ classdef mount <handle
                      start(MountObj.SlewingTimer);
 
                      MountObj.MouHn.Alt = Alt;
-
-                     if (~isempty(MountObj.MouHn.lastError))
-                        MountObj.LastError = MountObj.MouHn.lastError;
-                     end
+                     MountObj.LastError = MountObj.MouHn.lastError;
                   else
                      MountObj.LastError = "target Alt beyond limits";
                   end
@@ -414,9 +413,9 @@ classdef mount <handle
            if (~isempty(LastError))
               % If the error message is taken from the driver object, do NOT
               % update the driver object.
-              if (~strcmp(MountObj.MouHn.lastError, LastError))
-                 MountObj.MouHn.LastError = LastError;
-              end
+%               if (~strcmp(MountObj.MouHn.lastError, LastError))
+%                  MountObj.MouHn.lastError = LastError;
+%               end
               MountObj.LogFile.writeLog(LastError)
               if MountObj.Verbose, fprintf('%s\n', LastError); end
            end

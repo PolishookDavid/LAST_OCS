@@ -54,7 +54,7 @@ end
 
 if MountObj.checkIfConnected
 
-   % Do not slew if parkign, first do unpark
+   % Do not slew if parking, first do unpark using MountObj.park(0)
    if (~strcmp(MountObj.Status, 'park'))
 
       % Convert input into RA/Dec [input deg, output deg]
@@ -78,9 +78,7 @@ if MountObj.checkIfConnected
             MountObj.MouHn.GoTo(RA, Dec, 'eq');
 
             % Get error
-            if (~isempty(MountObj.MouHn.lastError))
-               MountObj.LastError = MountObj.MouHn.lastError;
-            end
+            MountObj.LastError = MountObj.MouHn.lastError;
          else
             if (~FlagRes.Alt)
                MountObj.LastError = 'Target Alt too low';

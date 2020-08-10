@@ -1,4 +1,10 @@
 function Flag = takeExposure(CameraObj,ExpTime)
+% take single exposure method
+% Package: +obs.@mount
+% Input  : - A camera object.
+%          - Exposure time [s].
+% Output : - Sucess flag.
+
 
    if CameraObj.IsConnected
       Flag = false;

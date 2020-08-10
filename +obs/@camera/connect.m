@@ -1,6 +1,6 @@
-function success=connect(CameraObj, MountHn, FocusHn)
+function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
     % Open the connection with a specific camera.
-    %  cameranum: int, number of the camera to open (as enumerated by the SDK)
+    %  CameraNum: int, number of the camera to open (as enumerated by the SDK)
     %     May be omitted. In that case the last camera is referred to
 
     % Patch! More than one connection to the camera make matlab stuck while
@@ -12,28 +12,29 @@ function success=connect(CameraObj, MountHn, FocusHn)
         %    if CameraObj.Verbose, fprintf('>>> Updating computer clock with the Network Time Protocol (NTP).\n Wait for a few seconds\n'); end
         %    CameraObj.LogFile.writeLog('Updating computer clock with the Network Time Protocol (NTP).')
         %    obs.util.update_time_NTP;
-        
-        if nargin==1
-            if CameraObj.Verbose, fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n'); end
-        end
-        
-        if nargin>1
-            % Open handle to mount
-            CameraObj.MouHn=MountHn;
-            MountConSuccess = CameraObj.MouHn.connect;
-            CameraObj.LogFile.writeLog('Camera connects to mount to get details.')
-            if(~MountConSuccess), fprintf('Failed to connect to Mount\n'); end
-        end
-        if nargin>2
+
+        if nargin == 1
+           CameraNum = 1;
+           if CameraObj.Verbose, fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n'); end
+        elseif nargin == 2
+           if CameraObj.Verbose, fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n'); end
+        elseif nargin >= 3
+           % Open handle to mount
+           CameraObj.MouHn=MountHn;
+%%%           MountConSuccess = CameraObj.MouHn.connect;
+           CameraObj.LogFile.writeLog('Camera connects to mount to get details.')
+%%%           if(~MountConSuccess), fprintf('Failed to connect to Mount\n'); end
+           if CameraObj.Verbose, fprintf('>>>>> warning: Focuser was not connected <<<<<\n'); end
+        elseif nargin >= 4
             % Open handle to focuser
             CameraObj.FocHn=FocusHn;
-            FocuserConSuccess = CameraObj.FocHn.connect;
-            CameraObj.LogFile.writeLog('Camera connects to mount to derive details.')
-            if(~FocuserConSuccess), fprintf('Failed to connect to Focuser\n'); end
+%%%            FocuserConSuccess = CameraObj.FocHn.connect;
+            CameraObj.LogFile.writeLog('Camera connects to focuser to derive details.')
+%%%            if(~FocuserConSuccess), fprintf('Failed to connect to Focuser\n'); end
         end
         
         % Connect to camera
-        success = CameraObj.CamHn.connect;
+        success = CameraObj.CamHn.connect(CameraNum);
         CameraObj.IsConnected = success;
         CameraObj.LogFile.writeLog('Connecting to camera.')
         
@@ -44,10 +45,12 @@ function success=connect(CameraObj, MountHn, FocusHn)
             % - Compare with Unique Name read from camera.
             % - Define camera class instance as East or West
             
-            
-            CameraObj.cameranum = CameraObj.CamHn.cameranum;
+            % The number of the connected camera for matlab recognition
+            CameraObj.CameraNum = CameraObj.CamHn.cameranum;
             
             % Naming of instruments
+            
+            % Get camera's model and unique name from camera
             CameraNameDetails = strsplit(CameraObj.CamHn.CameraName);
             CameraObj.CamUniqueName = CameraNameDetails{end};
             if (strcmp(CameraObj.CamType, 'ZWO'))
@@ -56,8 +59,26 @@ function success=connect(CameraObj, MountHn, FocusHn)
                 CameraObj.CamModel = CameraObj.CamHn.CameraName(1:strfind(CameraObj.CamHn.CameraName, '-')-1);
             end
             
+            % Choose an arbitrary high number larger than 2 as the number
+            % of connected cameras
+            NumOfCamerasConnected = 5;
+
+            % get names of all cameras connected to the computer
+            for Icam=1:1:NumOfCamerasConnected
+               CamUniqueNames{Icam} = obs.util.config.readSystemConfigFile(['CamUniqueName',num2str(Icam)]);
+
+               % Associate Matlab's camera object with physical camera
+               if (strcmp(CameraObj.CamUniqueName, CamUniqueNames{Icam}))
+                  CameraObj.CamGeoName = num2str(Icam);
+               end
+            end
+            if (strcmp(CameraObj.CamGeoName, ''))
+               fprintf('Cannot recognize the camera %s. It does not appear in the config file: ~/config/ObsSystemConfig.txt\n', CameraObj.CamUniqueName)
+            end
+            
+            
             % Read camera Geo name from config file
-            CameraObj.CamGeoName = obs.util.readSystemConfigFile('CamGeoName');
+%%%            CameraObj.CamGeoName = obs.util.config.readSystemConfigFile('CamGeoName');
             
             
             %       % Get searial number of last saved image
@@ -83,6 +104,7 @@ function success=connect(CameraObj, MountHn, FocusHn)
            CameraObj.LastError = CameraObj.CamHn.lastError;
         end
     else
+       success = false;
        CameraObj.LastError = "A second connecting procedure is NOT allowed";
     end
    

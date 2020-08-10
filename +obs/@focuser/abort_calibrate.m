@@ -1,7 +1,4 @@
-function abort_calibrate(F)
-    F.FocHn.abort_calibrate;
-    switch F.FocHn.lastError
-        case "not able to abort calibration!"
-            F.lastError = "not able to abort calibration!";
-    end
+function abort_calibrate(Foc)
+    Foc.FocHn.abort_calibrate;
+    Foc.LastError = Foc.FocHn.lastError;
 end
