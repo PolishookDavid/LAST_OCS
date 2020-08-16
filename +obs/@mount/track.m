@@ -6,11 +6,11 @@ function track(MountObj,rate)
    if MountObj.checkIfConnected
       if nargin < 2
          MountObj.LogFile.writeLog('call track')
-         MountObj.MouHn.track; % Driver will tarck at sidereal rate
+         MountObj.Handle.track; % Driver will tarck at sidereal rate
       else
          MountObj.LogFile.writeLog(sprintf('call track, rate = %.f',rate))
-         MountObj.MouHn.track(rate);
+         MountObj.Handle.track(rate);
       end
-      MountObj.LastError = MountObj.MouHn.lastError;
+      MountObj.LastError = MountObj.Handle.lastError;
    end
 end

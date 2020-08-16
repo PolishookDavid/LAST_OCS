@@ -16,10 +16,10 @@ function Flag = takeExposure(CameraObj,ExpTime)
       if(strcmp(CameraObj.CamStatus, 'idle'))
            
          % Check mount status - OBSELETE?
-         %   if (~strcmp(CameraObj.MouHn.Status, 'slewing'))
+         %   if (~strcmp(CameraObj.HandleMount.Status, 'slewing'))
            
          % Send exposure command
-         CameraObj.CamHn.takeExposure(CameraObj.ExpTime);
+         CameraObj.Handle.takeExposure(CameraObj.ExpTime);
          CameraObj.LogFile.writeLog(sprintf('call takeExposure. ExpTime=%.3f', CameraObj.ExpTime))
            
          % Start timer to write image on disk and display it when exposure and reading are complete

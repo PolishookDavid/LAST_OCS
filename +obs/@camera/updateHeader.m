@@ -1,10 +1,10 @@
 function Header=updateHeader(CameraObj)
    RAD = 180./pi;
-   DateObs = datestr(CameraObj.CamHn.time_start,'yyyy-mm-ddTHHMMSS.FFF');
-   DateVec = datevec(CameraObj.CamHn.time_start);
+   DateObs = datestr(CameraObj.Handle.time_start,'yyyy-mm-ddTHHMMSS.FFF');
+   DateVec = datevec(CameraObj.Handle.time_start);
    JD      = celestial.time.julday(DateVec(:,[3 2 1 4 5 6]));
 
-   if (isempty(CameraObj.MouHn))
+   if (isempty(CameraObj.HandleMount))
       MountGeoName = 0;
       RA  = NaN;
       Dec = NaN;
@@ -15,23 +15,23 @@ function Header=updateHeader(CameraObj)
       TrackingSpeed = NaN;
       IsCounterWeightDown = NaN;
    else
-      MountGeoName = CameraObj.MouHn.MountGeoName;
-      RA  = CameraObj.MouHn.RA;
-      Dec = CameraObj.MouHn.Dec;
-      HA  = CameraObj.MouHn.HA;
-      LST = celestial.time.lst(JD,CameraObj.MouHn.MountCoo.ObsLon./RAD,'a').*360;
-      Az = CameraObj.MouHn.Az;
-      Alt = CameraObj.MouHn.Alt;
-      TrackingSpeed = CameraObj.MouHn.TrackingSpeed;
-      IsCounterWeightDown = CameraObj.MouHn.IsCounterWeightDown;
+      MountGeoName = CameraObj.HandleMount.MountGeoName;
+      RA  = CameraObj.HandleMount.RA;
+      Dec = CameraObj.HandleMount.Dec;
+      HA  = CameraObj.HandleMount.HA;
+      LST = celestial.time.lst(JD,CameraObj.HandleMount.MountCoo.ObsLon./RAD,'a').*360;
+      Az = CameraObj.HandleMount.Az;
+      Alt = CameraObj.HandleMount.Alt;
+      TrackingSpeed = CameraObj.HandleMount.TrackingSpeed;
+      IsCounterWeightDown = CameraObj.HandleMount.IsCounterWeightDown;
    end
    
-   if (isempty(CameraObj.FocHn))
+   if (isempty(CameraObj.HandleFocuser))
       FocPos = NaN;
       FocPrevPos = NaN;
    else
-      FocPos = CameraObj.FocHn.Pos;
-      FocPrevPos = CameraObj.FocHn.LastPos;
+      FocPos = CameraObj.HandleFocuser.Pos;
+      FocPrevPos = CameraObj.HandleFocuser.LastPos;
    end
 
    Instrument = sprintf('LAST.%s.%s.%s', obs.util.config.readSystemConfigFile('ObservatoryNode'), MountGeoName, CameraObj.CamGeoName); % 'LAST.node.mount.camera'
@@ -44,7 +44,7 @@ function Header=updateHeader(CameraObj)
               'BUNIT','ADU','physical units of the array values';...
               'IMTYPE',CameraObj.ImType,'Image type: dark/flat/focus/science/test';...
               'INTGAIN',CameraObj.Gain,'Camera internal gain level';...
-              'INTOFFS',CameraObj.CamHn.offset,'Camera internal offset level';...
+              'INTOFFS',CameraObj.Handle.offset,'Camera internal offset level';...
               'BINX',CameraObj.Binning(1),'Camera binning in X-axis';...
               'BINY',CameraObj.Binning(2),'Camera binning in Y-axis';...
               'ORIGIN','Weizmann Institute of Science','organization responsible for the data';...

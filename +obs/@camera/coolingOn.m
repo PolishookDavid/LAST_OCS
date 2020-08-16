@@ -8,7 +8,8 @@ function coolingOn(CameraObj,Temp)
          Temp = CameraObj.Temperature;
       end
 
-      CameraObj.CamHn.coolingOn(Temp);
-      CameraObj.LastError = CameraObj.CamHn.lastError;
+      % Call coolingOn using the camera handle object
+      CameraObj.Handle.coolingOn(Temp);
+      CameraObj.LastError = CameraObj.Handle.lastError;
    end
 end

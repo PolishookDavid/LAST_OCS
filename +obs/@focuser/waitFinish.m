@@ -1,16 +1,16 @@
-function Flag = waitFinish(Foc)
+function Flag = waitFinish(Focuser)
 % wait until the focuser ended moving and returned to idle mode
    Flag = false;
    pause(2);
-   while(strcmp(Foc.Status, 'moving'))
+   while(strcmp(Focuser.Status, 'moving'))
       pause(1);
-      if Foc.Verbose, fprintf('.'); end
+      if Focuser.Verbose, fprintf('.'); end
    end
    pause(1);
-   if (strcmp(Foc.Status, 'idle'))
-      if Foc.Verbose, fprintf('\nMoving focuser is complete\n'); end
+   if (strcmp(Focuser.Status, 'idle'))
+      if Focuser.Verbose, fprintf('\nMoving focuser is complete\n'); end
       Flag = true;
    else
-      if Foc.Verbose, fprintf('A problem has occurd with the focuser. Status: %s\n', Foc.Status); end
+      if Focuser.Verbose, fprintf('A problem has occurd with the focuser. Status: %s\n', Focuser.Status); end
    end
 end

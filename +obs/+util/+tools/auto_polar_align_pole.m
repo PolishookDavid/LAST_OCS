@@ -10,13 +10,17 @@ function [ResP,Res]=auto_polar_align_pole(C,M,varargin)
 % Input  : - Camera object
 %          - Mount object
 %          * Pairs of ...,key,val,... arguments. Possible keywords are:
-%            'VecHA'
-%            'PoleDec'
-%            'PolarisRA'
-%            'PolarisDec'
+%            'VecHA' - Vector of HA on which to observe Polaris [deg].
+%                   This list must contain HA 0. 
+%                   Default is [-60:30:60].
+%            'PoleDec' - Pole declination [deg]. Default is +89.9999
+%            'PolarisRA' - Polaris J2000.0 R.A. [deg].
+%                   Default is celestial.coo.convertdms([2 31 49.09],'H','d')
+%            'PolarisDec' - Polaris J2000.0 Dec. [deg].
+%                   Default is celestial.coo.convertdms([1 89 15 50.8],'D','d')
 %            'PixScale' - Default is 1.25 "/pix.
 %            'Xalong' - options are: 'ra','-ra','dec','-dec'
-%                   Default is 'ra';
+%                   Default is '-ra';
 %            'Yalong' - options are: 'ra','-ra','dec','-dec'
 %                   Default is 'dec';
 %            'ExpTime' - Exposure time. Default is 1s.
@@ -33,20 +37,20 @@ SEC_IN_DAY = 86400;
 
 InPar = inputParser;
 addOptional(InPar,'VecHA',[-60:30:60]);
-addOptional(InPar,'PoleDec',+89.999999);
+addOptional(InPar,'PoleDec',+89.9999);
 addOptional(InPar,'PolarisRA',celestial.coo.convertdms([2 31 49.09],'H','d'));  % deg
 addOptional(InPar,'PolarisDec',celestial.coo.convertdms([1 89 15 50.8],'D','d'));  % deg
 addOptional(InPar,'PixScale',1.25);  % "/pix
-addOptional(InPar,'Xalong','ra');   % 'ra','-ra','dec','-dec'
+addOptional(InPar,'Xalong','-ra');   % 'ra','-ra','dec','-dec'
 addOptional(InPar,'Yalong','dec');  % 'ra','-ra','dec','-dec'
 
 addOptional(InPar,'ExpTime',1);
 addOptional(InPar,'Verbose',true);  
 addOptional(InPar,'Plot',true);  
 addOptional(InPar,'MarkerPolaris','ro'); 
-addOptional(InPar,'MarkerCelPole','wo'); 
+addOptional(InPar,'MarkerCelPole','bo'); 
 addOptional(InPar,'MarkerMountPole','co'); 
-addOptional(InPar,'MarkerSize',20); 
+addOptional(InPar,'MarkerSize',50); 
 
 parse(InPar,varargin{:});
 InPar = InPar.Results;
@@ -104,7 +108,7 @@ for Iha=1:1:Nha
                                                        'HalfSize',[]);
     % store astrometric images in S                                         
     S(Iha) = ResAst.Image;
-    ds9(S(Iha))
+    ds9(S(Iha),1)
     pause(1);
     
     [Res(Iha).PolarisX, Res(Iha).PolarisY]=ds9.coo2xy(InPar.PolarisRA, InPar.PolarisDec);
@@ -147,11 +151,11 @@ CircData = [X(:), Y(:)];
 
 if InPar.Plot
     CS = coadd(S);
-    ds9(CS);
+    ds9(CS,2);
     % mark mount pole
     ds9.plot(BestCen(1),BestCen(2),InPar.MarkerMountPole,'Size',InPar.MarkerSize.*[1 1 0]);
     % mark polaris pointings over all images
-    ds9.plot(X,Y,InPar.MarkerPolaris,'Size',InPar.MarkerSize.*[1 1 0]);
+    ds9.plot(X(:),Y(:),InPar.MarkerPolaris,'Size',InPar.MarkerSize.*[1 1 0]);
     % mark celestial pole on the HA=0 image
     Iha0 = find([Res.HA]==0);
     ds9.plot(Res(Iha0).CelPoleX,Res(Iha0).CelPoleY,InPar.MarkerCelPole,'Size',InPar.MarkerSize.*[1 1 0]);
@@ -160,8 +164,8 @@ end
 
 % calc dist between mount pole and celestial pole (calculated -observed)
 % (sign is plus the direction the mount need to move)
-ResP.DX  = -BestCen(1) + Res(Iha).CelPoleX;  % pix
-ResP.DY  = -BestCen(2) + Res(Iha).CelPoleY;  % pix
+ResP.DX  = -BestCen(1) + Res(Iha0).CelPoleX;  % pix
+ResP.DY  = -BestCen(2) + Res(Iha0).CelPoleY;  % pix
 switch lower(InPar.Xalong)
     case 'ra'
         ResP.DAz  = ResP.DX.*InPar.PixScale./60;    % arcmin
@@ -192,9 +196,9 @@ if InPar.Verbose
     fprintf('\n\n');
     fprintf('------------------------\n');
     fprintf('ds9 legend: \n');
-    fprintf('    Marker Polaris %s',InPar.MarkerPolaris);
-    fprintf('    Marker celestial pole %s',InPar.MarkerCelPole);
-    fprintf('    Marker mount pole %s',InPar.MarkerMountPole);    
+    fprintf('    Marker Polaris %s\n',InPar.MarkerPolaris);
+    fprintf('    Marker celestial pole %s\n',InPar.MarkerCelPole);
+    fprintf('    Marker mount pole %s\n',InPar.MarkerMountPole);    
     fprintf('Shift the mount Az/Alt shuch that the celestial pole coincides with the mount pole\n');
     fprintf('Required delta X shift [pix]     : %f\n',ResP.DX);
     fprintf('Required delta Y shift [pix]     : %f\n',ResP.DY);

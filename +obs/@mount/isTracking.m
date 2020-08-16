@@ -1,6 +1,6 @@
 function flag=isTracking(MountObj)
 % check if the mount is tracking
    if MountObj.checkIfConnected
-      flag = MountObj.MouHn.isTracking;
+      flag = MountObj.Handle.isTracking;
    end
 end

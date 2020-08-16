@@ -5,7 +5,7 @@ function abort(MountObj)
       MountObj.LogFile.writeLog('Abort slewing')
 
       % Stop the mount motion through the driver object
-      MountObj.MouHn.abort;
+      MountObj.Handle.abort;
 
       % restored limitation on minimal altitude
       if(~isnan(MountObj.MinAltPrev))

@@ -8,7 +8,7 @@ function saveCurImage(CameraObj)
 
 
    % Construct image name   
-   ImageDate = datestr(CameraObj.CamHn.time_start,'yyyymmdd.HHMMSS.FFF');
+   ImageDate = datestr(CameraObj.Handle.time_start,'yyyymmdd.HHMMSS.FFF');
    ObservatoryNode = obs.util.config.readSystemConfigFile('ObservatoryNode');
    MountGeoName = obs.util.config.readSystemConfigFile('MountGeoName');
 
@@ -25,7 +25,7 @@ function saveCurImage(CameraObj)
    Header = CameraObj.updateHeader;
 
    % Write fits
-   FITS.write(single(CameraObj.CamHn.lastImage), CameraObj.LastImageName,'Header',Header,'DataType','single');
+   FITS.write(single(CameraObj.Handle.lastImage), CameraObj.LastImageName,'Header',Header,'DataType','single');
 
    CameraObj.LogFile.writeLog(sprintf('%s is written', CameraObj.LastImageName))
 

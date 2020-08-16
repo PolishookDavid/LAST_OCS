@@ -53,9 +53,9 @@ function Properties(CameraObj)
         CameraObj.Color
         CameraObj.BitDepth
     
-        CameraObj.CamHn      % Handle to camera driver class
-        CameraObj.MouHn      % Handle to mount driver class
-        CameraObj.FocHn      % Handle to focuser driver class
+        CameraObj.Handle      % Handle to camera driver class
+        CameraObj.HandleMount      % Handle to mount driver class
+        CameraObj.HandleFocuser      % Handle to focuser driver class
         CameraObj.ReadoutTimer
         CameraObj.LastError
         CameraObj.ImageFormat

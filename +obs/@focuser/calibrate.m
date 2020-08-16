@@ -1,4 +1,4 @@
-function calibrate(Foc)
+function calibrate(Focuser)
 % Run the calibration routine to find the movement limits.
 % Beware, the process takes a few minutes, like 3-4.
 % With less than perfect USB connection, this causes an almost certain disconnection
@@ -7,6 +7,6 @@ function calibrate(Foc)
 % assigned USB resource.
 % Or to say it better: doesnt't matter, take for granted that the focuser
 % will disconnect itself, just reconnect it after a few minutes.
-    Foc.FocHn.calibrate;
-    Foc.LastError = Foc.FocHn.lastError;
+    Focuser.Handle.calibrate;
+    Focuser.LastError = Focuser.Handle.lastError;
 end

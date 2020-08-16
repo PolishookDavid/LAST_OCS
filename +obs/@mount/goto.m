@@ -1,4 +1,4 @@
-function [DistRA,DistDec,Aux]=goto(MountObj, Long, Lat, varargin)
+function [RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
 % Send mount to coordinates/name
 % Package: mount
 % Description: Send mount to a given coordinates in some coordinate system
@@ -34,6 +34,9 @@ function [DistRA,DistDec,Aux]=goto(MountObj, Long, Lat, varargin)
 %                           Default is empty. If not given return [0,0].
 %            'InputUnits' - Default is 'deg'.
 %            'OutputUnits'- Default is 'deg'
+%            'Temp'       - Default is 15 C.
+%            'Wave'       - Default is 5500 Ang.
+%            'PressureHg' - Default is 760 mm Hg.
 % Output : - Apparent R.A.
 %          - Apparent Dec.
 %          - A structure containing the intermidiate values.
@@ -58,7 +61,7 @@ if MountObj.checkIfConnected
    if (~strcmp(MountObj.Status, 'park'))
 
       % Convert input into RA/Dec [input deg, output deg]
-      [RA, Dec] = celestial.coo.convert2equatorial(Long, Lat, varargin{:});
+      [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:});
 
       if(~isnan(RA) && ~isnan(Dec))
 
@@ -75,10 +78,10 @@ if MountObj.checkIfConnected
             start(MountObj.SlewingTimer);
 
             % Start slewing
-            MountObj.MouHn.GoTo(RA, Dec, 'eq');
+            MountObj.Handle.GoTo(RA, Dec, 'eq');
 
             % Get error
-            MountObj.LastError = MountObj.MouHn.lastError;
+            MountObj.LastError = MountObj.Handle.lastError;
          else
             if (~FlagRes.Alt)
                MountObj.LastError = 'Target Alt too low';

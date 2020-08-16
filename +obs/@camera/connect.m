@@ -20,21 +20,21 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
            if CameraObj.Verbose, fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n'); end
         elseif nargin >= 3
            % Open handle to mount
-           CameraObj.MouHn=MountHn;
-%%%           MountConSuccess = CameraObj.MouHn.connect;
+           CameraObj.HandleMount=MountHn;
+%%%           MountConSuccess = CameraObj.HandleMount.connect;
            CameraObj.LogFile.writeLog('Camera connects to mount to get details.')
 %%%           if(~MountConSuccess), fprintf('Failed to connect to Mount\n'); end
            if CameraObj.Verbose, fprintf('>>>>> warning: Focuser was not connected <<<<<\n'); end
         elseif nargin >= 4
             % Open handle to focuser
-            CameraObj.FocHn=FocusHn;
-%%%            FocuserConSuccess = CameraObj.FocHn.connect;
+            CameraObj.HandleFocuser=FocusHn;
+%%%            FocuserConSuccess = CameraObj.HandleFocuser.connect;
             CameraObj.LogFile.writeLog('Camera connects to focuser to derive details.')
 %%%            if(~FocuserConSuccess), fprintf('Failed to connect to Focuser\n'); end
         end
         
         % Connect to camera
-        success = CameraObj.CamHn.connect(CameraNum);
+        success = CameraObj.Handle.connect(CameraNum);
         CameraObj.IsConnected = success;
         CameraObj.LogFile.writeLog('Connecting to camera.')
         
@@ -46,17 +46,17 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
             % - Define camera class instance as East or West
             
             % The number of the connected camera for matlab recognition
-            CameraObj.CameraNum = CameraObj.CamHn.cameranum;
+            CameraObj.CameraNum = CameraObj.Handle.cameranum;
             
             % Naming of instruments
             
             % Get camera's model and unique name from camera
-            CameraNameDetails = strsplit(CameraObj.CamHn.CameraName);
+            CameraNameDetails = strsplit(CameraObj.Handle.CameraName);
             CameraObj.CamUniqueName = CameraNameDetails{end};
             if (strcmp(CameraObj.CamType, 'ZWO'))
-                CameraObj.CamModel = CameraObj.CamHn.CameraName(1:strfind(CameraObj.CamHn.CameraName, CameraObj.CamUniqueName));
+                CameraObj.CamModel = CameraObj.Handle.CameraName(1:strfind(CameraObj.Handle.CameraName, CameraObj.CamUniqueName));
             elseif (strcmp(CameraObj.CamType, 'QHY'))
-                CameraObj.CamModel = CameraObj.CamHn.CameraName(1:strfind(CameraObj.CamHn.CameraName, '-')-1);
+                CameraObj.CamModel = CameraObj.Handle.CameraName(1:strfind(CameraObj.Handle.CameraName, '-')-1);
             end
             
             % Choose an arbitrary high number larger than 2 as the number
@@ -101,7 +101,7 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
             CameraObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
             
         else
-           CameraObj.LastError = CameraObj.CamHn.lastError;
+           CameraObj.LastError = CameraObj.Handle.lastError;
         end
     else
        success = false;

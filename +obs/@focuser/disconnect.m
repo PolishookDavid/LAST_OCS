@@ -1,5 +1,5 @@
-function disconnect(Foc)
+function disconnect(Focuser)
 % close the serial stream, but don't delete it from workspace
-   Foc.FocHn.disconnect;
-   Foc.LastError = Foc.FocHn.lastError;
+   Focuser.Handle.disconnect;
+   Focuser.LastError = Focuser.Handle.lastError;
 end

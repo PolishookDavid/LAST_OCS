@@ -1,5 +1,5 @@
-function abort(Foc)
+function abort(Focuser)
 % Stops the focuser movement
-    Foc.FocHn.abort;
-    Foc.LastError = Foc.FocHn.lastError;
+    Focuser.Handle.abort;
+    Focuser.LastError = Focuser.Handle.lastError;
 end

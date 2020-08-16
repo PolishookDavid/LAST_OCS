@@ -1,9 +1,9 @@
-function callback_timer(Foc, ~, ~)
+function callback_timer(Focuser, ~, ~)
 % After slewing, check if mount is in Idle status 
 
-if (strcmp(Foc.Status, 'idle'))
-   stop(Foc.FocusMotionTimer);
+if (strcmp(Focuser.Status, 'idle'))
+   stop(Focuser.FocusMotionTimer);
    beep
-   Foc.LogFile.writeLog('Focuser reached destination')
-%   if Foc.Verbose, fprintf('Focuser reached destination\n'); end
+   Focuser.LogFile.writeLog('Focuser reached destination')
+%   if Focuser.Verbose, fprintf('Focuser reached destination\n'); end
 end

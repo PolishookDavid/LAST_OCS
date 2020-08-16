@@ -2,14 +2,14 @@ function success=connect(MountObj)
 % connect to a mount on the specified Port, try all ports if
 %  Port omitted
     MountObj.LogFile.writeLog('Connecting to mount.')
-    success = MountObj.MouHn.connect;
+    success = MountObj.Handle.connect;
     MountObj.IsConnected = success;
     
     if success
        MountObj.LogFile.writeLog('Mount is connected.')
         % Naming of instruments
-        MountObj.MountType = MountObj.MouHn.MountType;
-        MountObj.MountModel = MountObj.MouHn.MountModel;
+        MountObj.MountType = MountObj.Handle.MountType;
+        MountObj.MountModel = MountObj.Handle.MountModel;
         % Read mount unique and Geo name from config file
         MountObj.MountUniqueName =         obs.util.config.readSystemConfigFile('MountUniqueName');
         MountObj.MountGeoName =            obs.util.config.readSystemConfigFile('MountGeoName');
@@ -19,8 +19,8 @@ function success=connect(MountObj)
         % Mount location coordinates and UTC
         if (MountObj.TimeFromGPS)
            % Take from GPS
-           MountObj.MountCoo.ObsLon = MountObj.MouHn.fullStatus.Lon;
-           MountObj.MountCoo.ObsLat = MountObj.MouHn.fullStatus.Lat;
+           MountObj.MountCoo.ObsLon = MountObj.Handle.fullStatus.Lon;
+           MountObj.MountCoo.ObsLat = MountObj.Handle.fullStatus.Lat;
         else
            % Take coordinates from computer
            MountObj.MountCoo.ObsLon = obs.util.config.readSystemConfigFile('MountLongitude');
@@ -28,7 +28,7 @@ function success=connect(MountObj)
            MountObj.MountCoo.ObsHeight = obs.util.config.readSystemConfigFile('MountHeight');
            MountObj.MountPos = [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat MountObj.MountCoo.ObsHeight];
            % Update UTC clock on mount
-           MountObj.MouHn.MountUTC = 'dummy';
+           MountObj.Handle.MountUTC = 'dummy';
         end
 
         % Read mount parking position from the config file

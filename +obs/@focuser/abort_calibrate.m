@@ -1,4 +1,4 @@
-function abort_calibrate(Foc)
-    Foc.FocHn.abort_calibrate;
-    Foc.LastError = Foc.FocHn.lastError;
+function abort_calibrate(Focuser)
+    Focuser.Handle.abort_calibrate;
+    Focuser.LastError = Focuser.Handle.lastError;
 end

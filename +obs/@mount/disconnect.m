@@ -2,7 +2,7 @@ function success=disconnect(MountObj)
    if MountObj.checkIfConnected
       MountObj.LogFile.writeLog('call mount.disconnect')
       try
-         MountObj.MouHn.disconnect;
+         MountObj.Handle.disconnect;
          MountObj.IsConnected = false;
          success = true;
       catch

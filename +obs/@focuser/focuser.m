@@ -11,12 +11,12 @@ classdef focuser <handle
         
     properties (SetAccess=public, GetAccess=private)
 %        RelPos=NaN;
-        FocType       = NaN;
-        FocUniqueName = NaN;
+        FocuserType       = NaN;
+        FocuserUniqueName = NaN;
     end
         
     properties (Hidden=true)
-        FocHn;
+        Handle;
         LogFile;
     end
 
@@ -35,41 +35,41 @@ classdef focuser <handle
     
     methods
         % constructor and destructor
-        function Foc=focuser(varargin)
+        function Focuser=focuser(varargin)
 
            DirName = obs.util.config.constructDirName('log');
            cd(DirName);
 
            % Opens Log for the camera
-           Foc.LogFile = logFile;
-           Foc.LogFile.Dir = DirName;
-           Foc.LogFile.FileNameTemplate = 'LAST_%s.log';
-           Foc.LogFile.logOwner = sprintf('%s.%s.%s_%s_Foc', ...
+           Focuser.LogFile = logFile;
+           Focuser.LogFile.Dir = DirName;
+           Focuser.LogFile.FileNameTemplate = 'LAST_%s.log';
+           Focuser.LogFile.logOwner = sprintf('%s.%s.%s_%s_Foc', ...
                                   obs.util.config.readSystemConfigFile('ObservatoryNode'), obs.util.config.readSystemConfigFile('MountGeoName'), obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
            if (isempty(varargin))
               Answer = input('Is the mirror unlock? [y/n]\n', 's');
               if strcmpi(Answer,'y')
-                 Foc.FocHn=inst.CelestronFocuser;
+                 Focuser.Handle=inst.CelestronFocuser;
               else
-                 if Foc.Verbose, fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n'); end
-                 Foc.LogFile.writeLog('Release the mirror of the telescope using the two black nobs at the bottom!!!')
-                 delete(Foc);
+                 if Focuser.Verbose, fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n'); end
+                 Focuser.LogFile.writeLog('Release the mirror of the telescope using the two black nobs at the bottom!!!')
+                 delete(Focuser);
               end
            else
               switch varargin{1}
                  case 'Robot'
                     % The robot assumes the mirror of the telescope is
                     % unlocked, thus the focuser can move.
-                    Foc.FocHn=inst.CelestronFocuser;
+                    Focuser.Handle=inst.CelestronFocuser;
               end
            end
            % Connecting to port in a separate method
         end
         
-        function delete(Foc)
-            if(~isempty(Foc.FocHn))
-               delete(Foc.FocHn)
+        function delete(Focuser)
+            if(~isempty(Focuser.Handle))
+               delete(Focuser.Handle)
             end
         end
 
@@ -77,69 +77,69 @@ classdef focuser <handle
 
     methods
         %getters and setters
-        function focus=get.Pos(Foc)
-            if (isnan(Foc.FocHn.Pos))
-               Foc.LastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
+        function focus=get.Pos(Focuser)
+            if (isnan(Focuser.Handle.Pos))
+               Focuser.LastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
             else
-               focus = Foc.FocHn.Pos;
-               Foc.LastError = Foc.FocHn.lastError;
+               focus = Focuser.Handle.Pos;
+               Focuser.LastError = Focuser.Handle.lastError;
             end
         end
 
-        function set.Pos(Foc,focus)
-            Foc.LogFile.writeLog(sprintf('call set.Pos. focus=%d',focus))
+        function set.Pos(Focuser,focus)
+            Focuser.LogFile.writeLog(sprintf('call set.Pos. focus=%d',focus))
 
-            Foc.LastPos = Foc.FocHn.LastPos;
-            Foc.FocHn.Pos = focus;
+            Focuser.LastPos = Focuser.Handle.LastPos;
+            Focuser.Handle.Pos = focus;
 
             % Start timer to wait for focus to reach destination
-            Foc.FocusMotionTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'focuser-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @Foc.callback_timer, 'ErrorFcn', 'beep');
-            start(Foc.FocusMotionTimer);
-            Foc.LogFile.writeLog('Start focuser timer')            
+            Focuser.FocusMotionTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'focuser-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @Focuser.callback_timer, 'ErrorFcn', 'beep');
+            start(Focuser.FocusMotionTimer);
+            Focuser.LogFile.writeLog('Start focuser timer')            
             
-            Foc.LastError = Foc.FocHn.lastError;
+            Focuser.LastError = Focuser.Handle.lastError;
         end
         
         % DOES NOT WORK !!! DP June 4, 2020
-%         function set.RelPos(Foc,incr)
-%             Foc.FocHn.RelPos(incr)
-%             Foc.LogFile.writeLog(sprintf('call set.RelPos. focues increase=%d',incr))
-%             Foc.LastError = Foc.FocHn.lastError;
+%         function set.RelPos(Focuser,incr)
+%             Focuser.Handle.RelPos(incr)
+%             Focuser.LogFile.writeLog(sprintf('call set.RelPos. focues increase=%d',incr))
+%             Focuser.LastError = Focuser.Handle.lastError;
 %         end
         
-        function focus=get.LastPos(Foc)
-            focus = Foc.FocHn.LastPos;
-            Foc.LastError = Foc.FocHn.lastError;
+        function focus=get.LastPos(Focuser)
+            focus = Focuser.Handle.LastPos;
+            Focuser.LastError = Focuser.Handle.lastError;
         end
 
-        function Limits=get.Limits(Foc)
-            Limits = Foc.FocHn.limits;
+        function Limits=get.Limits(Focuser)
+            Limits = Focuser.Handle.limits;
         end
 
-        function s=get.Status(Foc)
-            s = Foc.FocHn.Status;
-            Foc.LastError = Foc.FocHn.lastError;
+        function s=get.Status(Focuser)
+            s = Focuser.Handle.Status;
+            Focuser.LastError = Focuser.Handle.lastError;
         end
         
         % Get the last error reported by the driver code
-        function LastError=get.LastError(Foc)
-            LastError = Foc.FocHn.lastError;
-            Foc.LogFile.writeLog(LastError)
-            if Foc.Verbose, fprintf('%s\n', LastError); end
+        function LastError=get.LastError(Focuser)
+            LastError = Focuser.Handle.lastError;
+            Focuser.LogFile.writeLog(LastError)
+            if Focuser.Verbose, fprintf('%s\n', LastError); end
         end
 
         % Set an error, update log and print to command line
-        function set.LastError(Foc,LastError)
+        function set.LastError(Focuser,LastError)
            % If the LastError is empty (e.g. if the previous command did
            % not fail), do not keep or print it,
            if (~isempty(LastError))
               % If the error message is taken from the driver object, do NOT
               % update the driver object.
-              if (~strcmp(Foc.FocHn.lastError, LastError))
-                 Foc.FocHn.lastError = LastError;
+              if (~strcmp(Focuser.Handle.lastError, LastError))
+                 Focuser.Handle.lastError = LastError;
               end
-              Foc.LogFile.writeLog(LastError)
-              if Foc.Verbose, fprintf('%s\n', LastError); end
+              Focuser.LogFile.writeLog(LastError)
+              if Focuser.Verbose, fprintf('%s\n', LastError); end
            end
         end
 

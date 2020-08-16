@@ -21,7 +21,7 @@ function park(MountObj,parking)
             MountObj.MinAltPrev = NaN;
          end
       end
-      MountObj.MouHn.park(parking);
-      MountObj.LastError = MountObj.MouHn.lastError;
+      MountObj.Handle.park(parking);
+      MountObj.LastError = MountObj.Handle.lastError;
    end
 end

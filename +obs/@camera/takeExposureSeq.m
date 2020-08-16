@@ -8,7 +8,7 @@ function Imgs=takeExposureSeq(CameraObj,num,ExpTime)
          num = 1; % sec
       end
 
-      Imgs = CameraObj.CamHn.takeExposureSeq(num, ExpTime);
-      CameraObj.LastError = CameraObj.CamHn.lastError;
+      Imgs = CameraObj.Handle.takeExposureSeq(num, ExpTime);
+      CameraObj.LastError = CameraObj.Handle.lastError;
    end
 end

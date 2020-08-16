@@ -1,4 +1,4 @@
-function relPos(Foc, Addition)
+function relPos(Focuser, Addition)
 % Make a relative focuser motion
-    Foc.Pos = Foc.Pos + Addition;
+    Focuser.Pos = Focuser.Pos + Addition;
 end

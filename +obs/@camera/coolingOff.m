@@ -2,7 +2,8 @@ function coolingOff(CameraObj)
    % Turn camera cooling off
    if CameraObj.checkIfConnected
       CameraObj.LogFile.writeLog('Call Cooling off')
-      CameraObj.CamHn.coolingOff;
-      CameraObj.LastError = CameraObj.CamHn.lastError;
+      % Call coolingOff using the camera handle object
+      CameraObj.Handle.coolingOff;
+      CameraObj.LastError = CameraObj.Handle.lastError;
    end
 end
