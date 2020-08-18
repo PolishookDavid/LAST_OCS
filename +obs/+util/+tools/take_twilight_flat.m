@@ -44,10 +44,7 @@ while AttemptTakeFlat
     
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 
-    if InPar.Verbose
-        fprintf('Not ready to start flat - SunAlt is not in range\n');
-        fprintf('     SunAlt             : %5.2f\n',Sun.Alt.*RAD);
-    end
+    
     
     if (Sun.Alt.*RAD)>InPar.MinSunAlt && (Sun.Alt.*RAD)<InPar.MaxSunAlt
         % take wilight test image and check that mean value is within allowed
@@ -101,9 +98,10 @@ while AttemptTakeFlat
                 RA  = LST - 0;  % RA at HA=0
                 RA  = RA + InPar.EastFromZenith;
                 RA  = mod(RA,360);
-                RA  = RA + randn(1,1).*InPar.RandomShift;
-                Dec = Lat + randn(1,1).*InPar.RandomShift;
+                RA  = RA + (rand(1,1)-0.5).*2.*InPar.RandomShift;
+                Dec = Lat + (rand(1,1)-0.5).*2.*InPar.RandomShift;
                 M.goto(RA,Dec);
+                M.waitFinish;
                 
                 EstimatedExpTime = InPar.MaxFlatLimit./MeanValPerSec;
                 if EstimatedExpTime>min(InPar.ExpTimeRange) && EstimatedExpTime<max(InPar.ExpTimeRange)
@@ -143,19 +141,25 @@ while AttemptTakeFlat
                 % TBD
                 
             end
+        else
+            pause(InPar.WaitTimeCheck);
+            
         end
 
         if Counter>0
             AttemptTakeFlat = false;
-        else
-            AttemptTakeFlat = true;
-            pause(InPar.WaitTimeCheck);
-            
-            % check weather or abort commands
-            % TBD
-            
         end
 
+    else
+        if InPar.Verbose
+            fprintf('Not ready to start flat - SunAlt is not in range\n');
+            fprintf('     SunAlt             : %5.2f\n',Sun.Alt.*RAD);
+        end
+        
+        if Counter==0
+            % else for (Sun.Alt.*RAD)>InPar.MinSunAlt && (Sun.Alt.*RAD)<InPar.MaxSunAlt
+            pause(InPar.WaitTimeCheck);
+        end
     end
 end
     

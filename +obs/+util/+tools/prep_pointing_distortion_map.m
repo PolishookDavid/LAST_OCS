@@ -14,14 +14,15 @@ function Res=prep_pointing_distortion_map(C,M,varargin)
 %            'Verbose' - Default is true.
 % Output : -
 %     By : Eran Ofek                  Aug 2020
-% Example:
+% Example: Res=obs.util.tools.prep_pointing_distortion_map(C,M);
+
 
 RAD = 180./pi;
 
 InPar = inputParser;
-addOptional(InPar,'NstepGC',10);  % number of points along great circle
+addOptional(InPar,'NstepGC',12);  % number of points along great circle
 addOptional(InPar,'MinAM',2);  
-addOptional(InPar,'AzAltLimit',[250 0; 251 70; 315 70; 320 0]);  % [deg]
+addOptional(InPar,'AzAltLimit',[0 0; 1 45; 45 45; 46 0; 250 0; 251 70; 315 70; 320 0]);  % [deg]
 addOptional(InPar,'ExpTime',5);  
 addOptional(InPar,'Verbose',true);  
 parse(InPar,varargin{:});
@@ -42,9 +43,8 @@ C.ExpTime = InPar.ExpTime;
 
 Ntarget = numel(Grid.HA);
 for Itarget=1:1:Ntarget
-    if InPar.Verbose
-        fprintf('Target %d out of %d\n',Itarget,Ntarget);
-    end
+    tic;
+    
     
     HA  = Grid.HA(Itarget);
     Dec = Grid.Dec(Itarget);
@@ -54,6 +54,13 @@ for Itarget=1:1:Ntarget
     RA  = LST - HA;
     RA  = mod(RA,360);
 
+    if InPar.Verbose
+        fprintf('Target %d out of %d\n',Itarget,Ntarget);
+        fprintf('RA  : %f\n',RA);
+        fprintf('HA  : %f\n',HA);
+        fprintf('Dec : %f\n',Dec);
+    end
+    
     Res(Itarget).TargetRA  = RA;
     Res(Itarget).TargetDec = Dec;
     Res(Itarget).TargetHA  = HA;
@@ -77,14 +84,19 @@ for Itarget=1:1:Ntarget
     C.waitFinish;
     FileName = C.LastImageName;
 
-    %--- astrometry ---
-    ResAst = obs.util.tools.astrometry_center(FileName,'RA',Res(Itarget).MountRA./RAD,...
-                                                 'Dec',Res(Itarget).MountDec./RAD);
-    % save results
-    Res(Itarget).FileName    = FileName;
-    Res(Itarget).AstR        = ResAst.AstR;
-    Res(Itarget).AstAssymRMS = ResAst.AstR.AssymErr;
-    Res(Itarget).AstRA       = ResAst.CenterRA;
-    Res(Itarget).AstDec      = ResAst.CenterDec;
-
+    try
+        %--- astrometry ---
+        ResAst = obs.util.tools.astrometry_center(FileName,'RA',Res(Itarget).MountRA./RAD,...
+                                                     'Dec',Res(Itarget).MountDec./RAD);
+        % save results
+        Res(Itarget).FileName    = FileName;
+        Res(Itarget).AstR        = ResAst.AstR;
+        Res(Itarget).AstAssymRMS = ResAst.AstR.AssymErr;
+        Res(Itarget).AstRA       = ResAst.CenterRA;
+        Res(Itarget).AstDec      = ResAst.CenterDec;
+    
+        
+    end
+    
+    toc
 end
