@@ -339,9 +339,9 @@ classdef camera < handle
            if (~isempty(LastError))
               % If the error message is taken from the driver object, do NOT
               % update the driver object.
-              if (~strcmp(CameraObj.Handle.lastError, LastError))
-                 CameraObj.Handle.lastError = LastError;
-              end
+%              if (~strcmp(CameraObj.Handle.lastError, LastError))
+%                 CameraObj.Handle.lastError = LastError;
+%              end
               CameraObj.LogFile.writeLog(LastError)
               if CameraObj.Verbose, fprintf('%s\n', LastError); end
            end

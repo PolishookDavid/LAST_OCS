@@ -135,9 +135,9 @@ classdef focuser <handle
            if (~isempty(LastError))
               % If the error message is taken from the driver object, do NOT
               % update the driver object.
-              if (~strcmp(Focuser.Handle.lastError, LastError))
-                 Focuser.Handle.lastError = LastError;
-              end
+%              if (~strcmp(Focuser.Handle.lastError, LastError))
+%                 Focuser.Handle.lastError = LastError;
+%              end
               Focuser.LogFile.writeLog(LastError)
               if Focuser.Verbose, fprintf('%s\n', LastError); end
            end
