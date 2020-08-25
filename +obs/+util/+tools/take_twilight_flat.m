@@ -44,7 +44,9 @@ while AttemptTakeFlat
     
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 
-    
+    if exist('/home/eran/abort','file')
+        AttemptTakeFlat = false;
+    end
     
     if (Sun.Alt.*RAD)>InPar.MinSunAlt && (Sun.Alt.*RAD)<InPar.MaxSunAlt
         % take wilight test image and check that mean value is within allowed
@@ -122,6 +124,10 @@ while AttemptTakeFlat
                         fprintf('     Alt                : %6.2f\n',M.Alt);
                         fprintf('     Image ExpTime      : %6.1f\n',InPar.TestExpTime);
                         fprintf('     Image MeanValPerSec: %10.1f\n',MeanValPerSec);
+                    end
+                    
+                    if exist('/home/eran/abort','file')
+                        ContFlat = false;
                     end
                 end
                 

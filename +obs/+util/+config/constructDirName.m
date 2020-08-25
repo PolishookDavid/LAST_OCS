@@ -5,9 +5,10 @@ function DirName = constructDirName(DirType)
    if (strcmpi(DirType, 'raw') || strcmpi(DirType, 'proc') || strcmpi(DirType, 'log') || strcmpi(DirType, 'cat'))
 
       % Directory name of 6Tb disk
-      BaseDir = '/media/last/data2/';
-      if (exist(BaseDir,'dir')),
-         BaseDir = [BaseDir,DirType,'/'];
+      BaseDir = obs.util.config.readSystemConfigFile('ImagesBaseDir');
+      %BaseDir = '/media/last/data2/';
+      if (exist(BaseDir,'dir'))
+         BaseDir = [BaseDir,filesep,DirType,filesep];
 
          % Construct daily directory
          T = celestial.time.jd2date(floor(celestial.time.julday));

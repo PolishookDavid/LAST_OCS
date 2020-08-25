@@ -27,7 +27,7 @@ function [ResP,Res]=auto_polar_align_pole(C,M,varargin)
 % Output : - A structure containing required shifts of mount from celestial
 %            pole.
 %          - A structure with all the measured images.
-% By: Eran Ofek                         Jul 2020
+% By: Eran Ofek                         Jul varargin={}2020
 % Example: [ResP,Res]=obs.util.tools.auto_polar_align_pole(C,M)
 
 
@@ -102,10 +102,16 @@ for Iha=1:1:Nha
     C.waitFinish;
     FileName = C.LastImageName;
 
+    
     %--- astrometry ---
-    ResAst = obs.util.tools.astrometry_center(FileName,'RA',RA./RAD,...
+    S = FITS.read2sim(FileName);
+    S = trim_image(S,[3001 4000 3001 4000]);
+    ResAst = obs.util.tools.astrometry_center(S,'RA',RA./RAD,...
                                                        'Dec',Dec./RAD,...
                                                        'HalfSize',[]);
+%     ResAst = obs.util.tools.astrometry_center(FileName,'RA',RA./RAD,...
+%                                                        'Dec',Dec./RAD,...
+%                                                        'HalfSize',[]);                                               
     % store astrometric images in S                                         
     S(Iha) = ResAst.Image;
     ds9(S(Iha),1)
@@ -113,6 +119,10 @@ for Iha=1:1:Nha
     
     [Res(Iha).PolarisX, Res(Iha).PolarisY]=ds9.coo2xy(InPar.PolarisRA, InPar.PolarisDec);
     [Res(Iha).CelPoleX, Res(Iha).CelPoleY]=ds9.coo2xy(0, 90.*sign(InPar.PoleDec));
+    Res(Iha).PolarisX = Res(Iha).PolarisX +3000;
+    Res(Iha).PolarisY = Res(Iha).PolarisY +3000;
+    Res(Iha).CelPoleX = Res(Iha).CelPoleX +3000;
+    Res(Iha).CelPoleY = Res(Iha).CelPoleY +3000;
     
     % identify the [X,Y] position of Polaris in the images
     %W = ClassWCS.populate(S);

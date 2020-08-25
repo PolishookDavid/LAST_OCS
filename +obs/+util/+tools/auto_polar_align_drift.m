@@ -33,13 +33,13 @@ RAD = 180./pi;
 SEC_IN_DAY = 86400;
 
 InPar = inputParser;
-addOptional(InPar,'Nimage',15);   % number of images per field (fr drift)
+addOptional(InPar,'Nimage',5);   % number of images per field (fr drift)
 addOptional(InPar,'WaitTime',10);  
 addOptional(InPar,'ExpTime',5);  
-addOptional(InPar,'VecHA',[-60 -30 0 30]);
+addOptional(InPar,'VecHA',[-60 0 60]);
 addOptional(InPar,'VecDec',[0]);
-addOptional(InPar,'Lon',34.89);  % for offline mode
-addOptional(InPar,'Lat',31.9);   % for offline mode
+addOptional(InPar,'Lon',35.04);  % for offline mode
+addOptional(InPar,'Lat',31.02);   % for offline mode
 addOptional(InPar,'Verbose',true);  
 addOptional(InPar,'Plot',true);  
 parse(InPar,varargin{:});
