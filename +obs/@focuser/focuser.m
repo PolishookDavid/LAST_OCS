@@ -48,7 +48,7 @@ classdef focuser <handle
                                   obs.util.config.readSystemConfigFile('ObservatoryNode'), obs.util.config.readSystemConfigFile('MountGeoName'), obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
            if (isempty(varargin))
-              Answer = input('Is the mirror unlock? [y/n]\n', 's');
+              Answer = input('Is the mirror unlocked? [y/n]\n', 's');
               if strcmpi(Answer,'y')
                  Focuser.Handle=inst.CelestronFocuser;
               else
@@ -79,6 +79,7 @@ classdef focuser <handle
         %getters and setters
         function focus=get.Pos(Focuser)
             if (isnan(Focuser.Handle.Pos))
+               focus = NaN;
                Focuser.LastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
             else
                focus = Focuser.Handle.Pos;

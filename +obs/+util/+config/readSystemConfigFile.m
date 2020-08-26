@@ -3,8 +3,8 @@ function Output = readSystemConfigFile(Keyword)
 % retrieve the fixed Keywords.
 % Only superuser can modify the configuration file
 
-%ConfigDirectory = '/home/last/config/';  % this should be an environoment variable
-ConfigDirectory = '/home/eran/config/';  % this should be an environoment variable
+ConfigDirectory = '/home/last/config/';  % this should be an environoment variable
+%ConfigDirectory = '/home/eran/config/';  % this should be an environoment variable
 ConfigTable=readtable([ConfigDirectory,'ObsSystemConfig.txt']);
 
 if nargin < 1

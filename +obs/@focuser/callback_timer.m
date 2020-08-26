@@ -6,4 +6,9 @@ if (strcmp(Focuser.Status, 'idle'))
    beep
    Focuser.LogFile.writeLog('Focuser reached destination')
 %   if Focuser.Verbose, fprintf('Focuser reached destination\n'); end
+elseif (strcmp(Focuser.Status, 'unknown'))
+   stop(Focuser.FocusMotionTimer);
+   beep; beep;
+   Focuser.LogFile.writeLog('Focuser status is unknown')
+   if Focuser.Verbose, fprintf('Focuser status is unknown\n'); end
 end

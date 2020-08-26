@@ -1,7 +1,11 @@
-function success=connect(Focuser)
+function success=connect(Focuser,Port)
 % Connect to a focus motor
     success = 0;
-    Focuser.Handle.connect;
+    if nargin == 1
+       Focuser.Handle.connect;
+    elseif(nargin == 2)
+       Focuser.Handle.connect(Port);
+    end
     Focuser.LogFile.writeLog('Connecting to focuser.')
     Focuser.LogFile.writeLog(sprintf('Current focus position: %d',Focuser.Pos));
 
