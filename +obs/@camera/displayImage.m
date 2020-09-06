@@ -18,6 +18,7 @@ function displayImage(CameraObj)
       hold off;
       title(strrep(CameraObj.LastImageName,'_','\_'))
    elseif(strcmpi(CameraObj.Display, 'ds9'))
+       % Display in ds9 each camera in a different frame
        ds9(CameraObj.LastImage, 'frame', CameraObj.CameraNum)
    else
       if CameraObj.Verbose

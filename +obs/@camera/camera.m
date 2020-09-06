@@ -92,6 +92,7 @@ classdef camera < handle
 
            if nargin >= 2
               CameraObj.CameraNum = CameraNum;
+              CameraObj.CamType = CamType;   % 'QHY'; % 'ZWO';
            elseif nargin >= 1
               % Use one camera as default
               CameraObj.CameraNum = 1;

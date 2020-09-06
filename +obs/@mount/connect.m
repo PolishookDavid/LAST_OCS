@@ -2,7 +2,10 @@ function success=connect(MountObj)
 % connect to a mount on the specified Port, try all ports if
 %  Port omitted
     MountObj.LogFile.writeLog('Connecting to mount.')
-    success = MountObj.Handle.connect;
+
+    % Connect to the mount using its IP address
+    MountObj.IPaddress = obs.util.config.readSystemConfigFile('MountIPaddress');
+    success = MountObj.Handle.connect(MountObj.IPaddress);
     MountObj.IsConnected = success;
     
     if success

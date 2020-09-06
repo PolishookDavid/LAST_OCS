@@ -26,16 +26,17 @@ classdef mount <handle
         TimeFromGPS = false; % default is no, take time and coordinates from computer
         IsCounterWeightDown=true; % Test that this works as expected
 
-        Port
+        IPaddress = '';
+        Port = '';
         Serial_resource % the serial object corresponding to Port
 
         % Mount and telescopes names and models
-        MountType = NaN;
-        MountModel = NaN;
-        MountUniqueName = NaN;
-        MountGeoName = NaN;
-        TelescopeEastUniqueName = NaN;
-        TelescopeWestUniqueName = NaN;
+        MountType = '';
+        MountModel = '';
+        MountUniqueName = '';
+        MountGeoName = '';
+        TelescopeEastUniqueName = '';
+        TelescopeWestUniqueName = '';
         
         MinAlt = 15;
         MinAzAltMap = NaN;
@@ -421,7 +422,12 @@ classdef mount <handle
            end
         end
 
-        % Get the computer port connected to the mount
+        % Get the mount IPaddress
+        function IPaddress=get.IPaddress(MountObj)
+            IPaddress = MountObj.IPaddress;
+        end
+
+        % Get the computer USB port to connect to the mount
         function Port=get.Port(MountObj)
             Port = MountObj.Handle.Port;
         end
