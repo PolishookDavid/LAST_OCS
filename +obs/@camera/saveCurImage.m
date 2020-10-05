@@ -8,7 +8,7 @@ function saveCurImage(CameraObj)
 
 
    % Construct image name   
-   ImageDate = datestr(CameraObj.Handle.TimeStart,'yyyymmdd.HHMMSS.FFF');
+   ImageDate = datestr(CameraObj.TimeStart,'yyyymmdd.HHMMSS.FFF');
    ObservatoryNode = obs.util.config.readSystemConfigFile('ObservatoryNode');
    MountGeoName = obs.util.config.readSystemConfigFile('MountGeoName');
 

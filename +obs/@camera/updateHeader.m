@@ -1,7 +1,7 @@
 function Header=updateHeader(CameraObj)
    RAD = 180./pi;
-   DateObs = datestr(CameraObj.Handle.TimeStart,'yyyy-mm-ddTHHMMSS.FFF');
-   DateVec = datevec(CameraObj.Handle.TimeStart);
+   DateObs = datestr(CameraObj.TimeStart,'yyyy-mm-ddTHHMMSS.FFF');
+   DateVec = datevec(CameraObj.TimeStart);
    JD      = celestial.time.julday(DateVec(:,[3 2 1 4 5 6]));
 
    if (isempty(CameraObj.HandleMount))

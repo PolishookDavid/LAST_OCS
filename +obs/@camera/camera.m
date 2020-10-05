@@ -1,58 +1,88 @@
 % Camera control handle class (for QHY and ZWO CMOS detectors) 
 % Package: +obs
-% Description: operate drivers of QHY and ZWO detectors
+% Description: operate camera drivers.
+%              Currently can work with QHY and ZWO detectors
+
 
 classdef camera < handle
  
     properties
+	% The status of the camera: idle, exposing, reading, unknown
         CamStatus     = 'unknown';
 
+	% The name of the last image 
         LastImageName = '';
+	% A matrix of the last image
         LastImage
 
+	% Exposure time
         ExpTime=1;
 
+	% Temperature of the camera
         Temperature  % DP -> Put NAN if unknown.
+	% The cooling power precentage of the camera
         CoolingPower = NaN;
 
+	% The image type: science, flat, bias, dark
         ImType = 'science';
+	% The name of the observed object/field
         Object = '';
     end
 
     properties(Hidden)
+	% The type of the camera (e.g. QHY)
         CamType       = '';
+	% The model of the camera (e.g. QHY-600M-Pro)
         CamModel      = '';
+	% Unique name of the specific camera (e.g. 9fc3db42b6306d371)
         CamUniqueName = '';
+	% Location of the camera on the mount , to be added to the image name (i.e. 1-4)
         CamGeoName    = '';
+	% Number of the camera  as recognized by the computer (i.e. 1-4)
         CameraNum
         
+	% Camera readout mode. QHY deault of 1 determines a low readnoise
         ReadMode = 1;
+	% The bias level mode of the camera. QHY default is 3
         Offset = 3;
+	% The gain of the camera. QHY default is 0
         Gain = 0;
+	% The binning of the pixels.
         Binning=[1,1];
+	% Used filter. Currenty not implemented
         Filter
 
+	% Reports if colling is on or off
         CoolingStatus = 'unknown';
 
+	% A flag marking if the computer code is connected to the camera
         IsConnected = false;        
+	% A flag marking if the images should be wriiten to the disk after exposure
         SaveOnDisk = true; %false;
+	% A property defining software to present the image: 'matlab', 'ds9', or '' for no image presentation
         Display    = 'ds9'; %'';
+	% When presenting image in matlab, on what figure number to present
         DisplayMatlabFig = 0; % Will be updated after first image
 
+	% Perhaps obselete. Keep here until we sure it should be removed
         CCDnum = 0;         % ???? 
+
+	% The LogFile object class to handle the log of the camera
         LogFile;
     end
         
+    % Region Of Interest [X1 X2 Y1 Y2] - currently not implemented
     properties(Dependent = true)
         ROI % beware - SDK does not provide a getter for it, go figure
     end
     
     properties(GetAccess = public, SetAccess = private)
-%         TimeStart=[];
-%         TimeEnd=[];
+        % Start time and end time of the last integration.
+        TimeStart=[];
+        TimeEnd=[];
    end
     
-    % Enrico, discretional
+    % Properties not implemented yet on this class, but imlpemented[?] in the driver class 
     properties(GetAccess = public, SetAccess = private, Hidden)
         physical_size=struct('chipw',[],'chiph',[],'pixelw',[],'pixelh',[],...
                              'nx',[],'ny',[]);
@@ -64,21 +94,28 @@ classdef camera < handle
         TimeStartDelta % uncertainty, after-before calling exposure start
     end
     
-    % settings which have not been prescribed by the API,
-    % but for which I have already made the code
+    % Properties that are not implemented by QHY [is it true?]
     properties(Hidden)
         Color
         BitDepth
     end
     
     properties (Hidden,Transient)
-        Handle;      % Handle to camera driver class
-        HandleMount;      % Handle to mount driver class
-        HandleFocuser;      % Handle to focuser driver class
+        % Handle to camera driver class
+        Handle;
+        % Handle to mount driver class
+        HandleMount;
+        % Handle to focuser driver class
+        HandleFocuser;
+        % A timer object to operate after exposure start,  to wait until the image is ready.
         ReadoutTimer;
+        % The last error message
         LastError = '';
+        % The format of the written image
         ImageFormat = 'fits';
+        % The serial number of the last image - not implemented anymore
         LastImageSearialNum = 0;
+        % A flag marking if to print software printouts or not
         Verbose=true;
         pImg  % pointer to the image buffer (can we gain anything in going
               %  to a double buffer model?)
@@ -218,6 +255,20 @@ classdef camera < handle
                CameraObj.Handle.ExpTime = ExpTime;
                CameraObj.LastError = CameraObj.Handle.LastError;
            end
+        end
+        
+        function TimeStart=get.TimeStart(CameraObj)
+            if CameraObj.checkIfConnected
+               TimeStart = CameraObj.Handle.TimeStart;
+               CameraObj.LastError = CameraObj.Handle.LastError;
+            end
+        end
+        
+        function TimeEnd=get.TimeEnd(CameraObj)
+            if CameraObj.checkIfConnected
+               TimeEnd = CameraObj.Handle.TimeEnd;
+               CameraObj.LastError = CameraObj.Handle.LastError;
+            end
         end
         
         function Gain=get.Gain(CameraObj)
