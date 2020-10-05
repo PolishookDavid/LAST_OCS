@@ -5,6 +5,6 @@ function success=disconnect(CameraObj)
       % Call disconnect using the camera handle object
       success=CameraObj.Handle.disconnect;
       CameraObj.IsConnected = ~success;
-      CameraObj.LastError = CameraObj.Handle.lastError;
+      CameraObj.LastError = CameraObj.Handle.LastError;
    end
 end

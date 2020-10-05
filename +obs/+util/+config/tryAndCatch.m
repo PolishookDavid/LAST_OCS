@@ -41,7 +41,7 @@ addOptional(InPar,'Verbose',false);
 
 
 addOptional(InPar,'updateObj',[]);  % M (handle object!!!)
-addOptional(InPar,'updateProp',''); % 'lastError'
+addOptional(InPar,'updateProp',''); % 'LastError'
 addOptional(InPar,'updatePropRC',[]);  %'lastRC'
 
 parse(InPar,varargin{:});

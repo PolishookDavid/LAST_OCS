@@ -10,7 +10,7 @@ classdef camera < handle
         LastImageName = '';
         LastImage
 
-        ExpTime=10;
+        ExpTime=1;
 
         Temperature  % DP -> Put NAN if unknown.
         CoolingPower = NaN;
@@ -26,9 +26,9 @@ classdef camera < handle
         CamGeoName    = '';
         CameraNum
         
-        ReadMode
-        Offset
-        Gain=0;
+        ReadMode = 1;
+        Offset = 3;
+        Gain = 0;
         Binning=[1,1];
         Filter
 
@@ -48,8 +48,8 @@ classdef camera < handle
     end
     
     properties(GetAccess = public, SetAccess = private)
-%         time_start=[];
-%         time_end=[];
+%         TimeStart=[];
+%         TimeEnd=[];
    end
     
     % Enrico, discretional
@@ -61,7 +61,7 @@ classdef camera < handle
         readModesList=struct('name',[],'resx',[],'resy',[]);
         lastExpTime=NaN;
         progressive_frame = 0; % image of a sequence already available
-        time_start_delta % uncertainty, after-before calling exposure start
+        TimeStartDelta % uncertainty, after-before calling exposure start
     end
     
     % settings which have not been prescribed by the API,
@@ -134,7 +134,7 @@ classdef camera < handle
             end
 
             % Check if a camera was found
-            CameraObj.LastError = CameraObj.Handle.lastError;
+            CameraObj.LastError = CameraObj.Handle.LastError;
 
             % Update filter and ccd number from config file
             CameraObj.Filter = obs.util.config.readSystemConfigFile('Filter');
@@ -164,27 +164,27 @@ classdef camera < handle
             status = 'unknown';
             if CameraObj.checkIfConnected
                status=CameraObj.Handle.CamStatus;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
         
         function status=get.CoolingStatus(CameraObj)
             if CameraObj.checkIfConnected
                status = CameraObj.Handle.CoolingStatus;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end        
         
         function LastImage=get.LastImage(CameraObj)
             if CameraObj.checkIfConnected
-               LastImage = CameraObj.Handle.lastImage;
+               LastImage = CameraObj.Handle.LastImage;
             end
         end
 
         function Temp=get.Temperature(CameraObj)
             if CameraObj.checkIfConnected
                Temp = CameraObj.Handle.Temperature;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
 
@@ -192,14 +192,14 @@ classdef camera < handle
             if CameraObj.checkIfConnected
                CameraObj.LogFile.writeLog(sprintf('call set.Temperature. Temperature=%f',Temp))
                CameraObj.Handle.Temperature = Temp;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
         
         function CoolingPower=get.CoolingPower(CameraObj)
             if CameraObj.checkIfConnected
                CoolingPower = CameraObj.Handle.CoolingPower;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
         
@@ -207,7 +207,7 @@ classdef camera < handle
             if CameraObj.checkIfConnected
                % ExpTime in seconds
                ExpTime = CameraObj.Handle.ExpTime;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
 
@@ -216,14 +216,14 @@ classdef camera < handle
                % ExpTime in seconds
                CameraObj.LogFile.writeLog(sprintf('call set.ExpTime. ExpTime=%f',ExpTime))
                CameraObj.Handle.ExpTime = ExpTime;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
         
         function Gain=get.Gain(CameraObj)
            if CameraObj.checkIfConnected
               Gain = CameraObj.Handle.Gain;
-              CameraObj.LastError = CameraObj.Handle.lastError;
+              CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
         
@@ -234,7 +234,7 @@ classdef camera < handle
                %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
                %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
                CameraObj.Handle.Gain = Gain;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
         
@@ -246,49 +246,49 @@ classdef camera < handle
            if CameraObj.checkIfConnected
               CameraObj.LogFile.writeLog(sprintf('call set.ROI. roi=%f',roi))
               CameraObj.Handle.ROI = roi;
-              CameraObj.LastError = CameraObj.Handle.lastError;
+              CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
 
-        function offset=get.Offset(CameraObj)
+        function Offset=get.Offset(CameraObj)
            if CameraObj.checkIfConnected
               % Offset seems to be a sort of bias, black level
-              offset = CameraObj.Handle.offset;
-              CameraObj.LastError = CameraObj.Handle.lastError;
+              Offset = CameraObj.Handle.Offset;
+              CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
 
-        function set.Offset(CameraObj,offset)
+        function set.Offset(CameraObj,Offset)
            if CameraObj.checkIfConnected
-              CameraObj.LogFile.writeLog(sprintf('call set.Offset. offset=%f',offset))
-              CameraObj.Handle.offset = offset;
-              CameraObj.LastError = CameraObj.Handle.lastError;
+              CameraObj.LogFile.writeLog(sprintf('call set.Offset. Offset=%f',Offset))
+              CameraObj.Handle.Offset = Offset;
+              CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
 
         function readMode=get.ReadMode(CameraObj)
            if CameraObj.checkIfConnected
               readMode = CameraObj.Handle.ReadMode;
-              CameraObj.LastError = CameraObj.Handle.lastError;
+              CameraObj.LastError = CameraObj.Handle.LastError;
            end
        end
 
         function set.ReadMode(CameraObj,ReadMode)
            if CameraObj.checkIfConnected
-              CameraObj.LogFile.writeLog(sprintf('call set.ReadMode. readMode=%f',readMode))
+              CameraObj.LogFile.writeLog(sprintf('call set.ReadMode. readMode=%f',ReadMode))
               CameraObj.Handle.ReadMode = ReadMode;
-              CameraObj.LastError = CameraObj.Handle.lastError;
+              CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
 
         function set.Binning(CameraObj,Binning)
             if CameraObj.checkIfConnected
-               CameraObj.LogFile.writeLog(sprintf('call set.binning. binning=%f',binning))
+               CameraObj.LogFile.writeLog(sprintf('call set.Binning. Binning=%f',Binning))
                % default is 1x1
                % for the QHY367, 1x1 and 2x2 seem to work; NxN with N>2 gives
                % error.
-               CameraObj.Handle.binning = Binning;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.Handle.Binning = Binning;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
         
@@ -297,16 +297,16 @@ classdef camera < handle
 
         function set.Color(CameraObj,ColorMode)
             if CameraObj.checkIfConnected
-               CameraObj.LogFile.writeLog(sprintf('call set.color. ColorMode=%f',ColorMode))
+               CameraObj.LogFile.writeLog(sprintf('call set.Color. ColorMode=%f',ColorMode))
                % default has to be bw
-               CameraObj.Handle.color = ColorMode;
-               CameraObj.LastError = CameraObj.Handle.lastError;
+               CameraObj.Handle.Color = ColorMode;
+               CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
 
         function set.BitDepth(CameraObj,BitDepth)
             if CameraObj.checkIfConnected
-                CameraObj.LogFile.writeLog(sprintf('call set.bitDepth. BitDepth=%f',BitDepth))
+                CameraObj.LogFile.writeLog(sprintf('call set.BitDepth. BitDepth=%f',BitDepth))
                 % BitDepth: 8 or 16 (bit). My understanding is that this is in
                 %  first place a communication setting, which however implies
                 %  the scaling of the raw ADC readout. IIUC, e.g. a 14bit ADC
@@ -314,21 +314,21 @@ classdef camera < handle
                 % Constrain BitDepth to 8|16, the functions wouldn't give any
                 %  error anyway for different values.
                 % default has to be bw
-                CameraObj.Handle.bitDepth = BitDepth;
-                CameraObj.LastError = CameraObj.Handle.lastError;
+                CameraObj.Handle.BitDepth = BitDepth;
+                CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
 
         function BitDepth=get.BitDepth(CameraObj)
            if CameraObj.checkIfConnected
-              BitDepth = CameraObj.Handle.bitDepth;
-              CameraObj.LastError = CameraObj.Handle.lastError;
+              BitDepth = CameraObj.Handle.BitDepth;
+              CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
 
         % Get the last error reported by the driver code
         function LastError=get.LastError(CameraObj)
-            LastError = CameraObj.Handle.lastError;
+            LastError = CameraObj.Handle.LastError;
             CameraObj.LogFile.writeLog(LastError)
             if CameraObj.Verbose, fprintf('%s\n', LastError); end
         end
@@ -340,8 +340,8 @@ classdef camera < handle
            if (~isempty(LastError))
               % If the error message is taken from the driver object, do NOT
               % update the driver object.
-%              if (~strcmp(CameraObj.Handle.lastError, LastError))
-%                 CameraObj.Handle.lastError = LastError;
+%              if (~strcmp(CameraObj.Handle.LastError, LastError))
+%                 CameraObj.Handle.LastError = LastError;
 %              end
               CameraObj.LogFile.writeLog(LastError)
               if CameraObj.Verbose, fprintf('%s\n', LastError); end

@@ -40,7 +40,7 @@ function flag=checkIfConnected(CameraObj, Text)
 %             if nargin<2
 %                Text = sprintf("Camera %s is disconnected", obs.util.readSystemConfigFile('CameraGeoName'));
 %             end
-%             CameraObj.lastError = Text;
+%             CameraObj.LastError = Text;
 %             CameraObj.LogFile.writeLog(Text)
 %             if CameraObj.Verbose, fprintf('%s\n', Text); end
 %             error(Text)

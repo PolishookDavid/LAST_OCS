@@ -23,7 +23,7 @@ classdef focuser <handle
     % non-API-demanded properties, Enrico's judgement
     properties (Hidden=true) 
         Verbose=true; % for stdin debugging
-        serial_resource % the serial object corresponding to Port
+        SerialResource % the serial object corresponding to Port
     end
     
     properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
@@ -83,7 +83,7 @@ classdef focuser <handle
                Focuser.LastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
             else
                focus = Focuser.Handle.Pos;
-               Focuser.LastError = Focuser.Handle.lastError;
+               Focuser.LastError = Focuser.Handle.LastError;
             end
         end
 
@@ -98,33 +98,33 @@ classdef focuser <handle
             start(Focuser.FocusMotionTimer);
             Focuser.LogFile.writeLog('Start focuser timer')            
             
-            Focuser.LastError = Focuser.Handle.lastError;
+            Focuser.LastError = Focuser.Handle.LastError;
         end
         
         % DOES NOT WORK !!! DP June 4, 2020
 %         function set.RelPos(Focuser,incr)
 %             Focuser.Handle.RelPos(incr)
 %             Focuser.LogFile.writeLog(sprintf('call set.RelPos. focues increase=%d',incr))
-%             Focuser.LastError = Focuser.Handle.lastError;
+%             Focuser.LastError = Focuser.Handle.LastError;
 %         end
         
         function focus=get.LastPos(Focuser)
             focus = Focuser.Handle.LastPos;
-            Focuser.LastError = Focuser.Handle.lastError;
+            Focuser.LastError = Focuser.Handle.LastError;
         end
 
         function Limits=get.Limits(Focuser)
-            Limits = Focuser.Handle.limits;
+            Limits = Focuser.Handle.Limits;
         end
 
         function s=get.Status(Focuser)
             s = Focuser.Handle.Status;
-            Focuser.LastError = Focuser.Handle.lastError;
+            Focuser.LastError = Focuser.Handle.LastError;
         end
         
         % Get the last error reported by the driver code
         function LastError=get.LastError(Focuser)
-            LastError = Focuser.Handle.lastError;
+            LastError = Focuser.Handle.LastError;
             Focuser.LogFile.writeLog(LastError)
             if Focuser.Verbose, fprintf('%s\n', LastError); end
         end
@@ -136,8 +136,8 @@ classdef focuser <handle
            if (~isempty(LastError))
               % If the error message is taken from the driver object, do NOT
               % update the driver object.
-%              if (~strcmp(Focuser.Handle.lastError, LastError))
-%                 Focuser.Handle.lastError = LastError;
+%              if (~strcmp(Focuser.Handle.LastError, LastError))
+%                 Focuser.Handle.LastError = LastError;
 %              end
               Focuser.LogFile.writeLog(LastError)
               if Focuser.Verbose, fprintf('%s\n', LastError); end

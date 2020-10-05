@@ -22,6 +22,6 @@ function park(MountObj,parking)
          end
       end
       MountObj.Handle.park(parking);
-      MountObj.LastError = MountObj.Handle.lastError;
+      MountObj.LastError = MountObj.Handle.LastError;
    end
 end

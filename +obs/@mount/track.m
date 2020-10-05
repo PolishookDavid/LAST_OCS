@@ -11,6 +11,6 @@ function track(MountObj,rate)
          MountObj.LogFile.writeLog(sprintf('call track, rate = %.f',rate))
          MountObj.Handle.track(rate);
       end
-      MountObj.LastError = MountObj.Handle.lastError;
+      MountObj.LastError = MountObj.Handle.LastError;
    end
 end

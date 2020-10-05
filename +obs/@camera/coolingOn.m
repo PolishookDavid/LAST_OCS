@@ -10,6 +10,6 @@ function coolingOn(CameraObj,Temp)
 
       % Call coolingOn using the camera handle object
       CameraObj.Handle.coolingOn(Temp);
-      CameraObj.LastError = CameraObj.Handle.lastError;
+      CameraObj.LastError = CameraObj.Handle.LastError;
    end
 end

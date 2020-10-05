@@ -9,6 +9,6 @@ function Imgs=takeExposureSeq(CameraObj,num,ExpTime)
       end
 
       Imgs = CameraObj.Handle.takeExposureSeq(num, ExpTime);
-      CameraObj.LastError = CameraObj.Handle.lastError;
+      CameraObj.LastError = CameraObj.Handle.LastError;
    end
 end

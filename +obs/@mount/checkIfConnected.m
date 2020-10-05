@@ -43,7 +43,7 @@ function flag=checkIfConnected(MountObj, Text)
 %             if nargin<2
 %                Text = sprintf("Mount %s is disconnected", obs.util.readSystemConfigFile('MountGeoName'));
 %             end
-%             MountObj.lastError = Text;
+%             MountObj.LastError = Text;
 %             MountObj.LogFile.writeLog(Text)
 %             if MountObj.Verbose, fprintf('%s\n', Text); end
 %             error(Text)

@@ -40,7 +40,7 @@ addOptional(InPar,'VecHA',[-60:30:60]);
 addOptional(InPar,'PoleDec',+89.9999);
 addOptional(InPar,'PolarisRA',celestial.coo.convertdms([2 31 49.09],'H','d'));  % deg
 addOptional(InPar,'PolarisDec',celestial.coo.convertdms([1 89 15 50.8],'D','d'));  % deg
-addOptional(InPar,'PixScale',1.25);  % "/pix
+addOptional(InPar,'PixScale',1.251);  % "/pix
 addOptional(InPar,'Xalong','-ra');   % 'ra','-ra','dec','-dec'
 addOptional(InPar,'Yalong','dec');  % 'ra','-ra','dec','-dec'
 
@@ -51,6 +51,8 @@ addOptional(InPar,'MarkerPolaris','ro');
 addOptional(InPar,'MarkerCelPole','bo'); 
 addOptional(InPar,'MarkerMountPole','co'); 
 addOptional(InPar,'MarkerSize',50); 
+addOptional(InPar,'HalfSize',[]); 
+
 
 parse(InPar,varargin{:});
 InPar = InPar.Results;
@@ -104,11 +106,14 @@ for Iha=1:1:Nha
 
     
     %--- astrometry ---
-    S = FITS.read2sim(FileName);
-    S = trim_image(S,[3001 4000 3001 4000]);
-    ResAst = obs.util.tools.astrometry_center(S,'RA',RA./RAD,...
-                                                       'Dec',Dec./RAD,...
-                                                       'HalfSize',[]);
+    %S = FITS.read2sim(FileName);
+    S(Iha) = FITS.read2sim(FileName);
+    %S = trim_image(S,[3001 4000 3001 4000]);
+    %S(Iha) = trim_image(S(Iha),[3001 4000 3001 4000]);
+    
+    ResAst = obs.util.tools.astrometry_center(S(Iha),'RA',RA./RAD,...
+                                                       'Dec',Dec./RAD);
+                                                       %'HalfSize',InPar.HalfSize);
 %     ResAst = obs.util.tools.astrometry_center(FileName,'RA',RA./RAD,...
 %                                                        'Dec',Dec./RAD,...
 %                                                        'HalfSize',[]);                                               
@@ -209,13 +214,21 @@ if InPar.Verbose
     fprintf('    Marker Polaris %s\n',InPar.MarkerPolaris);
     fprintf('    Marker celestial pole %s\n',InPar.MarkerCelPole);
     fprintf('    Marker mount pole %s\n',InPar.MarkerMountPole);    
-    fprintf('Shift the mount Az/Alt shuch that the celestial pole coincides with the mount pole\n');
+    fprintf('Shift the mount Az/Alt such that the celestial pole coincides with the mount pole\n');
     fprintf('Required delta X shift [pix]     : %f\n',ResP.DX);
     fprintf('Required delta Y shift [pix]     : %f\n',ResP.DY);
-    fprintf('Required delta Az shift [arcmin] : %f\n',ResP.DAz);
-    fprintf('Required delta Alt shift [arcmin]: %f\n',ResP.DAlt);
-    
+    if (ResP.DAz > 0)
+       fprintf('Decrease Az by:  [arcmin] : %f\n',ResP.DAz);
+    else
+       fprintf('Increase Az by:  [arcmin] : %f\n',ResP.DAz);
+    end
+    if (ResP.DAlt > 0)
+       fprintf('Decrease Alt by [arcmin]: %f\n',ResP.DAlt);
+    else
+       fprintf('Increase Alt by [arcmin]: %f\n',ResP.DAlt);
+    end
 end
 
 
     
+v

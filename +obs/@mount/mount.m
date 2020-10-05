@@ -28,7 +28,7 @@ classdef mount <handle
 
         IPaddress = '';
         Port = '';
-        Serial_resource % the serial object corresponding to Port
+        SerialResource % the serial object corresponding to Port
 
         % Mount and telescopes names and models
         MountType = '';
@@ -55,7 +55,7 @@ classdef mount <handle
     
     % non-API-demanded properties, Enrico's judgement
     properties (Hidden) 
-%?        serial_resource % the serial object corresponding to Port
+%?        SerialResource % the serial object corresponding to Port
     end
     
     properties (Hidden, GetAccess=public, SetAccess=private, Transient)
@@ -151,7 +151,7 @@ classdef mount <handle
                    start(MountObj.SlewingTimer);
 
                    MountObj.Handle.Az = Az;
-                   MountObj.LastError = MountObj.Handle.lastError;
+                   MountObj.LastError = MountObj.Handle.LastError;
                 else
                    MountObj.LastError = "Cannot slew, telescope is parking. Run: park(0)";
                 end
@@ -184,7 +184,7 @@ classdef mount <handle
                      start(MountObj.SlewingTimer);
 
                      MountObj.Handle.Alt = Alt;
-                     MountObj.LastError = MountObj.Handle.lastError;
+                     MountObj.LastError = MountObj.Handle.LastError;
                   else
                      MountObj.LastError = "target Alt beyond limits";
                   end
@@ -242,19 +242,19 @@ classdef mount <handle
            if MountObj.checkIfConnected
                % True if east, false if west.
                % Assuming that the mount is polar aligned
-               EastOfPier = MountObj.Handle.isEastOfPier;
+               EastOfPier = MountObj.Handle.IsEastOfPier;
            end
         end
 
         function CounterWeightDown=get.IsCounterWeightDown(MountObj)
            if MountObj.checkIfConnected
-              CounterWeightDown = MountObj.Handle.isCounterweightDown;
+              CounterWeightDown = MountObj.Handle.IsCounterWeightDown;
            end
         end
         
-%         function S=get.fullStatus(MountObj)
+%         function S=get.FullStatus(MountObj)
 %             if MountObj.checkIfConnected
-%             S = MountObj.Handle.fullStatus;
+%             S = MountObj.Handle.FullStatus;
 %            end
 %         end
         
@@ -297,7 +297,7 @@ classdef mount <handle
               end
               MountObj.Handle.TrackingSpeed = Speed;
             
-              MountObj.LastError = MountObj.Handle.lastError;
+              MountObj.LastError = MountObj.Handle.LastError;
            end
         end
 
@@ -312,7 +312,7 @@ classdef mount <handle
         function set.MeridianFlip(MountObj,flip)
             if MountObj.checkIfConnected
                MountObj.Handle.MeridianFlip = flip;
-               MountObj.LastError = MountObj.Handle.lastError;
+               MountObj.LastError = MountObj.Handle.LastError;
             end
         end
 
@@ -325,7 +325,7 @@ classdef mount <handle
         function set.MeridianLimit(MountObj,limit)
            if MountObj.checkIfConnected
               MountObj.Handle.MeridianLimit = limit;
-              MountObj.LastError = MountObj.Handle.lastError;
+              MountObj.LastError = MountObj.Handle.LastError;
            end
         end
         
@@ -338,7 +338,7 @@ classdef mount <handle
         function set.MinAlt(MountObj,MinAlt)
            if MountObj.checkIfConnected
               MountObj.Handle.MinAlt = MinAlt;
-              MountObj.LastError = MountObj.Handle.lastError;
+              MountObj.LastError = MountObj.Handle.LastError;
             end
         end
        
@@ -364,7 +364,7 @@ classdef mount <handle
         function set.ParkPos(MountObj,pos)
             if MountObj.checkIfConnected
                MountObj.Handle.ParkPos = pos;
-               MountObj.LastError = MountObj.Handle.lastError;
+               MountObj.LastError = MountObj.Handle.LastError;
             end
         end
         
@@ -377,7 +377,7 @@ classdef mount <handle
         function set.MountPos(MountObj,Position)
             if MountObj.checkIfConnected
                MountObj.Handle.MountPos = Position;
-               MountObj.LastError = MountObj.Handle.lastError;
+               MountObj.LastError = MountObj.Handle.LastError;
             end
         end
 
@@ -396,13 +396,13 @@ classdef mount <handle
 %               MountObj.MountCoo.ObsHeight = Position(3);
 % 
 %               MountObj.Handle.MountPos = Position;
-%               MountObj.LastError = MountObj.Handle.lastError;
+%               MountObj.LastError = MountObj.Handle.LastError;
 %            end
 %         end
 
         % Get the last error reported by the driver code
         function LastError=get.LastError(MountObj)
-            LastError = MountObj.Handle.lastError;
+            LastError = MountObj.Handle.LastError;
             MountObj.LogFile.writeLog(LastError)
             if MountObj.Verbose, fprintf('%s\n', LastError); end
         end
@@ -414,8 +414,8 @@ classdef mount <handle
            if (~isempty(LastError))
               % If the error message is taken from the driver object, do NOT
               % update the driver object.
-%               if (~strcmp(MountObj.Handle.lastError, LastError))
-%                  MountObj.Handle.lastError = LastError;
+%               if (~strcmp(MountObj.Handle.LastError, LastError))
+%                  MountObj.Handle.LastError = LastError;
 %               end
               MountObj.LogFile.writeLog(LastError)
               if MountObj.Verbose, fprintf('%s\n', LastError); end
@@ -433,8 +433,8 @@ classdef mount <handle
         end
 
         % Get the serial object corresponding to Port
-        function Serial_resource=get.Serial_resource(MountObj)
-            Serial_resource = MountObj.Handle.serial_resource;
+        function SerialResource=get.SerialResource(MountObj)
+            SerialResource = MountObj.Handle.SerialResource;
         end
 
         function MountUTC=get.MountUTC(MountObj)

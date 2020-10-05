@@ -84,7 +84,7 @@ if MountObj.checkIfConnected
             MountObj.Handle.GoTo(RA, Dec, 'eq');
 
             % Get error
-            MountObj.LastError = MountObj.Handle.lastError;
+            MountObj.LastError = MountObj.Handle.LastError;
          else
             if (~FlagRes.Alt)
                MountObj.LastError = 'Target Alt too low';

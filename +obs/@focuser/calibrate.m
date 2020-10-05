@@ -8,5 +8,5 @@ function calibrate(Focuser)
 % Or to say it better: doesnt't matter, take for granted that the focuser
 % will disconnect itself, just reconnect it after a few minutes.
     Focuser.Handle.calibrate;
-    Focuser.LastError = Focuser.Handle.lastError;
+    Focuser.LastError = Focuser.Handle.LastError;
 end

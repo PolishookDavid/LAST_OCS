@@ -86,7 +86,7 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
             % - Define camera class instance as East or West
             
             % The number of the connected camera for matlab recognition
-            CameraObj.CameraNum = CameraObj.Handle.cameranum;
+            CameraObj.CameraNum = CameraObj.Handle.CameraNum;
             
             % Naming of instruments
             
@@ -141,7 +141,7 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
             CameraObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
             
         else
-           CameraObj.LastError = CameraObj.Handle.lastError;
+           CameraObj.LastError = CameraObj.Handle.LastError;
         end
     else
        success = false;

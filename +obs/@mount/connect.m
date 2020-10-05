@@ -22,8 +22,8 @@ function success=connect(MountObj)
         % Mount location coordinates and UTC
         if (MountObj.TimeFromGPS)
            % Take from GPS
-           MountObj.MountCoo.ObsLon = MountObj.Handle.fullStatus.Lon;
-           MountObj.MountCoo.ObsLat = MountObj.Handle.fullStatus.Lat;
+           MountObj.MountCoo.ObsLon = MountObj.Handle.FullStatus.Lon;
+           MountObj.MountCoo.ObsLat = MountObj.Handle.FullStatus.Lat;
         else
            % Take coordinates from computer
            MountObj.MountCoo.ObsLon = obs.util.config.readSystemConfigFile('MountLongitude');

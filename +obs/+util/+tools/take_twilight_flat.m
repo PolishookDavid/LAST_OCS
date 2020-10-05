@@ -21,7 +21,7 @@ addOptional(InPar,'TestExpTime',1);
 addOptional(InPar,'MeanFun',@nanmedian);
 addOptional(InPar,'EastFromZenith',20);
 addOptional(InPar,'RandomShift',3);
-addOptional(InPar,'ImType','twflat');
+addOptional(InPar,'ImType','SkyFlat');
 addOptional(InPar,'WaitTimeCheck',30);
 addOptional(InPar,'Verbose',true);
 addOptional(InPar,'Plot',true);

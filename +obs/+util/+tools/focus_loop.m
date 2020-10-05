@@ -73,8 +73,8 @@ PlotMinMarker = 'p';
 
 InPar = inputParser;
 addOptional(InPar,'FocusGuess',30050);  
-addOptional(InPar,'HalfRange',150);  
-addOptional(InPar,'Step',30);  
+addOptional(InPar,'HalfRange',50);  
+addOptional(InPar,'Step',25);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  
 addOptional(InPar,'BacklashPos',200);  
@@ -220,7 +220,7 @@ for Ipos=1:1:Nstep
         %close all    
         for Icam=1:1:Ncam
             
-            H=plot(FocusValCam(Ipos,Icam),FocVal(Ipos,Icam),'ko','MarkerFaceColor','k');
+            H=plot(FocusValCam(Ipos,Icam),FocVal(Ipos,Icam),'ko','MarkerFaceColor','r');
             H.Marker          = PlotMarker;
             H.Color           = Colors(Icam,:);
             H.MarkerFaceColor = Colors(Icam,:);

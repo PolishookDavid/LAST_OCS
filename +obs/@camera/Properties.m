@@ -10,7 +10,7 @@ function Properties(CameraObj)
 
         CameraObj.ExpTime
         CameraObj.Gain
-        CameraObj.binning
+        CameraObj.Binning
 
         CameraObj.CoolingStatus
         CameraObj.Temperature
@@ -37,8 +37,8 @@ function Properties(CameraObj)
         
         CameraObj.ROI % beware - SDK does not provide a getter for it, go figure
     
-%         time_start=[];
-%         time_end=[];
+%         TimeStart=[];
+%         TimeEnd=[];
     
         CameraObj.physical_size
         CameraObj.effective_area
@@ -46,7 +46,7 @@ function Properties(CameraObj)
         CameraObj.readModesList
         CameraObj.lastExpTime
         CameraObj.progressive_frame % image of a sequence already available
-        CameraObj.time_start_delta % uncertainty, after-before calling exposure start
+        CameraObj.TimeStartDelta % uncertainty, after-before calling exposure start
     
     % settings which have not been prescribed by the API,
     % but for which I have already made the code

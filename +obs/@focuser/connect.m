@@ -14,8 +14,8 @@ function success=connect(Focuser,Port)
     Focuser.FocuserUniqueName = obs.util.config.readSystemConfigFile('FocuserUniqueName');
     Focuser.FocuserType = Focuser.Handle.FocType;
 
-    if (isempty(Focuser.Handle.lastError))
+    if (isempty(Focuser.Handle.LastError))
        success = 1;
     end
-    Focuser.LastError = Focuser.Handle.lastError;
+    Focuser.LastError = Focuser.Handle.LastError;
 end
