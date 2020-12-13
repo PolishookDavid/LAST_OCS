@@ -1,3 +1,14 @@
+% mount control handle class
+% Package: +obs
+% Description: operate mount drivers.
+%              Currently can work with Xerxes, iOptron and Celestron mounts
+% Input  : none.
+% Output : A mount class
+%     By :
+% Example: M = obs.mount;
+%
+% Author: David Polishook, Mar 2020
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef mount <handle
 
     properties (Dependent)

@@ -1,3 +1,15 @@
+% Focuser control handle class (for Celestron's focusers) 
+% Package: +obs
+% Description: operate focuser drivers.
+%              Currently can work with Celestron's focusers
+% Input  : Focuser text, e.g. 'Robot'.
+% Output : A focuser class
+%     By :
+% Example: F = obs.focuser;
+%          F = obs.focuser('Robot');
+%
+% Author: David Polishook, Mar 2020
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef focuser <handle
     
     properties

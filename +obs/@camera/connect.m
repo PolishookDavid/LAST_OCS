@@ -1,3 +1,5 @@
+
+
 function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
     % Open the connection with a specific camera.
     %  CameraNum: int, number of the camera to open (as enumerated by the SDK)
@@ -76,7 +78,8 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
         % Connect to camera
         success = CameraObj.Handle.connect(CameraNum);
         CameraObj.IsConnected = success;
-        CameraObj.LogFile.writeLog('Connecting to camera.')
+        if CameraObj.Verbose, fprintf('>>>>> Connecting to camera <<<<<\n'); end
+
         
         if (success)
             
@@ -132,12 +135,32 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
             %          CameraObj.LastImageSearialNum = 0;
             %       end
             
+
+           % Opens Log for the camera
+           DirName = obs.util.config.constructDirName('log');
+           cd(DirName);
+
+           CameraObj.LogFile = logFile;
+           CameraObj.LogFile.Dir = DirName;
+%            CameraObj.LogFile.FileNameTemplate = 'LAST_%s.log';
+%            CameraObj.LogFile.logOwner = sprintf('%s.%s_%s_Cam', ...
+%                      obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+%                      obs.util.config.readSystemConfigFile('MountGeoName'),...
+%                      DirName(end-7:end));
+           CameraObj.LogFile.FileNameTemplate = '%s';
+           CameraObj.LogFile.logOwner = obs.util.config.constructImageName('LAST', ...
+                                                           obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+                                                           obs.util.config.readSystemConfigFile('MountGeoName'),...
+                                                           CameraObj.CamGeoName, datestr(now,'yyyymmdd.HHMMSS.FFF'), ...
+                                                           obs.util.config.readSystemConfigFile('Filter'),...
+                                                           '',      '',     'log',   '',         '',        '1',       'log');
+% legend:                                                  FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat
             CameraObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
-            CameraObj.LogFile.writeLog('Details:')
-            CameraObj.LogFile.writeLog(sprintf('CamType: %s',CameraObj.CamType))
-            CameraObj.LogFile.writeLog(sprintf('CamModel: %s',CameraObj.CamModel))
-            CameraObj.LogFile.writeLog(sprintf('CamUniqueName: %s',CameraObj.CamUniqueName))
-            CameraObj.LogFile.writeLog(sprintf('CamGeoName: %s',CameraObj.CamGeoName))
+            CameraObj.LogFile.writeLog('Camera connected:')
+            CameraObj.LogFile.writeLog(sprintf('- CamType: %s',CameraObj.CamType))
+            CameraObj.LogFile.writeLog(sprintf('- CamModel: %s',CameraObj.CamModel))
+            CameraObj.LogFile.writeLog(sprintf('- CamUniqueName: %s',CameraObj.CamUniqueName))
+            CameraObj.LogFile.writeLog(sprintf('- CamGeoName: %s',CameraObj.CamGeoName))
             CameraObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
             
         else

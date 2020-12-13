@@ -2,6 +2,16 @@
 % Package: +obs
 % Description: operate camera drivers.
 %              Currently can work with QHY and ZWO detectors
+% Input  : CameraType, 'QHY' (default) or 'ZWO'.
+%          CameraNum, number of camera to connect with, 1 (default) or 2.
+% Output : A camera class
+%     By :
+% Example: C = obs.camera;
+%          C = obs.camera('QHY');
+%          C = obs.camera('ZWO', 2);
+%
+% Author: David Polishook, Mar 2020
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 classdef camera < handle
@@ -24,7 +34,7 @@ classdef camera < handle
         CoolingPower = NaN;
 
 	% The image type: science, flat, bias, dark
-        ImType = 'science';
+        ImType = 'sci';
 	% The name of the observed object/field
         Object = '';
     end
@@ -70,8 +80,8 @@ classdef camera < handle
 	% The LogFile object class to handle the log of the camera
         LogFile;
     end
-        
-    % Region Of Interest [X1 X2 Y1 Y2] - currently not implemented
+
+    % Region Of Interest [X1 Y1 X_size Y_size] - currently not implemented
     properties(Dependent = true)
         ROI % beware - SDK does not provide a getter for it, go figure
     end
@@ -113,6 +123,8 @@ classdef camera < handle
         LastError = '';
         % The format of the written image
         ImageFormat = 'fits';
+	% Maximum exposure time in seconds
+	MaxExpTime = 1800;
         % The serial number of the last image - not implemented anymore
         LastImageSearialNum = 0;
         % A flag marking if to print software printouts or not
@@ -146,17 +158,23 @@ classdef camera < handle
               CameraObj.CamType = 'QHY';
            end
 
-           % Opens Log for the camera
-           DirName = obs.util.config.constructDirName('log');
-           cd(DirName);
+% % %            % Opens Log for the camera
+% % %            DirName = obs.util.config.constructDirName('log');
+% % %            cd(DirName);
+% % % 
+% % %            CameraObj.LogFile = logFile;
+% % %            CameraObj.LogFile.Dir = DirName;
+% % %            CameraObj.LogFile.FileNameTemplate = 'LAST_%s.log';
+% % %            CameraObj.LogFile.logOwner = sprintf('%s.%s_%s_Cam', ...
+% % %                      obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+% % %                      obs.util.config.readSystemConfigFile('MountGeoName'),...
+% % %                      DirName(end-7:end));
+% % %            CameraObj.LogFile.logOwner = constructImageName('LAST', obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+% % %                                                            obs.util.config.readSystemConfigFile('MountGeoName'),...
+% % %                                                            CameraObj.CamGeoName CamGeoName, ImageDateTime, Filter, FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat);
 
-           CameraObj.LogFile = logFile;
-           CameraObj.LogFile.Dir = DirName;
-           CameraObj.LogFile.FileNameTemplate = 'LAST_%s.log';
-           CameraObj.LogFile.logOwner = sprintf('%s.%s_%s_Cam', ...
-                     obs.util.config.readSystemConfigFile('ObservatoryNode'),...
-                     obs.util.config.readSystemConfigFile('MountGeoName'),...
-                     DirName(end-7:end));
+
+
 % Should the log be for 1 or 2 cameras??? Here is for a single camera:
 %           CameraObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Cam', ...
 %                     obs.util.config.readSystemConfigFile('ObservatoryNode'),...
@@ -170,13 +188,13 @@ classdef camera < handle
                CameraObj.Handle=inst.QHYccd(CameraObj.CameraNum);
             end
 
-            % Check if a camera was found
+            % Check if a camera was not found
             CameraObj.LastError = CameraObj.Handle.LastError;
 
             % Update filter and ccd number from config file
             CameraObj.Filter = obs.util.config.readSystemConfigFile('Filter');
             CameraObj.CCDnum = obs.util.config.readSystemConfigFile('CCDnum');
-            
+
         end
 
         % Destructor
@@ -186,17 +204,31 @@ classdef camera < handle
         end
     end
     
-    methods %getters and setters
+    methods % Getters and setters
         
+	% Get image type
         function ImType=get.ImType(CameraObj)
             ImType=CameraObj.ImType;
         end
         
+	% set image type
         function set.ImType(CameraObj,ImType)
             CameraObj.ImType = ImType;
             CameraObj.LogFile.writeLog(sprintf('call set.ImType. ImType=%s',ImType))
         end
 
+        % Get image object
+        function Object=get.Object(CameraObj)
+            Object=CameraObj.Object;
+        end
+
+        % Set image object
+        function set.Object(CameraObj,Object)
+            CameraObj.Object = Object;
+            CameraObj.LogFile.writeLog(sprintf('call set.Object. Object=%s', Object))
+        end
+
+	% Get camera status: idle, exposing, reading, unknown
         function status=get.CamStatus(CameraObj)
             status = 'unknown';
             if CameraObj.checkIfConnected
@@ -204,20 +236,23 @@ classdef camera < handle
                CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
-        
+
+	% Get the camera cooling status: on, off
         function status=get.CoolingStatus(CameraObj)
             if CameraObj.checkIfConnected
                status = CameraObj.Handle.CoolingStatus;
                CameraObj.LastError = CameraObj.Handle.LastError;
             end
-        end        
-        
+        end
+
+        % Get the last image taken
         function LastImage=get.LastImage(CameraObj)
             if CameraObj.checkIfConnected
                LastImage = CameraObj.Handle.LastImage;
             end
         end
 
+	% Get the current temperature of the camera, in Celsius
         function Temp=get.Temperature(CameraObj)
             if CameraObj.checkIfConnected
                Temp = CameraObj.Handle.Temperature;
@@ -225,6 +260,7 @@ classdef camera < handle
             end
         end
 
+	% Set the temperature of the camera. Input: temperature in Celsius
         function set.Temperature(CameraObj,Temp)
             if CameraObj.checkIfConnected
                CameraObj.LogFile.writeLog(sprintf('call set.Temperature. Temperature=%f',Temp))
@@ -232,52 +268,61 @@ classdef camera < handle
                CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
-        
+
+	% Get the precentage of the cooling power
         function CoolingPower=get.CoolingPower(CameraObj)
             if CameraObj.checkIfConnected
                CoolingPower = CameraObj.Handle.CoolingPower;
                CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
-        
+
+	% Get the exposure time. In seconds
         function ExpTime=get.ExpTime(CameraObj)
             if CameraObj.checkIfConnected
-               % ExpTime in seconds
                ExpTime = CameraObj.Handle.ExpTime;
                CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
 
+	% Set the exposure time for the next exposure. In seconds
         function set.ExpTime(CameraObj,ExpTime)
-           if CameraObj.checkIfConnected
-               % ExpTime in seconds
-               CameraObj.LogFile.writeLog(sprintf('call set.ExpTime. ExpTime=%f',ExpTime))
-               CameraObj.Handle.ExpTime = ExpTime;
-               CameraObj.LastError = CameraObj.Handle.LastError;
+	   if (ExpTime <= CameraObj.MaxExpTime)
+              if CameraObj.checkIfConnected
+                 CameraObj.LogFile.writeLog(sprintf('call set.ExpTime. ExpTime=%f',ExpTime))
+                 CameraObj.Handle.ExpTime = ExpTime;
+                 CameraObj.LastError = CameraObj.Handle.LastError;
+              end
+	   else
+	      CameraObj.LastError = 'Exposure time is too long. Probably a mistake. Did not change time';
            end
         end
-        
+
+        % Get the start time of the last image.
         function TimeStart=get.TimeStart(CameraObj)
             if CameraObj.checkIfConnected
                TimeStart = CameraObj.Handle.TimeStart;
                CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
-        
+
+	% Get the end time of the last image.
         function TimeEnd=get.TimeEnd(CameraObj)
             if CameraObj.checkIfConnected
                TimeEnd = CameraObj.Handle.TimeEnd;
                CameraObj.LastError = CameraObj.Handle.LastError;
             end
         end
-        
+
+	% Get the gain value of the camera
         function Gain=get.Gain(CameraObj)
            if CameraObj.checkIfConnected
               Gain = CameraObj.Handle.Gain;
               CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
-        
+
+        % Set the gain value of the camera
         function set.Gain(CameraObj,Gain)
            if CameraObj.checkIfConnected
                CameraObj.LogFile.writeLog(sprintf('call set.Gain. Gain=%f',Gain))
@@ -288,7 +333,7 @@ classdef camera < handle
                CameraObj.LastError = CameraObj.Handle.LastError;
            end
         end
-        
+
         % ROI - assuming that this is what the SDK calls "Resolution"
         function set.ROI(CameraObj,roi)
             % resolution is [x1,y1,sizex,sizey]
@@ -301,9 +346,9 @@ classdef camera < handle
            end
         end
 
+	% Get the offset value, i.e. the bias level of the camera. Values are unique to this system
         function Offset=get.Offset(CameraObj)
            if CameraObj.checkIfConnected
-              % Offset seems to be a sort of bias, black level
               Offset = CameraObj.Handle.Offset;
               CameraObj.LastError = CameraObj.Handle.LastError;
            end

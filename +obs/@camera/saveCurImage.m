@@ -8,13 +8,19 @@ function saveCurImage(CameraObj)
 
 
    % Construct image name   
+   ProjectName = 'LAST';
    ImageDate = datestr(CameraObj.TimeStart,'yyyymmdd.HHMMSS.FFF');
    ObservatoryNode = obs.util.config.readSystemConfigFile('ObservatoryNode');
    MountGeoName = obs.util.config.readSystemConfigFile('MountGeoName');
+   FieldID = [CameraObj.Object,'.',CameraObj.CCDnum];
+   ImLevel = 'raw';
+   ImSubLevel = 'n';
+   ImProduct = 'im';
+   ImVersion = '1';
 
    % Image name legend:    LAST.Node.mount.camera_YYYYMMDD.HHMMSS.FFF_Filter_CCDnum_ImType.fits
    % Image name example:   LAST.1.1.e_20200603.063549.030_clear_0_science.fits
-   CameraObj.LastImageName = obs.util.config.constructImageName(ObservatoryNode, MountGeoName, CameraObj.CamGeoName, ImageDate, CameraObj.Filter, CameraObj.CCDnum, CameraObj.ImType, CameraObj.ImageFormat);
+   CameraObj.LastImageName = obs.util.config.constructImageName(ProjectName, ObservatoryNode, MountGeoName, CameraObj.CamGeoName, ImageDate, CameraObj.Filter, FieldID, CameraObj.ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, CameraObj.ImageFormat);
 
 %    % Name with serial number - OBSELETE?
 %    SerialNum = CameraObj.LastImageSearialNum + 1;
