@@ -6,12 +6,19 @@ function saveCurImage(CameraObj)
    cd(DirName);
    CameraObj.LogFile.writeLog(sprintf('cd %s',DirName))
 
+   ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
+   ConfigMount=obs.util.config.read_config_file('/home/last/config/config.mount.txt');
 
    % Construct image name   
    ProjectName = 'LAST';
    ImageDate = datestr(CameraObj.TimeStart,'yyyymmdd.HHMMSS.FFF');
-   ObservatoryNode = obs.util.config.readSystemConfigFile('ObservatoryNode');
-   MountGeoName = obs.util.config.readSystemConfigFile('MountGeoName');
+   % Old config file reading (before Dec 2020):
+%    ObservatoryNode = obs.util.config.readSystemConfigFile('ObservatoryNode');
+%    MountGeoName = obs.util.config.readSystemConfigFile('MountGeoName');
+   % New config file reading (after Dec 2020):
+   ObservatoryNode = ConfigNode.ObservatoryNode;
+   MountGeoName = ConfigMount.MountGeoName;
+
    FieldID = [CameraObj.Object,'.',CameraObj.CCDnum];
    ImLevel = 'raw';
    ImSubLevel = 'n';

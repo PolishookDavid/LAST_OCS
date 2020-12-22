@@ -5,7 +5,13 @@ function DirName = constructDirName(DirType)
    if (strcmpi(DirType, 'raw') || strcmpi(DirType, 'proc') || strcmpi(DirType, 'log') || strcmpi(DirType, 'cat'))
 
       % Directory name of 6Tb disk
-      BaseDir = obs.util.config.readSystemConfigFile('ImagesBaseDir');
+      % Old config file reading (before Dec 2020):
+%      BaseDir = obs.util.config.readSystemConfigFile('ImagesBaseDir');
+      % New config file reading (after Dec 2020):
+      Config=obs.util.config.read_config_file('/home/last/config/config.node.txt');
+      BaseDir = Config.ImagesBaseDir;
+
+      
       %BaseDir = '/media/last/data2/';
       if (exist(BaseDir,'dir'))
          % Construct daily directory - new version: YYYY/MM/DD/TYPE/

@@ -49,23 +49,13 @@ classdef focuser <handle
         % constructor and destructor
         function Focuser=focuser(varargin)
 
-           DirName = obs.util.config.constructDirName('log');
-           cd(DirName);
-
-           % Opens Log for the camera
-           Focuser.LogFile = logFile;
-           Focuser.LogFile.Dir = DirName;
-           Focuser.LogFile.FileNameTemplate = 'LAST_%s.log';
-           Focuser.LogFile.logOwner = sprintf('%s.%s.%s_%s_Foc', ...
-                                  obs.util.config.readSystemConfigFile('ObservatoryNode'), obs.util.config.readSystemConfigFile('MountGeoName'), obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
-
            if (isempty(varargin))
               Answer = input('Is the mirror unlocked? [y/n]\n', 's');
               if strcmpi(Answer,'y')
                  Focuser.Handle=inst.CelestronFocuser;
               else
                  if Focuser.Verbose, fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n'); end
-                 Focuser.LogFile.writeLog('Release the mirror of the telescope using the two black nobs at the bottom!!!')
+%                 Focuser.LogFile.writeLog('Release the mirror of the telescope using the two black nobs at the bottom!!!')
                  delete(Focuser);
               end
            else

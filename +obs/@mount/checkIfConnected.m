@@ -8,7 +8,9 @@ function flag=checkIfConnected(MountObj, Text)
       % Camera is connected, continue with no action
    else
       % Keep an error message
-      MountObj.LastError = ['Warnning: Mount ', obs.util.readSystemConfigFile('MountGeoName'), ' is disconnected. ', Text];
+      ConfigMount=obs.util.config.read_config_file('/home/last/config/config.mount.txt');
+      MountObj.LastError = ['Warnning: Mount ', ConfigMount.MountGeoName, ' is disconnected. ', Text];
+%      MountObj.LastError = ['Warnning: Mount ', obs.util.readSystemConfigFile('MountGeoName'), ' is disconnected. ', Text];
    end
    
    

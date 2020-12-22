@@ -192,8 +192,13 @@ classdef camera < handle
             CameraObj.LastError = CameraObj.Handle.LastError;
 
             % Update filter and ccd number from config file
-            CameraObj.Filter = obs.util.config.readSystemConfigFile('Filter');
-            CameraObj.CCDnum = obs.util.config.readSystemConfigFile('CCDnum');
+            % Old config file reading (before Dec 2020):
+%             CameraObj.Filter = obs.util.config.readSystemConfigFile('Filter');
+%             CameraObj.CCDnum = obs.util.config.readSystemConfigFile('CCDnum');
+            % New config file reading (after Dec 2020):
+            Config=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
+            CameraObj.Filter = Config.Filter;
+            CameraObj.CCDnum = Config.CCDnum;
 
         end
 

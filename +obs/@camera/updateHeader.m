@@ -33,8 +33,14 @@ function Header=updateHeader(CameraObj)
       FocPos = CameraObj.HandleFocuser.Pos;
       FocPrevPos = CameraObj.HandleFocuser.LastPos;
    end
+   
+   ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
+   ObservatoryNode = ConfigNode.ObservatoryNode;
 
-   Instrument = sprintf('LAST.%s.%s.%s', obs.util.config.readSystemConfigFile('ObservatoryNode'), MountGeoName, CameraObj.CamGeoName); % 'LAST.node.mount.camera'
+   % Old config file reading (before Dec 2020):
+%   Instrument = sprintf('LAST.%s.%s.%s', obs.util.config.readSystemConfigFile('ObservatoryNode'), MountGeoName, CameraObj.CamGeoName); % 'LAST.node.mount.camera'
+   % New config file reading (after Dec 2020):
+   Instrument = sprintf('LAST.%s.%s.%s', ObservatoryNode, MountGeoName, CameraObj.CamGeoName); % 'LAST.node.mount.camera'
    Header = {'NAXIS',2,'number of axes';...
               'NAXIS1',size(CameraObj.LastImage,2),'size of axis 1 (X)';...
               'NAXIS2',size(CameraObj.LastImage,1),'size of axis 2 (Y)';...

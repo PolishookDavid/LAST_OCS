@@ -1,9 +1,12 @@
-
-
 function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
     % Open the connection with a specific camera.
     %  CameraNum: int, number of the camera to open (as enumerated by the SDK)
     %     May be omitted. In that case the last camera is referred to
+
+    % Read configure files:
+    ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
+    ConfigMount=obs.util.config.read_config_file('/home/last/config/config.mount.txt');
+    ConfigCam=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
 
     % Patch! More than one connection to the camera make matlab stuck while
     % reading out the first image taken. Do NOT allow a second connection. 
@@ -102,21 +105,35 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
                 CameraObj.CamModel = CameraObj.Handle.CameraName(1:strfind(CameraObj.Handle.CameraName, '-')-1);
             end
             
-            % Choose an arbitrary high number larger than 2 as the number
-            % of connected cameras
-            NumOfCamerasConnected = 5;
-
             % get names of all cameras connected to the computer
-            for Icam=1:1:NumOfCamerasConnected
-               CamUniqueNames{Icam} = obs.util.config.readSystemConfigFile(['CamUniqueName',num2str(Icam)]);
-
-               % Associate Matlab's camera object with physical camera
-               if (strcmp(CameraObj.CamUniqueName, CamUniqueNames{Icam}))
-                  CameraObj.CamGeoName = num2str(Icam);
+            % New config file reading (after Dec 2020)
+            Fields = fieldnames(ConfigCam);
+            for Icam=1:1:length(fieldnames(ConfigCam))
+               if(contains(Fields{Icam}, 'CamUniqueName'))
+                  if (strcmp(CameraObj.CamUniqueName, eval(['ConfigCam.', Fields{Icam}])))
+                     CameraObj.CamGeoName = num2str(Icam);
+                  end
                end
             end
+
+
+            % Old config file reading (before Dec 2020):
+
+%             % Choose an arbitrary high number larger than 2 as the number
+%             % of connected cameras
+%             NumOfCamerasConnected = 5;
+%             for Icam=1:1:NumOfCamerasConnected
+%                % Old config file reading (before Dec 2020):
+%                CamUniqueNames{Icam} = obs.util.config.readSystemConfigFile(['CamUniqueName',num2str(Icam)]);
+%                % Associate Matlab's camera object with physical camera
+%                if (strcmp(CameraObj.CamUniqueName, CamUniqueNames{Icam}))
+%                   CameraObj.CamGeoName = num2str(Icam);
+%                end
+%             end
+            
             if (strcmp(CameraObj.CamGeoName, ''))
-               fprintf('Cannot recognize the camera %s. It does not appear in the config file: ~/config/ObsSystemConfig.txt\n', CameraObj.CamUniqueName)
+%               fprintf('Cannot recognize the camera %s. It does not appear in the config file: ~/config/ObsSystemConfig.txt\n', CameraObj.CamUniqueName)
+               fprintf('Cannot recognize the camera %s. It does not appear in the config file: ~/config/config.camera.txt\n', CameraObj.CamUniqueName)
             end
             
             
@@ -142,19 +159,29 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
 
            CameraObj.LogFile = logFile;
            CameraObj.LogFile.Dir = DirName;
+% Old version for LogFile name:
 %            CameraObj.LogFile.FileNameTemplate = 'LAST_%s.log';
 %            CameraObj.LogFile.logOwner = sprintf('%s.%s_%s_Cam', ...
 %                      obs.util.config.readSystemConfigFile('ObservatoryNode'),...
 %                      obs.util.config.readSystemConfigFile('MountGeoName'),...
 %                      DirName(end-7:end));
            CameraObj.LogFile.FileNameTemplate = '%s';
+%            CameraObj.LogFile.logOwner = obs.util.config.constructImageName('LAST', ...
+%                                                            obs.util.config.readSystemConfigFile('ObservatoryNode'),...
+%                                                            obs.util.config.readSystemConfigFile('MountGeoName'),...
+%                                                            CameraObj.CamGeoName, datestr(now,'yyyymmdd.HHMMSS.FFF'), ...
+%                                                            obs.util.config.readSystemConfigFile('Filter'),...
+%                                                            '',      '',     'log',   '',         '',        '1',       'log');
+% % legend:                                                  FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat
+
            CameraObj.LogFile.logOwner = obs.util.config.constructImageName('LAST', ...
-                                                           obs.util.config.readSystemConfigFile('ObservatoryNode'),...
-                                                           obs.util.config.readSystemConfigFile('MountGeoName'),...
+                                                           ConfigNode.ObservatoryNode,...
+                                                           ConfigMount.MountGeoName,...
                                                            CameraObj.CamGeoName, datestr(now,'yyyymmdd.HHMMSS.FFF'), ...
-                                                           obs.util.config.readSystemConfigFile('Filter'),...
+                                                           CameraObj.Filter,...
                                                            '',      '',     'log',   '',         '',        '1',       'log');
 % legend:                                                  FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat
+
             CameraObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
             CameraObj.LogFile.writeLog('Camera connected:')
             CameraObj.LogFile.writeLog(sprintf('- CamType: %s',CameraObj.CamType))

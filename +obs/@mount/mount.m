@@ -83,22 +83,7 @@ classdef mount <handle
 
     methods
         % constructor and destructor
-        function MountObj=mount()
-       
-           % Construct directory for log file
-           DirName = obs.util.config.constructDirName('log');
-           cd(DirName);
-
-           % Opens Log for the mount
-           MountObj.LogFile = logFile;
-           MountObj.LogFile.Dir = DirName;
-           MountObj.LogFile.FileNameTemplate = 'LAST_%s.log';
-           MountObj.LogFile.logOwner = sprintf('%s.%s.%s_%s_Mount', ...
-                                       obs.util.config.readSystemConfigFile('ObservatoryNode'),...
-                                       obs.util.config.readSystemConfigFile('MountGeoName'),...
-                                       obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
-
-            
+        function MountObj=mount()                   
            % Open a driver object for the mount
            MountObj.Handle=inst.iOptronCEM120();
         end
