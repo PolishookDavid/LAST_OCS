@@ -6,9 +6,38 @@
 %          CameraNum, number of camera to connect with, 1 (default) or 2.
 % Output : A camera class
 %     By :
-% Example: C = obs.camera;
-%          C = obs.camera('QHY');
-%          C = obs.camera('ZWO', 2);
+% Example: C = obs.camera;              % default is 'QHY'
+%          C = obs.camera('QHY');       % With name of camera type
+%          C = obs.camera('ZWO', 2);    % with number of camera 
+%
+% Settings parameters options:
+%       C.ExpTime = 1;        % In seconds
+%       C.Temperature = 0;    % In Celsius
+%       C.CoolingPower = 1;   % On or off
+%       C.ImType = 'sci';     % Sci, flat, bias, dark
+%       C.Object = 'Jupiter'; % Name of object or field for header
+%       C.SaveOnDisk = true;  % To save the image, otherwise: false;
+%       C.Display    = 'ds9'; % the software to display the image: ds9, matlab or ''
+%       C.DisplayZoom = 0.5;  % decides the zoom ratio to display the image.
+%                           % 'All' will present all image
+%       C.DisplayReducedIm = true; % Remove the dark and flat field before display
+%       C.Handle;             % Direct excess to the driver object
+
+%
+% Methods:
+%       C.connect;          % Connect to the driver and camera. Options:
+%       C.connect(CameraNum, MountHn, FocusHn);
+%                           % Connect to specific camera, and drivers of
+%                           the mount and focuser.
+%       C.takeExposure;     % Take an exposure using ExpTime property
+%       C.takeExposure(10); % Take an exposure with 10 seconds
+%       C.abort;            % Abort an exposure
+%       C.saveCurImage;     % Save last image to disk
+%       C.displayImage;     % Display the last image
+%       C.coolinOn(Temperature);     % Operate cooling to Temperature
+%       C.coolinOff;        % Shut down cooling
+%       C.waitFinish;       % Wait for camera status to be Idle
+%
 %
 % Author: David Polishook, Mar 2020
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -29,7 +58,7 @@ classdef camera < handle
         ExpTime=1;
 
 	% Temperature of the camera
-        Temperature  % DP -> Put NAN if unknown.
+        Temperature = NaN;  % DP -> Put NAN if unknown.
 	% The cooling power precentage of the camera
         CoolingPower = NaN;
 
@@ -73,6 +102,14 @@ classdef camera < handle
         Display    = 'ds9'; %'';
 	% When presenting image in matlab, on what figure number to present
         DisplayMatlabFig = 0; % Will be updated after first image
+    % Display the entire image, using ds9.zoom
+        DisplayAllImage = true;
+    % Desired value for ds9.zoom to zoom-in/out
+        DisplayZoom = 0.08;
+    % Value for ds9.zoom, to present the entire image
+        DisplayZoomValueAllImage = 0.08;
+    % Remove the dark and flat field before display
+        DisplayReducedIm = true;
 
 	% Perhaps obselete. Keep here until we sure it should be removed
         CCDnum = 0;         % ???? 
@@ -111,6 +148,9 @@ classdef camera < handle
     end
     
     properties (Hidden,Transient)
+        % A messenger class to comunicate with other computers and matlab
+        % instances. See: LAST_Messaging/obs.util.Messenger/@Messenger
+%        Messenger;
         % Handle to camera driver class
         Handle;
         % Handle to mount driver class
@@ -292,14 +332,14 @@ classdef camera < handle
 
 	% Set the exposure time for the next exposure. In seconds
         function set.ExpTime(CameraObj,ExpTime)
-	   if (ExpTime <= CameraObj.MaxExpTime)
+	       if (ExpTime <= CameraObj.MaxExpTime)
               if CameraObj.checkIfConnected
                  CameraObj.LogFile.writeLog(sprintf('call set.ExpTime. ExpTime=%f',ExpTime))
                  CameraObj.Handle.ExpTime = ExpTime;
                  CameraObj.LastError = CameraObj.Handle.LastError;
               end
-	   else
-	      CameraObj.LastError = 'Exposure time is too long. Probably a mistake. Did not change time';
+           else
+	          CameraObj.LastError = 'Exposure time is too long. Probably a mistake. Did not change time';
            end
         end
 
@@ -446,6 +486,25 @@ classdef camera < handle
 %              end
               CameraObj.LogFile.writeLog(LastError)
               if CameraObj.Verbose, fprintf('%s\n', LastError); end
+           end
+        end
+        
+        % Set the display zoom value
+        function set.DisplayZoom(CameraObj,ZoomValue)
+           if (strcmp(ZoomValue,'All'))
+              ZoomValue = CameraObj.DisplayZoomValueAllImage;
+              CameraObj.DisplayAllImage = true;
+           else
+              CameraObj.DisplayAllImage = false;
+           end
+           CameraObj.DisplayZoom = ZoomValue;
+        end
+
+        % Set the DisplayAllImage flag
+        function set.DisplayAllImage(CameraObj,Flag)
+           CameraObj.DisplayAllImage = Flag;
+           if(Flag)
+              CameraObj.DisplayZoomValue = CameraObj.DisplayZoomValueAllImage;
            end
         end
 

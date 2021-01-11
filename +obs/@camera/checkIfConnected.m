@@ -8,7 +8,7 @@ function flag=checkIfConnected(CameraObj, Text)
       % Camera is connected, continue with no action
    else
       % Keep an error message
-      CameraObj.LastError = ['Warnning: Camera is disconnected. ', Text];
+      CameraObj.LastError = ['Warning: Camera is disconnected. ', Text];
    end
    
    

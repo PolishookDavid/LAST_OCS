@@ -175,8 +175,8 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
 % % legend:                                                  FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat
 
            CameraObj.LogFile.logOwner = obs.util.config.constructImageName('LAST', ...
-                                                           ConfigNode.ObservatoryNode,...
-                                                           ConfigMount.MountGeoName,...
+                                                           num2str(ConfigNode.ObservatoryNode),...
+                                                           num2str(ConfigMount.MountGeoName),...
                                                            CameraObj.CamGeoName, datestr(now,'yyyymmdd.HHMMSS.FFF'), ...
                                                            CameraObj.Filter,...
                                                            '',      '',     'log',   '',         '',        '1',       'log');
@@ -191,11 +191,13 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
             CameraObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
             
         else
-           CameraObj.LastError = CameraObj.Handle.LastError;
+           if CameraObj.Verbose, fprintf('>>>>> CANNOT CONNECT TO THE CAMERA <<<<<\n'); end
+%           CameraObj.LastError = CameraObj.Handle.LastError;
         end
     else
        success = false;
-       CameraObj.LastError = "A second connecting procedure is NOT allowed";
+       if CameraObj.Verbose, fprintf('>>>>> A second connecting procedure is NOT allowed <<<<<\n'); end
+%       CameraObj.LastError = "A second connecting procedure is NOT allowed";
     end
    
    

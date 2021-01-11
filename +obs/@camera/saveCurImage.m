@@ -16,10 +16,10 @@ function saveCurImage(CameraObj)
 %    ObservatoryNode = obs.util.config.readSystemConfigFile('ObservatoryNode');
 %    MountGeoName = obs.util.config.readSystemConfigFile('MountGeoName');
    % New config file reading (after Dec 2020):
-   ObservatoryNode = ConfigNode.ObservatoryNode;
-   MountGeoName = ConfigMount.MountGeoName;
+   ObservatoryNode = num2str(ConfigNode.ObservatoryNode);
+   MountGeoName = num2str(ConfigMount.MountGeoName);
 
-   FieldID = [CameraObj.Object,'.',CameraObj.CCDnum];
+   FieldID = [CameraObj.Object,'.',num2str(CameraObj.CCDnum)];
    ImLevel = 'raw';
    ImSubLevel = 'n';
    ImProduct = 'im';

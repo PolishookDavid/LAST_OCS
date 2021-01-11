@@ -72,8 +72,8 @@ PlotMinMarker = 'p';
 
 
 InPar = inputParser;
-addOptional(InPar,'FocusGuess',30050);  
-addOptional(InPar,'HalfRange',50);  
+addOptional(InPar,'FocusGuess',26000);  
+addOptional(InPar,'HalfRange',200);  
 addOptional(InPar,'Step',25);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  

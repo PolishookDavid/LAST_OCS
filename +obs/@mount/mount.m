@@ -5,7 +5,69 @@
 % Input  : none.
 % Output : A mount class
 %     By :
-% Example: M = obs.mount;
+% Example:  M = obs.mount;
+%
+% Settings parameters options:
+%     M.connect;      % Connect to the driver and mount controller
+%     M.goto(10,50)   % Send telescope to RA & Dec in degrees
+%     M.goto(10,50,'InCooType','a');  % Send telescope to Az & Alt in degrees
+%     M.goto('10:00:00','+50:00:00'); % Send telescope to RA & Dec in hours and degrees
+%     M.goto('M31');                  % Send to known target in SIMBAD catalog
+%     M.goto('9804;',[],'NameServer','jpl'); % Send to known moving target in JPL catalog
+%     M.abort;                        % Abort telescope motion
+%     M.track;                        % Operate tracking in sidereal rate
+%     M.track(val);                   % Operate tracking in rate val in units of degrees/sec
+%     M.home;                         % Send telescope home position.
+%     M.park;                         % Send telescope to park position.
+%     M.park(false);                  % Release telescope from park position.
+%     M.waitFinish;                   % Wait for mount to complete slewing
+%
+%     M.Handle;             % Direct excess to the driver object
+%
+% Author: David Polishook, Mar 2020
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Camera control handle class (for QHY and ZWO CMOS detectors) 
+% Package: +obs
+% Description: operate camera drivers.
+%              Currently can work with QHY and ZWO detectors
+% Input  : CameraType, 'QHY' (default) or 'ZWO'.
+%          CameraNum, number of camera to connect with, 1 (default) or 2.
+% Output : A camera class
+%     By :
+% Example: C = obs.camera;              % default is 'QHY'
+%          C = obs.camera('QHY');       % With name of camera type
+%          C = obs.camera('ZWO', 2);    % with number of camera 
+%
+% Settings parameters options:
+%       C.ExpTime = 1;        % In seconds
+%       C.Temperature = 0;    % In Celsius
+%       C.CoolingPower = 1;   % On or off
+%       C.ImType = 'sci';     % Sci, flat, bias, dark
+%       C.Object = 'Jupiter'; % Name of object or field for header
+%       C.SaveOnDisk = true;  % To save the image, otherwise: false;
+%       C.Display    = 'ds9'; % the software to display the image: ds9, matlab or ''
+%       C.DisplayZoom = 0.5;  % decides the zoom ratio to display the image.
+%                           % 'All' will present all image
+%       C.DisplayReducedIm = true; % Remove the dark and flat field before display
+%       C.Handle;             % Direct excess to the driver object
+
+%
+% Methods:
+%       C.connect;          % Connect to the driver and camera. Options:
+%       C.connect(CameraNum, MountHn, FocusHn);
+%                           % Connect to specific camera, and drivers of
+%                           the mount and focuser.
+%       C.takeExposure;     % Take an exposure using ExpTime property
+%       C.takeExposure(10); % Take an exposure with 10 seconds
+%       C.abort;            % Abort an exposure
+%       C.saveCurImage;     % Save last image to disk
+%       C.displayImage;     % Display the last image
+%       C.coolinOn(Temperature);     % Operate cooling to Temperature
+%       C.coolinOff;        % Shut down cooling
+%       C.waitFinish;       % Wait for camera status to be Idle
+%
 %
 % Author: David Polishook, Mar 2020
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -85,7 +147,9 @@ classdef mount <handle
         % constructor and destructor
         function MountObj=mount()                   
            % Open a driver object for the mount
-           MountObj.Handle=inst.iOptronCEM120();
+%           MountObj.Handle=inst.iOptronCEM120();
+           % Open a driver object for the Xerxes mount
+           MountObj.Handle=inst.XerxesMount();
         end
         
         function delete(MountObj)

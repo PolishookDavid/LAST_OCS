@@ -42,11 +42,11 @@ function [RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
 %          - A structure containing the intermidiate values.
 % License: GNU general public license version 3
 %     By : David Polishook                    Feb 2020
-% Example: [DistRA,DistDec,Aux]=mount.GoTo(10,50)
-%          mount.GoTo(10,50,'InCooType','a')
-%          mount.GoTo('10:00:00','+50:00:00');
-%          mount.GoTo('M31');
-%          mount.GoTo('9804;',[],'NameServer','jpl')
+% Example: [DistRA,DistDec,Aux]=mount.goto(10,50)
+%          mount.goto(10,50,'InCooType','a')
+%          mount.goto('10:00:00','+50:00:00');
+%          mount.goto('M31');
+%          mount.goto('9804;',[],'NameServer','jpl')
 %--------------------------------------------------------------------------
 
 RAD = 180./pi;

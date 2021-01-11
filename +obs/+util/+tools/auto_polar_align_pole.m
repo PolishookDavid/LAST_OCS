@@ -124,10 +124,10 @@ for Iha=1:1:Nha
     
     [Res(Iha).PolarisX, Res(Iha).PolarisY]=ds9.coo2xy(InPar.PolarisRA, InPar.PolarisDec);
     [Res(Iha).CelPoleX, Res(Iha).CelPoleY]=ds9.coo2xy(0, 90.*sign(InPar.PoleDec));
-    Res(Iha).PolarisX = Res(Iha).PolarisX +3000;
-    Res(Iha).PolarisY = Res(Iha).PolarisY +3000;
-    Res(Iha).CelPoleX = Res(Iha).CelPoleX +3000;
-    Res(Iha).CelPoleY = Res(Iha).CelPoleY +3000;
+    Res(Iha).PolarisX = Res(Iha).PolarisX; % +3000;
+    Res(Iha).PolarisY = Res(Iha).PolarisY; % +3000;
+    Res(Iha).CelPoleX = Res(Iha).CelPoleX; % +3000;
+    Res(Iha).CelPoleY = Res(Iha).CelPoleY; % +3000;
     
     % identify the [X,Y] position of Polaris in the images
     %W = ClassWCS.populate(S);
