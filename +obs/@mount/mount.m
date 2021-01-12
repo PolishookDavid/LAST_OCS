@@ -26,51 +26,6 @@
 %
 % Author: David Polishook, Mar 2020
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-% Camera control handle class (for QHY and ZWO CMOS detectors) 
-% Package: +obs
-% Description: operate camera drivers.
-%              Currently can work with QHY and ZWO detectors
-% Input  : CameraType, 'QHY' (default) or 'ZWO'.
-%          CameraNum, number of camera to connect with, 1 (default) or 2.
-% Output : A camera class
-%     By :
-% Example: C = obs.camera;              % default is 'QHY'
-%          C = obs.camera('QHY');       % With name of camera type
-%          C = obs.camera('ZWO', 2);    % with number of camera 
-%
-% Settings parameters options:
-%       C.ExpTime = 1;        % In seconds
-%       C.Temperature = 0;    % In Celsius
-%       C.CoolingPower = 1;   % On or off
-%       C.ImType = 'sci';     % Sci, flat, bias, dark
-%       C.Object = 'Jupiter'; % Name of object or field for header
-%       C.SaveOnDisk = true;  % To save the image, otherwise: false;
-%       C.Display    = 'ds9'; % the software to display the image: ds9, matlab or ''
-%       C.DisplayZoom = 0.5;  % decides the zoom ratio to display the image.
-%                           % 'All' will present all image
-%       C.DisplayReducedIm = true; % Remove the dark and flat field before display
-%       C.Handle;             % Direct excess to the driver object
-
-%
-% Methods:
-%       C.connect;          % Connect to the driver and camera. Options:
-%       C.connect(CameraNum, MountHn, FocusHn);
-%                           % Connect to specific camera, and drivers of
-%                           the mount and focuser.
-%       C.takeExposure;     % Take an exposure using ExpTime property
-%       C.takeExposure(10); % Take an exposure with 10 seconds
-%       C.abort;            % Abort an exposure
-%       C.saveCurImage;     % Save last image to disk
-%       C.displayImage;     % Display the last image
-%       C.coolinOn(Temperature);     % Operate cooling to Temperature
-%       C.coolinOff;        % Shut down cooling
-%       C.waitFinish;       % Wait for camera status to be Idle
-%
-%
-% Author: David Polishook, Mar 2020
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef mount <handle
 
     properties (Dependent)

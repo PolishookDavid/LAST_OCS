@@ -81,7 +81,7 @@ if MountObj.checkIfConnected
             start(MountObj.SlewingTimer);
 
             % Start slewing
-            MountObj.Handle.GoTo(RA, Dec, 'eq');
+            MountObj.Handle.goTo(RA, Dec, 'eq');
 
             % Get error
             MountObj.LastError = MountObj.Handle.LastError;

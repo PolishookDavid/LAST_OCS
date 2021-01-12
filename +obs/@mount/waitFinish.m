@@ -14,7 +14,7 @@ function Flag = waitFinish(MountObj)
       
    
        switch lower(Status)
-           case {'idle','tracking','home','park'}
+           case {'idle','tracking','home','park','aborted'}
 
                 if MountObj.Verbose
                     fprintf('\nSlewing is complete\n');
