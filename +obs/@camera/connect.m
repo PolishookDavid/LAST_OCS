@@ -43,41 +43,42 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
         end
 
             
+%%%%%%%% DP FEB 1        
         
-%           REMOVE THIS OLDER SECTION - DP AUG 18, 2020 
-%         
-%         if nargin==1
-%            CameraNum = 1;
-%            
-%            CameraObj.HandleMount   = [];
-%            CameraObj.HandleFocuser = [];
-%            
-%            if CameraObj.Verbose
-%                fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n');
-%            end
-%         elseif nargin==2
-%             
-%            
-%            if CameraObj.Verbose
-%                fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n');
-%            end
-%         elseif nargin >= 3
-%            % Open handle to mount
-%            CameraObj.HandleMount=MountHn;
-% %%%           MountConSuccess = CameraObj.HandleMount.connect;
-%            CameraObj.LogFile.writeLog('Camera connects to mount to get details.')
-% %%%           if(~MountConSuccess), fprintf('Failed to connect to Mount\n'); end
-%            if CameraObj.Verbose
-%                fprintf('>>>>> warning: Focuser was not connected <<<<<\n');
-%            end
-%         elseif nargin >= 4
-%             % Open handle to focuser
-%             CameraObj.HandleFocuser=FocusHn;
-% %%%            FocuserConSuccess = CameraObj.HandleFocuser.connect;
-%             CameraObj.LogFile.writeLog('Camera connects to focuser to derive details.')
-% %%%            if(~FocuserConSuccess), fprintf('Failed to connect to Focuser\n'); end
-%         end
+%          REMOVE THIS OLDER SECTION - DP AUG 18, 2020 
         
+        if nargin==1
+           CameraNum = 1;
+           
+           CameraObj.HandleMount   = [];
+           CameraObj.HandleFocuser = [];
+           
+           if CameraObj.Verbose
+               fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n');
+           end
+        elseif nargin==2
+            
+           
+           if CameraObj.Verbose
+               fprintf('>>>>> warning: Mount and focuser were not connected <<<<<\n');
+           end
+        elseif nargin >= 3
+           % Open handle to mount
+           CameraObj.HandleMount=MountHn;
+           MountConSuccess = CameraObj.HandleMount.connect;
+%%%           CameraObj.LogFile.writeLog('Camera connects to mount to get details.')
+%%%           if(~MountConSuccess), fprintf('Failed to connect to Mount\n'); end
+           if CameraObj.Verbose
+               fprintf('>>>>> warning: Focuser was not connected <<<<<\n');
+           end
+        elseif nargin >= 4
+            % Open handle to focuser
+            CameraObj.HandleFocuser=FocusHn;
+            FocuserConSuccess = CameraObj.HandleFocuser.connect;
+%%%            CameraObj.LogFile.writeLog('Camera connects to focuser to derive details.')
+%%%            if(~FocuserConSuccess), fprintf('Failed to connect to Focuser\n'); end
+        end
+%%%%%%%% DP FEB 1        
         % Connect to camera
         success = CameraObj.Handle.connect(CameraNum);
         CameraObj.IsConnected = success;

@@ -1,6 +1,6 @@
 function [RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
 % Send mount to coordinates/name
-% Package: mount
+% Package: @mount
 % Description: Send mount to a given coordinates in some coordinate system
 %              or equinox, or an object name; convert it to euatorial coordinates
 %              that includes the atmospheric refraction correction and optional
@@ -76,9 +76,12 @@ if MountObj.checkIfConnected
          
          if (Flag)
 
-            % Start timer to notify when slewing is complete
-            MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-            start(MountObj.SlewingTimer);
+
+            % Delete calling a timer to wait for slewing complete,
+            % because a conflict with Xerexs. DP Feb 8, 2021
+%             % Start timer to notify when slewing is complete
+%             MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+%             start(MountObj.SlewingTimer);
 
             % Start slewing
             MountObj.Handle.goTo(RA, Dec, 'eq');

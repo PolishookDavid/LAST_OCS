@@ -1,5 +1,5 @@
 % mount control handle class
-% Package: +obs
+% Package: +obs/@mount
 % Description: operate mount drivers.
 %              Currently can work with Xerxes, iOptron and Celestron mounts
 % Input  : none.
@@ -32,6 +32,7 @@ classdef mount <handle
         % mount direction and motion
         RA            % Deg
         Dec           % Deg
+        HA            % Deg
         Az            % Deg
         Alt           % Deg
         TrackingSpeed % Deg/s
@@ -100,14 +101,39 @@ classdef mount <handle
 
     methods
         % constructor and destructor
-        function MountObj=mount()                   
-           % Open a driver object for the mount
-%           MountObj.Handle=inst.iOptronCEM120();
-           % Open a driver object for the Xerxes mount
-           MountObj.Handle=inst.XerxesMount();
+        function MountObj=mount(MountType)  
+            % mount class constructor
+            % Package: +obs/@mount
+            % Input  : - Mount type ['xerxes'] | 'ioptron'
+            %
+            
+            if nargin >= 1
+              % Derive mount type from the user
+              MountObj.MountType = MountType;
+            else
+              % Use Xerxes mount as default
+              MountObj.MountType = 'Xerxes';
+            end
+
+            % Open a driver object for the mount
+            switch lower(MountObj.MountType)
+                case 'xerxes'
+                    MountObj.Handle=inst.XerxesMount();
+                case 'ioptron'
+                    MountObj.Handle=inst.iOptronCEM120();
+                otherwise
+                    error('Unknown MountType');
+            end
+            
+            %if(strcmp(MountObj.MountType, 'Xerxes'))
+            %   MountObj.Handle=inst.XerxesMount();
+            %elseif(strcmp(MountObj.MountType, 'iOptron'))
+            %   MountObj.Handle=inst.iOptronCEM120();
+            %end
         end
-        
+
         function delete(MountObj)
+            % delete mount object and related sub objects
             MountObj.Handle.delete;
             % Delete the timer
             delete(MountObj.SlewingTimer);
@@ -121,6 +147,7 @@ classdef mount <handle
 
         % Get the unique serial name of the mount
         function MountUniqueName=get.MountUniqueName(MountObj)
+            % Get the unique serial name of the mount
             MountUniqueName = MountObj.MountUniqueName;
         end
 
@@ -161,9 +188,11 @@ classdef mount <handle
            if MountObj.checkIfConnected
                 if (~strcmp(MountObj.Status, 'park'))
 
-                   % Start timer to notify when slewing is complete
-                   MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-                   start(MountObj.SlewingTimer);
+                    % Delete calling a timer to wait for slewing complete,
+                    % because a conflict with Xerexs. DP Feb 8, 2021
+%                    % Start timer to notify when slewing is complete
+%                    MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+%                    start(MountObj.SlewingTimer);
 
                    MountObj.Handle.Az = Az;
                    MountObj.LastError = MountObj.Handle.LastError;
@@ -194,9 +223,11 @@ classdef mount <handle
                if (~strcmp(MountObj.Status, 'park'))
                   if (Alt >= MountObj.MinAlt)
 
-                     % Start timer to notify when slewing is complete
-                     MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-                     start(MountObj.SlewingTimer);
+                    % Delete calling a timer to wait for slewing complete,
+                    % because a conflict with Xerexs. DP Feb 8, 2021
+%                      % Start timer to notify when slewing is complete
+%                      MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+%                      start(MountObj.SlewingTimer);
 
                      MountObj.Handle.Alt = Alt;
                      MountObj.LastError = MountObj.Handle.LastError;
@@ -253,6 +284,28 @@ classdef mount <handle
            end
         end
 
+        function HA=get.HA(MountObj)
+           if MountObj.checkIfConnected
+               try
+                  HA = MountObj.Handle.HA;
+               catch
+                  pause(1);
+                  try
+                     HA = MountObj.Handle.HA;
+                  catch
+                     HA = [];
+                     MountObj.LastError = "Cannot get HA";
+                  end
+               end
+           end
+        end
+
+        function set.HA(MountObj,HA)
+           if MountObj.checkIfConnected
+              MountObj.Handle.HA = HA;
+           end
+        end
+
         function EastOfPier=get.IsEastOfPier(MountObj)
            if MountObj.checkIfConnected
                % True if east, false if west.
@@ -274,13 +327,16 @@ classdef mount <handle
 %         end
         
         function flag=get.TimeFromGPS(MountObj)
-            if MountObj.checkIfConnected
-               flag=MountObj.Handle.TimeFromGPS;
-            end
+            % At this stage - Xerxes and iOptron will read time/location from
+            % the computer, so always return false. DP Feb 2021.
+            flag = false;
+%             if MountObj.checkIfConnected
+%                flag=MountObj.Handle.TimeFromGPS;
+%             end
         end
         
         function S=get.Status(MountObj)
-            % Status of the mount: idle, slewing, park, home, tracking, unknown
+           % Status of the mount: idle, slewing, park, home, tracking, unknown
            if MountObj.checkIfConnected
                try
                   S = MountObj.Handle.Status;
@@ -300,20 +356,38 @@ classdef mount <handle
         %  using custom tracking mode, which allows the broadest range
         
         function TrackSpeed=get.TrackingSpeed(MountObj)
+           % Get the current Trackuing speed in [deg/s]
            if MountObj.checkIfConnected
               TrackSpeed = MountObj.Handle.TrackingSpeed;
            end
         end
 
         function set.TrackingSpeed(MountObj,Speed)
-           if MountObj.checkIfConnected
-              if (strcmp(Speed,'Sidereal'))
-                 Speed=MountObj.SiderealRate;
-              end
-              MountObj.Handle.TrackingSpeed = Speed;
+            % set the Tracking speed in (RA, Dec) [deg/s]
+            % Input  : - self
+            %          - [RA, Dec] tracking rate in deg/s.
+            %            Alternatively, this can be a string 'sidereal',
+            %            whicj will set the RA tracking rate to the
+            %            sidereal rate.
             
-              MountObj.LastError = MountObj.Handle.LastError;
-           end
+            if MountObj.checkIfConnected
+                if ischar(Speed)
+                    switch lower(Speed)
+                        case 'sidereal'
+                            Speed=MountObj.SiderealRate;
+                        otherwise
+                            error('Unknown Tracking rate string');
+                    end
+                end
+                    
+                %if (strcmp(Speed,'Sidereal'))
+                %    Speed=MountObj.SiderealRate;
+                %end
+                
+                MountObj.Handle.TrackingSpeed = Speed;
+
+                MountObj.LastError = MountObj.Handle.LastError;
+            end
         end
 
 % functioning parameters getters/setters & misc

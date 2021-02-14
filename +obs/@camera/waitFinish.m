@@ -3,9 +3,18 @@ function Flag = waitFinish(CameraObj)
    Flag = false;
    % Wait for 2 seconds so the previous command will start
    pause(0.01);
+   InxDot = 0;
    while(strcmp(CameraObj.CamStatus, 'exposing') || strcmp(CameraObj.CamStatus, 'reading'))
       pause(0.01);
-      if CameraObj.Verbose, fprintf('.'); end
+      if CameraObj.Verbose
+         InxDot = InxDot + 1;
+         if (mod(InxDot,100) == 0)
+            fprintf('.')
+         end
+         if (mod(InxDot,6000) == 0)
+            fprintf('\n')
+         end
+      end
    end
    pause(0.01);
    if (strcmp(CameraObj.CamStatus, 'idle'))

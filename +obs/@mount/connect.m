@@ -28,7 +28,7 @@ function success=connect(MountObj)
                                                            num2str(ConfigNode.ObservatoryNode),...
                                                            num2str(ConfigMount.MountGeoName),...
                                                            '', datestr(now,'yyyymmdd.HHMMSS.FFF'), ...
-                                                           CameraObj.Filter,...
+                                                           ConfigCam.Filter,...
                                                            '',      '',     'log',   '',         '',        '1',       'log');
 % legend:                                                  FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat
                                    
@@ -36,10 +36,16 @@ function success=connect(MountObj)
                                    
     MountObj.LogFile.writeLog('Connecting to mount.')
 
-    % Connect to the mount using its IP address
-%    MountObj.IPaddress = obs.util.config.readSystemConfigFile('MountIPaddress');
-    MountObj.IPaddress = ConfigMount.MountIPaddress;
-    success = MountObj.Handle.connect(MountObj.IPaddress);
+    % Connect to the iOptron mount using its IP address
+    if (strcmp(MountObj.MountType, 'Xerxes'))
+       Port = [];
+    elseif (strcmp(MountObj.MountType, 'iOptron'))
+       MountObj.IPaddress = ConfigMount.MountIPaddress;
+%      MountObj.IPaddress = obs.util.config.readSystemConfigFile('MountIPaddress');
+       Port = MountObj.IPaddress;
+    end
+    
+    success = MountObj.Handle.connect(Port);
     MountObj.IsConnected = success;
     
     if success
@@ -69,13 +75,15 @@ function success=connect(MountObj)
            MountObj.MountCoo.ObsLat = ConfigMount.MountLatitude;
            MountObj.MountCoo.ObsHeight = ConfigMount.MountHeight;
            MountObj.MountPos = [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat MountObj.MountCoo.ObsHeight];
-           % Update UTC clock on mount
-           MountObj.Handle.MountUTC = 'dummy';
+           % Update UTC clock on mount for iOptron
+           if(strcmp(MountObj.MountType, 'iOptron'))
+              MountObj.Handle.MountUTC = 'dummy';
+           end
         end
 
         % Read mount parking position from the config file
 %        MountObj.ParkPos = [obs.util.config.readSystemConfigFile('MountParkAz'), obs.util.config.readSystemConfigFile('MountParkAlt')];
-        MountObj.ParkPos = [ConfigMount.MountParkAz, ConfigMount.MountParkAlt)];
+        MountObj.ParkPos = [ConfigMount.MountParkAz, ConfigMount.MountParkAlt];
 
         % Read Alt minimal limitation from the config file
 %        MountObj.MinAlt = obs.util.config.readSystemConfigFile('MountMinAlt');
@@ -96,7 +104,7 @@ function success=connect(MountObj)
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
     else
 %       Text = sprintf("Mount %s is disconnected", obs.util.config.readSystemConfigFile('MountGeoName'));
-       Text = sprintf("Mount %s is disconnected", ConfigMount.MountGeoName);
+       Text = sprintf("Mount %s is disconnected", num2str(ConfigMount.MountGeoName));
        MountObj.LastError = Text;
     end
 

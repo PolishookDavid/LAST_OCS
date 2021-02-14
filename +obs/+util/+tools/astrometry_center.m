@@ -25,12 +25,12 @@ RAD = 180./pi;
 
 InPar = inputParser;
 addOptional(InPar,'CenterXY',[]);  % default is image center
-addOptional(InPar,'HalfSize',[]);  % If empty, use the entire image
+addOptional(InPar,'HalfSize',[1000]);  % If empty, use the entire image
 addOptional(InPar,'RA',[]);  % [rad]
 addOptional(InPar,'Dec',[]);  % [rad]
 addOptional(InPar,'Scale',1.25);  % [arcsec/pix]
 addOptional(InPar,'JD',[]);
-addOptional(InPar,'SecondIter',false);  
+addOptional(InPar,'SecondIter',true);  
 addOptional(InPar,'Verbose',true);  
 parse(InPar,varargin{:});
 InPar = InPar.Results;
