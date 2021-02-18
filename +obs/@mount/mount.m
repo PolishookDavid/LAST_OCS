@@ -26,7 +26,8 @@
 %
 % Author: David Polishook, Mar 2020
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-classdef mount <handle
+
+classdef mount <obs.LAST_Handle
 
     properties (Dependent)
         % mount direction and motion

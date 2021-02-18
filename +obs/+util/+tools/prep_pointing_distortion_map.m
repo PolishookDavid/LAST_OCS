@@ -20,10 +20,11 @@ function Res=prep_pointing_distortion_map(C,M,varargin)
 RAD = 180./pi;
 
 InPar = inputParser;
-addOptional(InPar,'NstepGC',12);  % number of points along great circle
+addOptional(InPar,'NstepGC',10);  % number of points along great circle
 addOptional(InPar,'MinAM',2);  
-addOptional(InPar,'AzAltLimit',[0 0; 1 45; 45 45; 46 0; 250 0; 251 70; 315 70; 320 0]);  % [deg]
+addOptional(InPar,'AzAltLimit',[0 20; 90 20; 180 20; 270 20; 360 20]);  % [deg]
 addOptional(InPar,'ExpTime',5);  
+addOptional(InPar,'PromptBeforeExp',true);  
 addOptional(InPar,'Verbose',true);  
 parse(InPar,varargin{:});
 InPar = InPar.Results;
@@ -77,6 +78,10 @@ for Itarget=1:1:Ntarget
     Res(Itarget).MountDec = M.Dec;
     Res(Itarget).MountHA  = M.HA;
   
+    if InPar.PromptBeforeExp
+        Ans = input('Press any key to start exposure','s');
+    end
+    
     %--- take image ---
     C.takeExposure;
 

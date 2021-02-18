@@ -1,4 +1,4 @@
-function [RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
+function [Flag,RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
 % Send mount to coordinates/name
 % Package: @mount
 % Description: Send mount to a given coordinates in some coordinate system
@@ -37,7 +37,8 @@ function [RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
 %            'Temp'       - Default is 15 C.
 %            'Wave'       - Default is 5500 Ang.
 %            'PressureHg' - Default is 760 mm Hg.
-% Output : - Apparent R.A.
+% Output : - Flag 0 if illegal input coordinates, 1 if ok.
+%          - Apparent R.A.
 %          - Apparent Dec.
 %          - A structure containing the intermidiate values.
 % License: GNU general public license version 3
@@ -55,19 +56,26 @@ if nargin<3
     Lat = [];
 end
 
+
+JD = celestial.time.julday;
+
+Flag = false;
+
 if MountObj.checkIfConnected
 
    % Do not slew if parking, first do unpark using MountObj.park(0)
    if (~strcmp(MountObj.Status, 'park'))
 
       % Convert input into RA/Dec [input deg, output deg]
-      [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:});
-
+      EquinoxOfDate = sprintf('J%8.3f',convert.time(JD,'JD','J'));
+      
+      [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',EquinoxOfDate);
+      
       if(~isnan(RA) && ~isnan(Dec))
 
          % check that target is visible
          % note that input is in [rad]
-         JD = celestial.time.julday;
+         
          [Flag,FlagRes,Data] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
                                                               'Lon', MountObj.MountCoo.ObsLon./RAD, ...
                                                               'Lat', MountObj.MountCoo.ObsLat./RAD, ...
@@ -77,17 +85,20 @@ if MountObj.checkIfConnected
          if (Flag)
 
 
-            % Delete calling a timer to wait for slewing complete,
-            % because a conflict with Xerexs. DP Feb 8, 2021
-%             % Start timer to notify when slewing is complete
-%             MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-%             start(MountObj.SlewingTimer);
-
             % Start slewing
             MountObj.Handle.goTo(RA, Dec, 'eq');
 
+            % compare coordinates to requested coordinates
+            
             % Get error
             MountObj.LastError = MountObj.Handle.LastError;
+
+            % Delete calling a timer to wait for slewing complete,
+            % because a conflict with Xerexs. DP Feb 8, 2021
+             % Start timer to notify when slewing is complete
+             MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+             start(MountObj.SlewingTimer);
+
          else
             if (~FlagRes.Alt)
                MountObj.LastError = 'Target Alt too low';

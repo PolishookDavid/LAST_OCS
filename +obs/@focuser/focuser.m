@@ -20,7 +20,7 @@
 %
 % Author: David Polishook, Mar 2020
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-classdef focuser <handle
+classdef focuser <obs.LAST_Handle
     
     properties
         Pos=NaN;

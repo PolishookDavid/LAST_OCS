@@ -10,14 +10,6 @@ function park(MountObj,parking)
       if (parking)
          MountObj.MinAltPrev = MountObj.MinAlt;
          MountObj.MinAlt = 0;
-
-
-         % Delete calling a timer to wait for slewing complete,
-         % because a conflict with Xerexs. DP Feb 8, 2021
-%          % Start timer to notify when slewing is complete
-%          MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-%          start(MountObj.SlewingTimer);
-
       else
          if(~isnan(MountObj.MinAltPrev))
             MountObj.MinAlt = MountObj.MinAltPrev;
@@ -26,5 +18,10 @@ function park(MountObj,parking)
       end
       MountObj.Handle.park(parking);
       MountObj.LastError = MountObj.Handle.LastError;
+
+      % Start timer to notify when slewing is complete
+      MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+      start(MountObj.SlewingTimer);
+
    end
 end

@@ -21,10 +21,10 @@ function List=hadec_grid(varargin)
 RAD = 180./pi;
 
 InPar = inputParser;
-addOptional(InPar,'NstepGC',20);  % default is image center
+addOptional(InPar,'NstepGC',10);  % default is image center
 addOptional(InPar,'MinAM',2);  % default is image center
 addOptional(InPar,'Lat',31.9);  % [deg]
-addOptional(InPar,'AzAltLimit',[250 0; 251 70; 315 70; 320 0]);  % [deg]
+addOptional(InPar,'AzAltLimit',[0 20; 90 20; 180 20; 270 20; 360 20]);  % [deg]
 
 parse(InPar,varargin{:});
 InPar = InPar.Results;

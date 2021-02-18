@@ -16,17 +16,23 @@ function success=connect(MountObj)
 %                                        obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
            
    % Read configure files:
-   ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
-   ConfigMount=obs.util.config.read_config_file('/home/last/config/config.mount.txt');
-   ConfigCam=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
+   % Old method to read config files... DP Feb 15, 2021
+%    ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
+%    ConfigMount=obs.util.config.read_config_file('/home/last/config/config.mount.txt');
+%    ConfigCam=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
+
+   ConfigNode = configfile.read_config('config.node_1.txt');
+   ConfigMount = configfile.read_config('config.mount_1_1.txt');
+   ConfigCam = configfile.read_config('config.camera_1_1_1.txt');
+
    
    % Opens Log for the mount
    MountObj.LogFile = logFile;
    MountObj.LogFile.Dir = DirName;
    MountObj.LogFile.FileNameTemplate = '%s';
    MountObj.LogFile.logOwner = obs.util.config.constructImageName('LAST', ...
-                                                           num2str(ConfigNode.ObservatoryNode),...
-                                                           num2str(ConfigMount.MountGeoName),...
+                                                           num2str(ConfigNode.NodeNumber),...
+                                                           num2str(ConfigMount.MountNumber),...
                                                            '', datestr(now,'yyyymmdd.HHMMSS.FFF'), ...
                                                            ConfigCam.Filter,...
                                                            '',      '',     'log',   '',         '',        '1',       'log');
@@ -40,7 +46,9 @@ function success=connect(MountObj)
     if (strcmp(MountObj.MountType, 'Xerxes'))
        Port = [];
     elseif (strcmp(MountObj.MountType, 'iOptron'))
-       MountObj.IPaddress = ConfigMount.MountIPaddress;
+       MountObj.IPaddress = '192.168.11.254';
+       % MountIPaddress removed from config file, DP, Feb 15 2021
+%      MountObj.IPaddress = ConfigMount.MountIPaddress;
 %      MountObj.IPaddress = obs.util.config.readSystemConfigFile('MountIPaddress');
        Port = MountObj.IPaddress;
     end
@@ -58,8 +66,8 @@ function success=connect(MountObj)
 %         MountObj.MountGeoName =            obs.util.config.readSystemConfigFile('MountGeoName');
 %         MountObj.TelescopeEastUniqueName = obs.util.config.readSystemConfigFile('TelescopeEastUniqueName');
 %         MountObj.TelescopeWestUniqueName = obs.util.config.readSystemConfigFile('TelescopeWestUniqueName');
-        MountObj.MountUniqueName =         ConfigMount.MountUniqueName;
-        MountObj.MountGeoName =            ConfigMount.MountGeoName;
+        MountObj.MountUniqueName =         ConfigMount.MountSerialNum;
+        MountObj.MountGeoName =            ConfigMount.MountNumber;
 
         % Mount location coordinates and UTC
         if (MountObj.TimeFromGPS)
@@ -71,9 +79,9 @@ function success=connect(MountObj)
 %            MountObj.MountCoo.ObsLon = obs.util.config.readSystemConfigFile('MountLongitude');
 %            MountObj.MountCoo.ObsLat = obs.util.config.readSystemConfigFile('MountLatitude');
 %            MountObj.MountCoo.ObsHeight = obs.util.config.readSystemConfigFile('MountHeight');
-           MountObj.MountCoo.ObsLon = ConfigMount.MountLongitude;
-           MountObj.MountCoo.ObsLat = ConfigMount.MountLatitude;
-           MountObj.MountCoo.ObsHeight = ConfigMount.MountHeight;
+           MountObj.MountCoo.ObsLon = ConfigMount.Long;
+           MountObj.MountCoo.ObsLat = ConfigMount.Lat;
+           MountObj.MountCoo.ObsHeight = ConfigMount.Height;
            MountObj.MountPos = [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat MountObj.MountCoo.ObsHeight];
            % Update UTC clock on mount for iOptron
            if(strcmp(MountObj.MountType, 'iOptron'))
@@ -83,15 +91,16 @@ function success=connect(MountObj)
 
         % Read mount parking position from the config file
 %        MountObj.ParkPos = [obs.util.config.readSystemConfigFile('MountParkAz'), obs.util.config.readSystemConfigFile('MountParkAlt')];
-        MountObj.ParkPos = [ConfigMount.MountParkAz, ConfigMount.MountParkAlt];
+        % Should we had to the config file MountParkAz and MountParkAlt? DP - Feb 15, 2021
+%        MountObj.ParkPos = [ConfigMount.MountParkAz, ConfigMount.MountParkAlt];
 
         % Read Alt minimal limitation from the config file
 %        MountObj.MinAlt = obs.util.config.readSystemConfigFile('MountMinAlt');
-        MountObj.MinAlt = ConfigMount.MountMinAlt;
+        MountObj.MinAlt = ConfigMount.AltLimit;
 
         % Read Alt minimal limitation map from the config file
 %        MountObj.MinAzAltMap = obs.util.config.readSystemConfigFile('MountMinAzAltMap');
-        MountObj.MinAzAltMap = ConfigMount.MountMinAzAltMap;
+        MountObj.MinAzAltMap = ConfigMount.AzAltLimi;
         
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
         MountObj.LogFile.writeLog('Details:')
@@ -104,7 +113,7 @@ function success=connect(MountObj)
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
     else
 %       Text = sprintf("Mount %s is disconnected", obs.util.config.readSystemConfigFile('MountGeoName'));
-       Text = sprintf("Mount %s is disconnected", num2str(ConfigMount.MountGeoName));
+       Text = sprintf("Mount %s is disconnected", num2str(ConfigMount.MountNumber));
        MountObj.LastError = Text;
     end
 

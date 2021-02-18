@@ -16,6 +16,7 @@ function [Res] = focus_loop(CamObj,MountObj,FocObj,SensObj,varargin)
 %            Here OCSObject is the single mount OCS object that contains
 %            the mount, camera, and focus objects.
 %            If sensor object is empty then do not use temperature.
+%            Omit SensorObj if absent
 %          * varargin is pairs of ...,key,val,... where the following keys
 %            are availble:
 %            'FocusGuess' - Best focus guess value.
@@ -63,7 +64,7 @@ function [Res] = focus_loop(CamObj,MountObj,FocObj,SensObj,varargin)
 %            .Alt         - Mount Alt [deg]
 %            .AM          - Mount airmass []
 % By: Eran Ofek          April 2020
-% Example: [FocRes] = obs.util.tools.focus_loop(C,M,F,S)
+% Example: [FocRes] = obs.util.tools.focus_loop(C,M,F,S) 
 
 RAD = 180./pi;
 
@@ -73,7 +74,7 @@ PlotMinMarker = 'p';
 
 InPar = inputParser;
 addOptional(InPar,'FocusGuess',26000);  
-addOptional(InPar,'HalfRange',240);  
+addOptional(InPar,'HalfRange',200);  
 addOptional(InPar,'Step',40);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  

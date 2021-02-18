@@ -4,9 +4,15 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
     %     May be omitted. In that case the last camera is referred to
 
     % Read configure files:
-    ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
-    ConfigMount=obs.util.config.read_config_file('/home/last/config/config.mount.txt');
-    ConfigCam=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
+   % Old method to read config files... DP Feb 15, 2021
+%     ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
+%     ConfigMount=obs.util.config.read_config_file('/home/last/config/config.mount.txt');
+     % NEED TO REPLACE THIS BY NEW CONFIG FILE BELOW
+     ConfigCam=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
+    ConfigNode = configfile.read_config('config.node_1.txt');
+    ConfigMount = configfile.read_config('config.mount_1_1.txt');
+    % NEED TO OPERATE THIS INSTEAD OF OLD CONFIG FILE ABOVE
+%    ConfigCam = configfile.read_config('config.camera_1_1_1.txt');
 
     % Patch! More than one connection to the camera make matlab stuck while
     % reading out the first image taken. Do NOT allow a second connection. 
@@ -176,8 +182,8 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
 % % legend:                                                  FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat
 
            CameraObj.LogFile.logOwner = obs.util.config.constructImageName('LAST', ...
-                                                           num2str(ConfigNode.ObservatoryNode),...
-                                                           num2str(ConfigMount.MountGeoName),...
+                                                           num2str(ConfigNode.NodeNumber),...
+                                                           num2str(ConfigMount.MountNumber),...
                                                            CameraObj.CamGeoName, datestr(now,'yyyymmdd.HHMMSS.FFF'), ...
                                                            CameraObj.Filter,...
                                                            '',      '',     'log',   '',         '',        '1',       'log');

@@ -43,7 +43,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-classdef camera < handle
+classdef camera < obs.LAST_Handle
  
     properties
 	% The status of the camera: idle, exposing, reading, unknown
@@ -237,8 +237,10 @@ classdef camera < handle
 %             CameraObj.CCDnum = obs.util.config.readSystemConfigFile('CCDnum');
             % New config file reading (after Dec 2020):
             Config=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
-            CameraObj.Filter = Config.Filter;
-            CameraObj.CCDnum = Config.CCDnum;
+            % Even newer config file reading (Feb 15 2021):
+            ConfigCam = configfile.read_config('config.camera_1_1_1.txt');
+            CameraObj.Filter = ConfigCam.Filter;
+            CameraObj.CCDnum = Config.CCDnum;  % DP - REPLACE BY READING ConfigCam
 
         end
 
@@ -302,6 +304,8 @@ classdef camera < handle
             if CameraObj.checkIfConnected
                Temp = CameraObj.Handle.Temperature;
                CameraObj.LastError = CameraObj.Handle.LastError;
+            else
+               Temp = NaN;
             end
         end
 
@@ -319,6 +323,8 @@ classdef camera < handle
             if CameraObj.checkIfConnected
                CoolingPower = CameraObj.Handle.CoolingPower;
                CameraObj.LastError = CameraObj.Handle.LastError;
+            else
+               CoolingPower = NaN;
             end
         end
 

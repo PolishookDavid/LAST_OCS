@@ -41,6 +41,9 @@ function setCoordinate(MountObj,NewRA,NewDec,MountRA,MountDec,CooSys)
 % Tested   : 12-02-2021/Eran
 
 
+% need to read this from the mount object
+%MountConfigFile = 'config.mount_1_1.txt';
+
 
 RAD = 180./pi;
 
@@ -71,6 +74,13 @@ else
     error('Illegal input arguments');
 end
 
+if ischar(NewRA)
+    NewRA = celestial.coo.convertdms(NewRA,'SH','d');
+end
+if ischar(NewDec)
+    NewDec = celestial.coo.convertdms(NewDec,'SD','d');
+end
+
 % convert coordinate systems
 switch lower(CooSys)
     case {'jdate','jnow'}
@@ -91,14 +101,6 @@ end
 % update the encoders position
 MountObj.Handle.setCoordinate(NewRA,NewDec,MountRA,MountDec);
  
-%--- write new setting to the configuration file ---
-% prepare strings of [NewRA, MountRA] for configuration file
-OffsetRAstr  = sprintf('[%12.8f %12.8f]',NewRA,MountRA);
-OffsetDecstr = sprintf('[%12.8f %12.8f]',NewDec,MountDec);
-% store the strings in the configuration file
-
-
-
 
 
 
