@@ -1,5 +1,5 @@
 function [Flag,RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
-% Send mount to coordinates/name
+% Send mount to coordinates/name and start tracking
 % Package: @mount
 % Description: Send mount to a given coordinates in some coordinate system
 %              or equinox, or an object name; convert it to euatorial coordinates

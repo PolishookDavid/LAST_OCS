@@ -5,7 +5,7 @@ function test_motion(M)
 
 RAD = 180./pi;
 
-List=obs.util.tools.hadec_grid('NstepGC',15);
+List=obs.util.tools.hadec_grid('NstepGC',10);
 N = numel(List.HA);
 
 
