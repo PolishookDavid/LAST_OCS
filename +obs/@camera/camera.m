@@ -9,6 +9,10 @@
 % Example: C = obs.camera;              % default is 'QHY'
 %          C = obs.camera('QHY');       % With name of camera type
 %          C = obs.camera('ZWO', 2);    % with number of camera 
+%          % Next connect the camera
+%          C.connect
+%          C.connect(1,M,F); % connect camera #1, with mount and focuser
+%          objects.
 %
 % Settings parameters options:
 %       C.ExpTime = 1;        % In seconds
@@ -301,6 +305,7 @@ classdef camera < obs.LAST_Handle
 
 	% Get the current temperature of the camera, in Celsius
         function Temp=get.Temperature(CameraObj)
+            % get camera temperature
             if CameraObj.checkIfConnected
                Temp = CameraObj.Handle.Temperature;
                CameraObj.LastError = CameraObj.Handle.LastError;
@@ -311,6 +316,7 @@ classdef camera < obs.LAST_Handle
 
 	% Set the temperature of the camera. Input: temperature in Celsius
         function set.Temperature(CameraObj,Temp)
+            % set camera target temperature
             if CameraObj.checkIfConnected
                CameraObj.LogFile.writeLog(sprintf('call set.Temperature. Temperature=%f',Temp))
                CameraObj.Handle.Temperature = Temp;

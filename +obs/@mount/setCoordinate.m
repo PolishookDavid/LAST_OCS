@@ -11,7 +11,7 @@ function setCoordinate(MountObj,NewRA,NewDec,MountRA,MountDec,CooSys)
 %            current mount RA. This is always given in Equinox of date.
 %          - Mount Dec [deg]. If not provided than will read from the
 %            current mount Dec. This is always given in Equinox of date.
-%          - Coordinate system of the New RA/Dec: 'J2000' | 'jdate'.
+%          - Coordinate system of the New RA/Dec: 'J2000' | 'tdate'.
 %            Default is 'J2000'.
 %            Note that the Mount RA/Dec are always in Equinox of date.
 %
@@ -54,7 +54,7 @@ elseif nargin==5
 elseif nargin==3
     MountRA  = MountObj.RA;
     MountDec = MountObj.Dec;
-    CooSys   = 'jdate';
+    CooSys   = 'J2000';
 elseif nargin==2
        
     if ischar(NewRA)
@@ -83,7 +83,7 @@ end
 
 % convert coordinate systems
 switch lower(CooSys)
-    case {'jdate','jnow'}
+    case {'tdate','jdate','jnow'}
         % do nothing
         % NewRA, NewDec are already in Equinox of date
     case {'j2000.0','j2000'}
