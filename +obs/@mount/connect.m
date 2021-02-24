@@ -25,7 +25,7 @@ function success=connect(MountObj)
 
    ConfigNode = configfile.read_config('config.node_1.txt');
    ConfigMount = configfile.read_config('config.mount_1_1.txt');
-   ConfigCam = configfile.read_config('config.camera_1_1_1.txt');
+   ConfigCam = configfile.read_config('config.camera_1_1_3.txt');
 
    
    % Opens Log for the mount
@@ -68,7 +68,7 @@ function success=connect(MountObj)
 %         MountObj.MountGeoName =            obs.util.config.readSystemConfigFile('MountGeoName');
 %         MountObj.TelescopeEastUniqueName = obs.util.config.readSystemConfigFile('TelescopeEastUniqueName');
 %         MountObj.TelescopeWestUniqueName = obs.util.config.readSystemConfigFile('TelescopeWestUniqueName');
-        MountObj.MountUniqueName =         ConfigMount.MountSerialNum;
+        MountObj.MountUniqueName =         ConfigMount.MountName;
         MountObj.MountGeoName =            ConfigMount.MountNumber;
 
         % Mount location coordinates and UTC
@@ -102,7 +102,8 @@ function success=connect(MountObj)
 
         % Read Alt minimal limitation map from the config file
 %        MountObj.MinAzAltMap = obs.util.config.readSystemConfigFile('MountMinAzAltMap');
-        MountObj.MinAzAltMap = ConfigMount.AzAltLimi;
+        MountObj.MinAzAltMap = ConfigMount.AzAltLimit;
+        %MountObj.AzAltLimit = ConfigMount.AzAltLimit;
         
         MountObj.LogFile.writeLog('~~~~~~~~~~~~~~~~~~~~~~')
         MountObj.LogFile.writeLog('Details:')

@@ -70,7 +70,7 @@ classdef mount <obs.LAST_Handle
         
         MinAlt      = 15;
         AzAltLimit  = [[0, 0];[90, 10];[180, 15];[270, 10];[360, 0]];
-        %MinAzAltMap = NaN;
+        MinAzAltMap = NaN;
         MinAltPrev = NaN;
         MeridianFlip=true; % if false, stop at the meridian limit
         MeridianLimit=92; % Test that this works as expected, no idea what happens

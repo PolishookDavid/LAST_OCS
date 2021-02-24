@@ -1,8 +1,9 @@
 function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
     % Open the connection with a specific camera.
     % Input  : - Camera object
-    %          - Camera number (as enumerated by the SDK??)
-    %            or camera address [Node, Mount, CameraID]
+    %          - Camera number (as enumerated by the SDK)
+    %            or camera address [Node, Mount, CameraID].
+    %            The camera address option works only with QHYccd.
     %          - Optional Mount object.
     %          - Optional Focus object
     % Output : - A succses flag
@@ -54,13 +55,24 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
         CameraObj.CameraModel    = Config.PhysicalCamera.CameraModel;
         CameraObj.CameraGeoName  = Config.LogicalCamera.CameraNumber;
         
+        % The following function search for all cameras (supported by the
+        % SDK) that are connected to the computer
         CameraNum = 1;
+        %Q = inst.QHYccd;
+        %AllCamNames = Q.allQHYCameraNames;
+        %%clear Q;
+        %% The camera number as refered by the SDK
+        %CameraNum = find(strcmp(AllCamNames,Config.PhysicalCamera.CameraName));
+        %if isnan(CameraNum)
+        %    error('Can not find camera %s on computer',Config.PhysicalCamera.CameraName);
+        %end
+        
     else
         
         if numel(CameraAddress)==1
             CameraNum = CameraAddress;
         else
-            CameraNum = 1;
+            CameraNum = 1;  % The camera number as refered by the SDK
         end
         CameraAddress = [NaN NaN NaN];
     end
