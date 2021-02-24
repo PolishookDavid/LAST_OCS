@@ -50,76 +50,51 @@
 classdef camera < obs.LAST_Handle
  
     properties
-	% The status of the camera: idle, exposing, reading, unknown
-        CamStatus     = 'unknown';
-
-	% The name of the last image 
-        LastImageName = '';
-	% A matrix of the last image
-        LastImage
-
-	% Exposure time
-        ExpTime=1;
-
-	% Temperature of the camera
-        Temperature = NaN;  % DP -> Put NAN if unknown.
-	% The cooling power precentage of the camera
-        CoolingPower = NaN;
-
-	% The image type: science, flat, bias, dark
-        ImType = 'sci';
-	% The name of the observed object/field
-        Object = '';
+        
+        CamStatus     = 'unknown';   % The status of the camera: idle, exposing, reading, unknown
+        LastImageName = '';          % The name of the last image 
+        LastImage                    % A matrix of the last image
+        ExpTime       = 1;           % Exposure time [s]
+        Temperature   = NaN;         % Temperature of the camera
+        CoolingPower  = NaN;         % The cooling power precentage of the camera
+        ImType        = 'sci';       % The image type: science, flat, bias, dark
+        Object        = '';          % The name of the observed object/field
     end
 
     properties(Hidden)
-	% The type of the camera (e.g. QHY)
-        CamType       = '';
-	% The model of the camera (e.g. QHY-600M-Pro)
-        CamModel      = '';
-	% Unique name of the specific camera (e.g. 9fc3db42b6306d371)
-        CamUniqueName = '';
-	% Location of the camera on the mount , to be added to the image name (i.e. 1-4)
-        CamGeoName    = '';
-	% Number of the camera  as recognized by the computer (i.e. 1-4)
-        CameraNum
+	
+        CameraType       = '';          % The type of the camera (e.g. QHY)
+        CameraModel      = '';          % The model of the camera (e.g. QHY-600M-Pro)
+        CameraName       = '';
+        %
         
-	% Camera readout mode. QHY deault of 1 determines a low readnoise
-        ReadMode = 1;
-	% The bias level mode of the camera. QHY default is 3
-        Offset = 3;
-	% The gain of the camera. QHY default is 0
-        Gain = 0;
-	% The binning of the pixels.
-        Binning=[1,1];
-	% Used filter. Currenty not implemented
-        Filter
+        % CamGeoName
+        CameraGeoName    = '';          % Location of the camera on the mount , to be added to the image name (i.e. 1-4)
+        CameraNum                    % Number of the camera  as recognized by the computer (i.e. 1-4)
+        
+        ReadMode      = 1;           % Camera readout mode. QHY deault of 1 determines a low readnoise
+        Offset        = 3;           % The bias level mode of the camera. QHY default is 3
+        Gain          = 0;           % The gain of the camera. QHY default is 0
+        Binning       =[1,1];        % The binning of the pixels.
+        MaxExpTime    = 300;        % Maximum exposure time in seconds
+        
+        Filter                       % Used filter. Currenty not implemented
 
-	% Reports if colling is on or off
-        CoolingStatus = 'unknown';
-
-	% A flag marking if the computer code is connected to the camera
-        IsConnected = false;        
-	% A flag marking if the images should be wriiten to the disk after exposure
-        SaveOnDisk = true; %false;
-	% A property defining software to present the image: 'matlab', 'ds9', or '' for no image presentation
-        Display    = 'ds9'; %'';
-	% When presenting image in matlab, on what figure number to present
-        DisplayMatlabFig = 0; % Will be updated after first image
-    % Display the entire image, using ds9.zoom
-        DisplayAllImage = true;
-    % Desired value for ds9.zoom to zoom-in/out
-        DisplayZoom = 0.08;
-    % Value for ds9.zoom, to present the entire image
-        DisplayZoomValueAllImage = 0.08;
-    % Remove the dark and flat field before display
-        DisplayReducedIm = true;
-
-	% Perhaps obselete. Keep here until we sure it should be removed
-        CCDnum = 0;         % ???? 
-
-	% The LogFile object class to handle the log of the camera
-        LogFile;
+        CoolingStatus = 'unknown';   % Reports if colling is on or off	
+        IsConnected   = false;       % A flag marking if the computer code is connected to the camera    
+	
+        SaveOnDisk    = true; %false;   % A flag marking if the images should be wriiten to the disk after exposure
+        ImageFormat = 'fits';    % The format of the written image
+        
+        Display       = 'ds9'; %'';   % A property defining software to present the image: 'matlab', 'ds9', or '' for no image presentation
+        DisplayMatlabFig = 0; % Will be updated after first image  % When presenting image in matlab, on what figure number to present
+        DisplayAllImage = true;   % Display the entire image, using ds9.zoom
+        DisplayZoom = 0.08;       % Desired value for ds9.zoom to zoom-in/out
+        DisplayZoomValueAllImage = 0.08;  % Value for ds9.zoom, to present the entire image
+        DisplayReducedIm = true;   % Remove the dark and flat field before display
+        CCDnum = 0;         % ????   % Perhaps obselete. Keep here until we sure it should be removed
+	
+        LogFile;     % The LogFile object class to handle the log of the camera
     end
 
     % Region Of Interest [X1 Y1 X_size Y_size] - currently not implemented
@@ -155,24 +130,21 @@ classdef camera < obs.LAST_Handle
         % A messenger class to comunicate with other computers and matlab
         % instances. See: LAST_Messaging/obs.util.Messenger/@Messenger
 %        Messenger;
-        % Handle to camera driver class
-        Handle;
-        % Handle to mount driver class
-        HandleMount;
-        % Handle to focuser driver class
-        HandleFocuser;
-        % A timer object to operate after exposure start,  to wait until the image is ready.
-        ReadoutTimer;
-        % The last error message
-        LastError = '';
-        % The format of the written image
-        ImageFormat = 'fits';
-	% Maximum exposure time in seconds
-	MaxExpTime = 1800;
+        
+        Handle;       % Handle to camera driver class
+        HandleMount;  % Handle to mount driver class
+        HandleFocuser;  % Handle to focuser driver class
+        ReadoutTimer;   % A timer object to operate after exposure start,  to wait until the image is ready.
+        
+        LastError = '';   % The last error message
+       
+        %ImageFormat = 'fits';    % The format of the written image
+        %MaxExpTime = 1800;  % Maximum exposure time in seconds
         % The serial number of the last image - not implemented anymore
         LastImageSearialNum = 0;
         % A flag marking if to print software printouts or not
         Verbose=true;
+        
         pImg  % pointer to the image buffer (can we gain anything in going
               %  to a double buffer model?)
               % Shall we allocate it only once on open(QC), or, like now,
@@ -182,26 +154,60 @@ classdef camera < obs.LAST_Handle
     methods
         % Constructor
         function CameraObj=camera(CamType, CameraNum)
+            % Camera object constructor
+            
+            if nargin<2
+                CameraNum = 1;
+                if nargin<1
+                    CamType = 'QHY';
+                end
+            end
+            
+            CameraObj.CameraNum   = CameraNum;
+            CameraObj.CameraType  = CamType;
+            
+            switch lower(CamType)
+                case 'qhy'
+                    CameraObj.Handle=inst.QHYccd(CameraObj.CameraNum);
+                case 'zwo'
+                    CameraObj.Handle=inst.ZWOASICamera(CameraObj.CameraNum);
+                otherwise
+                    error('Unknown CamType Option');
+            end
+            
+            CameraObj.LastError = CameraObj.Handle.LastError;
+            
+%            if nargin >= 2
+%               CameraObj.CameraNum = CameraNum;
+%               CameraObj.CamType = CamType;   % 'QHY'; % 'ZWO';
+%            elseif nargin >= 1
+%               % Use one camera as default
+%               CameraObj.CameraNum = 1;
+%               % Read model of camera
+%               if (strcmp(CamType,'QHY') || strcmp(CamType,'ZWO'))
+%                  CameraObj.CamType = CamType;   % 'QHY'; % 'ZWO';
+%               else
+%                  error('Use ZWO or QHY cameras only')
+%               end
+%            else
+%               % Use one camera as default
+%               CameraObj.CameraNum = 1;
+%               % Use QHY camera as default
+%               CameraObj.CamType = 'QHY';
+%            end
 
-           if nargin >= 2
-              CameraObj.CameraNum = CameraNum;
-              CameraObj.CamType = CamType;   % 'QHY'; % 'ZWO';
-           elseif nargin >= 1
-              % Use one camera as default
-              CameraObj.CameraNum = 1;
-              % Read model of camera
-              if (strcmp(CamType,'QHY') || strcmp(CamType,'ZWO'))
-                 CameraObj.CamType = CamType;   % 'QHY'; % 'ZWO';
-              else
-                 error('Use ZWO or QHY cameras only')
-              end
-           else
-              % Use one camera as default
-              CameraObj.CameraNum = 1;
-              % Use QHY camera as default
-              CameraObj.CamType = 'QHY';
-           end
+           
+%            % Open a driver object for the camera
+%            if(strcmp(CameraObj.CamType, 'ZWO'))
+%                CameraObj.Handle=inst.ZWOASICamera(CameraObj.CameraNum);
+%            elseif(strcmp(CameraObj.CamType, 'QHY'))
+%                CameraObj.Handle=inst.QHYccd(CameraObj.CameraNum);
+%            end
 
+            % Check if a camera was not found
+            %CameraObj.LastError = CameraObj.Handle.LastError;
+            
+            
 % % %            % Opens Log for the camera
 % % %            DirName = obs.util.config.constructDirName('log');
 % % %            cd(DirName);
@@ -225,26 +231,18 @@ classdef camera < obs.LAST_Handle
 %                     obs.util.config.readSystemConfigFile('MountGeoName'),...
 %                     obs.util.config.readSystemConfigFile('CamGeoName'), DirName(end-7:end));
 
-            % Open a driver object for the camera
-            if(strcmp(CameraObj.CamType, 'ZWO'))
-               CameraObj.Handle=inst.ZWOASICamera(CameraObj.CameraNum);
-            elseif(strcmp(CameraObj.CamType, 'QHY'))
-               CameraObj.Handle=inst.QHYccd(CameraObj.CameraNum);
-            end
-
-            % Check if a camera was not found
-            CameraObj.LastError = CameraObj.Handle.LastError;
+            
 
             % Update filter and ccd number from config file
             % Old config file reading (before Dec 2020):
 %             CameraObj.Filter = obs.util.config.readSystemConfigFile('Filter');
 %             CameraObj.CCDnum = obs.util.config.readSystemConfigFile('CCDnum');
             % New config file reading (after Dec 2020):
-            Config=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
-            % Even newer config file reading (Feb 15 2021):
-            ConfigCam = configfile.read_config('config.camera_1_1_1.txt');
-            CameraObj.Filter = ConfigCam.Filter;
-            CameraObj.CCDnum = Config.CCDnum;  % DP - REPLACE BY READING ConfigCam
+%             Config=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
+%             % Even newer config file reading (Feb 15 2021):
+%             ConfigCam = configfile.read_config('config.camera_1_1_1.txt');
+%             CameraObj.Filter = ConfigCam.Filter;
+%             CameraObj.CCDnum = Config.CCDnum;  % DP - REPLACE BY READING ConfigCam
 
         end
 
@@ -257,12 +255,12 @@ classdef camera < obs.LAST_Handle
     
     methods % Getters and setters
         
-	% Get image type
+        % Get image type
         function ImType=get.ImType(CameraObj)
             ImType=CameraObj.ImType;
         end
         
-	% set image type
+        % set image type
         function set.ImType(CameraObj,ImType)
             CameraObj.ImType = ImType;
             CameraObj.LogFile.writeLog(sprintf('call set.ImType. ImType=%s',ImType))
@@ -279,7 +277,7 @@ classdef camera < obs.LAST_Handle
             CameraObj.LogFile.writeLog(sprintf('call set.Object. Object=%s', Object))
         end
 
-	% Get camera status: idle, exposing, reading, unknown
+        % Get camera status: idle, exposing, reading, unknown
         function status=get.CamStatus(CameraObj)
             status = 'unknown';
             if CameraObj.checkIfConnected
@@ -288,7 +286,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Get the camera cooling status: on, off
+        % Get the camera cooling status: on, off
         function status=get.CoolingStatus(CameraObj)
             if CameraObj.checkIfConnected
                status = CameraObj.Handle.CoolingStatus;
@@ -303,7 +301,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Get the current temperature of the camera, in Celsius
+        % Get the current temperature of the camera, in Celsius
         function Temp=get.Temperature(CameraObj)
             % get camera temperature
             if CameraObj.checkIfConnected
@@ -314,7 +312,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Set the temperature of the camera. Input: temperature in Celsius
+        % Set the temperature of the camera. Input: temperature in Celsius
         function set.Temperature(CameraObj,Temp)
             % set camera target temperature
             if CameraObj.checkIfConnected
@@ -324,7 +322,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Get the precentage of the cooling power
+        % Get the precentage of the cooling power
         function CoolingPower=get.CoolingPower(CameraObj)
             if CameraObj.checkIfConnected
                CoolingPower = CameraObj.Handle.CoolingPower;
@@ -334,7 +332,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Get the exposure time. In seconds
+        % Get the exposure time. In seconds
         function ExpTime=get.ExpTime(CameraObj)
             if CameraObj.checkIfConnected
                ExpTime = CameraObj.Handle.ExpTime;
@@ -342,7 +340,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Set the exposure time for the next exposure. In seconds
+        % Set the exposure time for the next exposure. In seconds
         function set.ExpTime(CameraObj,ExpTime)
 	       if (ExpTime <= CameraObj.MaxExpTime)
               if CameraObj.checkIfConnected
@@ -363,7 +361,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Get the end time of the last image.
+        % Get the end time of the last image.
         function TimeEnd=get.TimeEnd(CameraObj)
             if CameraObj.checkIfConnected
                TimeEnd = CameraObj.Handle.TimeEnd;
@@ -371,7 +369,7 @@ classdef camera < obs.LAST_Handle
             end
         end
 
-	% Get the gain value of the camera
+        % Get the gain value of the camera
         function Gain=get.Gain(CameraObj)
            if CameraObj.checkIfConnected
               Gain = CameraObj.Handle.Gain;
@@ -403,7 +401,7 @@ classdef camera < obs.LAST_Handle
            end
         end
 
-	% Get the offset value, i.e. the bias level of the camera. Values are unique to this system
+        % Get the offset value, i.e. the bias level of the camera. Values are unique to this system
         function Offset=get.Offset(CameraObj)
            if CameraObj.checkIfConnected
               Offset = CameraObj.Handle.Offset;

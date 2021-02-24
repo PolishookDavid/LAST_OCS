@@ -68,8 +68,9 @@ classdef mount <obs.LAST_Handle
         TelescopeEastUniqueName = '';
         TelescopeWestUniqueName = '';
         
-        MinAlt = 15;
-        MinAzAltMap = NaN;
+        MinAlt      = 15;
+        AzAltLimit  = [[0, 0];[90, 10];[180, 15];[270, 10];[360, 0]];
+        %MinAzAltMap = NaN;
         MinAltPrev = NaN;
         MeridianFlip=true; % if false, stop at the meridian limit
         MeridianLimit=92; % Test that this works as expected, no idea what happens
@@ -108,13 +109,11 @@ classdef mount <obs.LAST_Handle
             % Input  : - Mount type ['xerxes'] | 'ioptron'
             %
             
-            if nargin >= 1
-              % Derive mount type from the user
-              MountObj.MountType = MountType;
-            else
-              % Use Xerxes mount as default
-              MountObj.MountType = 'Xerxes';
+            if nargin<1
+                MountType = 'Xerxes';
             end
+            MountObj.MountType = MountType;
+            
 
             % Open a driver object for the mount
             switch lower(MountObj.MountType)

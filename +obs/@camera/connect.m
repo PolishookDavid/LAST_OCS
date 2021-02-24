@@ -1,8 +1,98 @@
 function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
     % Open the connection with a specific camera.
-    %  CameraNum: int, number of the camera to open (as enumerated by the SDK)
-    %     May be omitted. In that case the last camera is referred to
+    % Input  : - Camera object
+    %          - Camera number (as enumerated by the SDK??)
+    %            or camera address [Node, Mount, CameraID]
+    %          - Optional Mount object.
+    %          - Optional Focus object
+    % Output : - A succses flag
+    % Example: C.connect([1 1 3])  % will read configuration file 1,1,3
+    %          C.connect
+    %          C.connect([1 1 3],M,F);  % supply the Mount and Focuser handles
+    % By : Eran Ofek         Feb 2021
+    
+    
+    % Identify specific camera to connect to
+    % Identified using the CameraName input argument
+    % Can be: 
+    
+    
+    if nargin<4
+        FocusHn = [];
+        if nargin<3
+            MountHn = [];
+            if nargin<2
+                CameraNum     = [];
+                %CameraAddress = [];
+            end
+        end
+    end
+    CameraAddress = CameraNum;
+    
+    CameraObj.HandleMount   = MountHn;
+    CameraObj.HandleFocuser = FocusHn;    
+    
+    
+        
+    if numel(CameraAddress)==3
+        
+        % Read Configuration file
+        % This can
+        %    Camera Observatory address : [Node Mount CameraID], where CameraID is sorted by [1=NE, 2=SE, 3=SW, 4=NW]
+        LogicalConfigFileName  = sprintf('config.camera_%d_%d_%d.txt',CameraAddress);
+        % Read logical configuration file
+        Config.LogicalCamera   = loadConfiguration(CameraObj,LogicalConfigFileName,false);
+        % Read physical camera configuration file
+        PhysicalConfigFileName = sprintf('config.%s',Config.LogicalCamera.CameraName);
+        Config.PhysicalCamera  = loadConfiguration(CameraObj,PhysicalConfigFileName,false);
+        
+        CameraObj.Config = LogicalConfigFileName;
+        % ConfigStruct
+        CameraObj.ConfigStruct.PhysicalCamera = Config.PhysicalCamera;
+        CameraObj.ConfigStruct.LogicalCamera  = Config.LogicalCamera;
+        
+        CameraObj.CameraModel    = Config.PhysicalCamera.CameraModel;
+        CameraObj.CameraGeoName  = Config.LogicalCamera.CameraNumber;
+        
+        CameraNum = 1;
+    else
+        
+        if numel(CameraAddress)==1
+            CameraNum = CameraAddress;
+        else
+            CameraNum = 1;
+        end
+        CameraAddress = [NaN NaN NaN];
+    end
+        
+    success = false;
+    
+    if CameraObj.IsConnected
+        fprintf('The camera is possibly already connected - do nothing');
+    else
+        % Connect to camera
+        success = CameraObj.Handle.connect(CameraNum);
+        CameraObj.IsConnected = success;
+        if CameraObj.Verbose
+            fprintf('>>>>> Connecting to camera <<<<<\n');
+        end
 
+        if success
+            
+            CameraObj.CameraNum   = CameraObj.Handle.CameraNum;
+            
+            
+            % Open a log file
+            CameraObj.LogFile = logFile;
+            CameraObj.LogFile.logOwner = sprintf('Camera_%d_%d_%d',CameraAddress);
+            CameraObj.LogFile.writeLog(sprintf('Connected to camera %s',CameraObj.Handle.CameraName)); %Config.PhysicalCamera.CamName);
+            CameraObj.LogFile.closeFile;
+            
+        end
+    end
+    
+        
+if 1==0
     % Read configure files:
    % Old method to read config files... DP Feb 15, 2021
 %     ConfigNode=obs.util.config.read_config_file('/home/last/config/config.node.txt');
@@ -11,6 +101,11 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
      ConfigCam=obs.util.config.read_config_file('/home/last/config/config.camera.txt');
     ConfigNode = configfile.read_config('config.node_1.txt');
     ConfigMount = configfile.read_config('config.mount_1_1.txt');
+    
+     % e.g., CameraObj.Config = 'config.camera_1_1_1.txt'
+     Config = CameraObj.loadConfiguration(CameraObj.Config,false)
+    
+    
     % NEED TO OPERATE THIS INSTEAD OF OLD CONFIG FILE ABOVE
 %    ConfigCam = configfile.read_config('config.camera_1_1_1.txt');
 
@@ -85,6 +180,10 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
 %%%            if(~FocuserConSuccess), fprintf('Failed to connect to Focuser\n'); end
         end
 %%%%%%%% DP FEB 1        
+
+
+
+
         % Connect to camera
         success = CameraObj.Handle.connect(CameraNum);
         CameraObj.IsConnected = success;
@@ -207,5 +306,9 @@ function success = connect(CameraObj, CameraNum, MountHn, FocusHn)
 %       CameraObj.LastError = "A second connecting procedure is NOT allowed";
     end
    
+end  % if 1==0
+
+
+
    
 end

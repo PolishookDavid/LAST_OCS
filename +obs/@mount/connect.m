@@ -1,5 +1,7 @@
 function success=connect(MountObj)
 % connect to a mount on the specified Port, try all ports if
+
+
 %  Port omitted
 
    % Construct directory for log file
