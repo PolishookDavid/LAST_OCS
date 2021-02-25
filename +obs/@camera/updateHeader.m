@@ -15,15 +15,15 @@ function Header=updateHeader(CameraObj)
       TrackingSpeed = NaN;
       IsCounterWeightDown = NaN;
    else
-      MountGeoName = CameraObj.HandleMount.MountGeoName;
+      MountGeoName = CameraObj.HandleMount.MountNumber;
       RA  = CameraObj.HandleMount.RA;
       Dec = CameraObj.HandleMount.Dec;
       HA  = CameraObj.HandleMount.HA;
-      LST = celestial.time.lst(JD,CameraObj.HandleMount.MountCoo.ObsLon./RAD,'a').*360;
+      LST = celestial.time.lst(JD,CameraObj.HandleMount.ObsLon./RAD,'a').*360;
       Az  = CameraObj.HandleMount.Az;
       Alt = CameraObj.HandleMount.Alt;
       TrackingSpeed = CameraObj.HandleMount.TrackingSpeed;
-      IsCounterWeightDown = CameraObj.HandleMount.IsCounterWeightDown;
+      IsCounterWeightDown = NaN; %CameraObj.HandleMount.IsCounterWeightDown;
    end
    
    if (isempty(CameraObj.HandleFocuser))

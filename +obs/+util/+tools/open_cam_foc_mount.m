@@ -5,7 +5,7 @@
 %X = inst.XerxesMount;
 %X.connect
 M = obs.mount;
-M.connect
+M.connect([1 1]);
 
 F = obs.focuser;
 F.connect
