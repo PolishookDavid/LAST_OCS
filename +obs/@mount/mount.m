@@ -5,7 +5,19 @@
 % Input  : none.
 % Output : A mount class
 %     By :
-% Example:  M = obs.mount;
+% Example:  M = obs.mount;   % default is 'Xerxes'
+%           M = obs.mount('Xerxes');
+%           % connect without configuration file, will require setting the
+%           ObsLon, ObsLat
+%           M.connect; 
+%           M.ObsLon = 35; M.ObsLat=32;
+%           M.goto(0,0,'ha')
+%           
+%           % connect with configuration file _1_1
+%           M.connect([1 1])
+%           M.goto(10,10,'ha')
+%
+%           M.stopMotors % dis-engage motors (mount in neutral)
 %
 % Settings parameters options:
 %     M.connect;      % Connect to the driver and mount controller
@@ -163,83 +175,7 @@ classdef mount <obs.LAST_Handle
     
     % connect, disconnect, restart, abort
     methods 
-        function [ConfigLogical,ConfigPhysical,ConfigFileNameLogical,ConfigFileNamePhysical]=readConfig(MountObj,MountAddress)
-            % read configuration file into place
-            % Description: Read the logical configuration file and the
-            %              physical configuration file and:
-            %              store it in ConfigStruct
-            %              update properties of MountObj
-            % Input  : - Mount object
-            %          - This can be:
-            %            1. A mount address which is a vector of
-            %               [NodeNumber, MountNumber]
-            %            2. A mount configuration file name (string).
-            %            3. Empty [default]. In this case, some default
-            %               values will be used.
-            % Output : - Structure of the logical configuration 
-            %          - Structure of the physical configuration 
-            %          - Logical config file name
-            %          - Physical config file name
-            
-            % Defaults for fields that we will copy from the Config to the
-            % MountObj properties
-            %FieldsToCopyDefault.MountName   = 'unknown';
-            %FieldsToCopyDefault.MountModel  = 'unknown';
-            %FieldsToCopyDefault.MountNumber = NaN;
-            %FieldsToCopyDefault.LogFileDir  = '';
-            
-            if nargin<2
-                MountAddress = [];
-            end
-            % read the configuratin file
-            if ischar(MountAddress)
-                ConfigFileNameLogical = MountAddress;
-            else
-                if numel(MountAddress)==2
-                    ConfigFileNameLogical = sprintf('config.mount_%d_%d.txt',MountAddress);
-                else
-                    ConfigFileNameLogical = [];
-                end
-            end
-            MountObj.Config = ConfigFileNameLogical;
-            
-            ConfigLogical  = [];
-            ConfigPhysical = [];
-            if ~isempty(MountObj.Config)
-                
-                ConfigLogical = MountObj.loadConfiguration(MountObj.Config,false);
-                MountObj.ConfigStruct.ConfigLogical  = ConfigLogical;
-                
-                % read the physical mount configuration file
-                ConfigFileNamePhysical = sprintf('config.%s.txt',MountObj.ConfigStruct.ConfigLogical.MountName);
-                ConfigPhysical        = MountObj.loadConfiguration(ConfigFileNamePhysical,false);
-                MountObj.ConfigStruct.ConfigPhysical = ConfigPhysical;
-                
-                % update properties in MountObj
-                MountObj.MountName    = MountObj.ConfigStruct.ConfigPhysical.MountName;
-                MountObj.MountModel   = ConfigPhysical.MountModel; %MountObj.ConfigStruct.MountModel;
-                MountObj.MountNumber  = MountObj.ConfigStruct.ConfigLogical.MountNumber;
-                MountObj.NodeNumber   = MountObj.ConfigStruct.ConfigLogical.NodeNumber;
-                
-                MountObj.LogFileDir   = MountObj.ConfigStruct.ConfigLogical.LogFileDir;
-                MountObj.MinAlt       = MountObj.ConfigStruct.ConfigLogical.MinAlt;
-                MountObj.AzAltLimit   = MountObj.ConfigStruct.ConfigLogical.AzAltLimit;
-                MountObj.HALimit      = MountObj.ConfigStruct.ConfigLogical.HALimit;
-                
-                MountObj.ObsLon       = MountObj.ConfigStruct.ConfigLogical.ObsLon;
-                MountObj.ObsLat       = MountObj.ConfigStruct.ConfigLogical.ObsLat;
-                MountObj.ObsHeight    = MountObj.ConfigStruct.ConfigLogical.ObsHeight;
-                
-                MountObj.Handle.HAZeroPositionTicks  = MountObj.ConfigStruct.ConfigLogical.HAZeroPositionTicks;
-                MountObj.Handle.DecZeroPositionTicks = MountObj.ConfigStruct.ConfigLogical.DecZeroPositionTicks;
-                
-            end
-            
-            
-            
-            
-            
-        end
+
         
         function connect(MountObj,MountAddress,MountType)
             % Connect a mount abstraction object
@@ -257,6 +193,19 @@ classdef mount <obs.LAST_Handle
             %            If not given will attempt to read from Config
             % Example: M.connect([],'xerxes')
             
+            ConfigBaseName  = 'config.mount';
+            PhysicalKeyName = 'MountName';
+            ListProp        = {'NodeNumber',...
+                               'MountType',...
+                               'MountModel',...
+                               'MountName',...
+                               'MountNumber',...
+                               'ObsLon',...
+                               'ObsLat',...
+                               'ObsHeight',...
+                               'LogFileDir'};
+
+            
             if nargin<2
                 MountAddress = [];
             end
@@ -266,24 +215,38 @@ classdef mount <obs.LAST_Handle
             end
             
             if ischar(MountAddress)
-                MountAddress = [0 0];
+                MountAddress = [NaN NaN];
             else
                 if numel(MountAddress)~=2
-                    MountAddress = [0 0];
+                    MountAddress = [NaN NaN];
                 end
             end
             
-            [ConfigLogical,ConfigPhysical] = MountObj.readConfig(MountAddress);
+            if any(isnan(MountAddress))
+                ConfigStruct   = [];
+                ConfigLogical  = [];
+                ConfigPhysical = [];
                 
+            else
+                %[ConfigLogical,ConfigPhysical] = MountObj.readConfig(MountAddress);
+%                 [ConfigStruct,ConfigLogical,ConfigPhysical,ConfigFileNameLogical,ConfigFileNamePhysical]=readConfig(MountObj,...
+%                                     MountAddress,...
+%                                     ConfigBaseName,PhysicalKeyName);
+                [ConfigStruct] = getConfigStruct(MountObj,...
+                                    MountAddress,...
+                                    ConfigBaseName,PhysicalKeyName);                
+                MountObj.ConfigStruct = ConfigStruct;               
+                MountObj = updatePropFromConfig(MountObj,ListProp,MountObj.ConfigStruct);
+            end
             
             % Open the logFile
-            if isempty(MountObj.LogFile) || isempty(ConfigLogical)
+            if isempty(MountObj.LogFile) || isempty(ConfigStruct)
                 % create a logFile, but with empty TemplateFileName so no
                 % writing is performed
                 MountObj.LogFile = logFile;
                 MountObj.LogFile.FileNameTemplate = [];
             else
-                MountObj.LogFileDir = ConfigLogical.LogFileDir;
+                MountObj.LogFileDir = ConfigStruct.LogFileDir;
                 MountObj.LogFile.logOwner = sprintf('mount_%d_%d',MountAddress);
             end
             
@@ -293,22 +256,28 @@ classdef mount <obs.LAST_Handle
             
             switch lower(MountObj.MountType)
                 case 'xerxes'
-                    MountIP = [];
+                    if Util.struct.isfield_notempty(MountObj.ConfigStruct,'PhysicalPort')
+                        PhysicalPort = MountObj.ConfigStruct.PhysicalPort;
+                        MountPort    = idpath_to_port(PhysicalPort);
+                    else
+                        MountPort = [];
+                    end
+                    
                 case 'ioptron'
                     % TODO: This need to be in the Config file
                     MountObj.MountIP = '192.168.11.254';
-                    MountIP = MountObj.MountIP;
+                    MountPort = MountObj.MountIP;
                 otherwise
                     error('Unknown MountType option - provide as input argument to connect');
             end
                     
-            Success = MountObj.Handle.connect(MountIP);
+            Success = MountObj.Handle.connect(MountPort);
             MountObj.IsConnected = Success;
     
             if Success
                 MountObj.LogFile.writeLog('Mount is connected successfully')
                 
-                MountObj.MountModel = MountObj.Handle.MountModel;
+                %MountObj.MountModel = MountObj.Handle.MountModel;
         
                 % Mount location coordinates and UTC
                 if (MountObj.TimeFromGPS)
@@ -326,25 +295,26 @@ classdef mount <obs.LAST_Handle
                         error('Lat is not available');
                     end
                 else
-                    % Take coordinates from Config
-                    if isfield(ConfigLogical,'ObsLon')
-                        MountObj.ObsLon = ConfigLogical.ObsLon;
-                    else
-                        MountObj.LogFile.writeLog('ObsLon is not available');
-                        warning('ObsLon is not available');
-                    end
-                    if isfield(ConfigLogical,'ObsLat')
-                        MountObj.ObsLat = ConfigLogical.ObsLat;
-                    else
-                        MountObj.LogFile.writeLog('ObsLat is not available');
-                        warning('ObsLat is not available');
-                    end
-                    if isfield(ConfigLogical,'ObsHeight')
-                        MountObj.ObsHeight = ConfigLogical.ObsHeight;
-                    else
-                        MountObj.LogFile.writeLog('ObsHeight is not available');
-                        warning('ObsHeight is not available');
-                    end
+                    
+                    % Take coordinates from Config - already taken 
+%                     if isfield(ConfigLogical,'ObsLon')
+%                         MountObj.ObsLon = ConfigLogical.ObsLon;
+%                     else
+%                         MountObj.LogFile.writeLog('ObsLon is not available');
+%                         warning('ObsLon is not available');
+%                     end
+%                     if isfield(ConfigLogical,'ObsLat')
+%                         MountObj.ObsLat = ConfigLogical.ObsLat;
+%                     else
+%                         MountObj.LogFile.writeLog('ObsLat is not available');
+%                         warning('ObsLat is not available');
+%                     end
+%                     if isfield(ConfigLogical,'ObsHeight')
+%                         MountObj.ObsHeight = ConfigLogical.ObsHeight;
+%                     else
+%                         MountObj.LogFile.writeLog('ObsHeight is not available');
+%                         warning('ObsHeight is not available');
+%                     end
                     
                     %MountObj.MountPos = [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat MountObj.MountCoo.ObsHeight];
                     % Update UTC clock on mount for iOptron
@@ -357,6 +327,10 @@ classdef mount <obs.LAST_Handle
                 MountObj.LogFile.writeLog('Mount was not connected successfully')
                 MountObj.LastError = sprintf("Mount %s is disconnected", num2str(ConfigMount.MountNumber));
             end
+            
+            
+            
+            
             
         end
         
@@ -693,6 +667,19 @@ classdef mount <obs.LAST_Handle
 
     % motion and position methods
     methods
+        function Flag=stopMotors(MountObj)
+            % stop mount motors using the Handle.reset command
+            
+            MountObj.Handle.reset;
+            switch lower(MountObj.Status)
+                case 'disabled'
+                    Flag = true;
+                otherwise
+                    Flag = false;
+            end
+            MountObj.LogFile.writeLog(sprintf('Mount motors stoped - sucess: %d',Flag));
+            
+        end
         
         function [Flag,RA,Dec,Aux]=goto(MountObj, Long, Lat, varargin)
             % Send mount to coordinates/name and start tracking
@@ -878,6 +865,36 @@ classdef mount <obs.LAST_Handle
             HAJ(HAJ>180) = HAJ(HAJ>180) -360;
             
             
+        end
+        
+        function RAJ=j2000_RA(MountObj,varargin)
+            % like j2000 but return only RA
+        
+            RAJ = j2000(MountObj,varargin{:});
+            
+        end
+        
+        function DecJ=j2000_Dec(MountObj,varargin)
+            % like j2000 but return only Dec
+        
+            [~,DecJ] = j2000(MountObj,varargin{:});
+            
+        end
+        
+        function TR_RA=trackingSpeedRA(MountObj)
+            % Return tracking rate in RA [deg/s]
+            
+            Rate  = MountObj.TrackingSpeed;
+            TR_RA = Rate(1);
+        
+        end
+        
+        function TR_Dec=trackingSpeedDec(MountObj)
+            % Return tracking rate in Dec [deg/s]
+            
+            Rate   = MountObj.TrackingSpeed;
+            TR_Dec = Rate(2);
+        
         end
         
         function move(Obj)
@@ -1238,7 +1255,7 @@ classdef mount <obs.LAST_Handle
             RAD = 180./pi;
             % Get JD from the computer
             JD = celestial.time.julday;
-            LST = celestial.time.lst(JD,MountObj.MountCoo.ObsLon./RAD);  % fraction of day
+            LST = celestial.time.lst(JD,MountObj.ObsLon./RAD);  % fraction of day
             LST = LST.*360;
         end
 

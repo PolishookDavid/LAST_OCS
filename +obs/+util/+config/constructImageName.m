@@ -18,6 +18,15 @@ function FileName = constructImageName(ProjectName, ObservatoryNode, MountGeoNam
 
 % SHOULD CCDnum BE STRING OR DOUBLE ??? DP
 
+if isnumeric(ObservatoryNode)
+    ObservatoryNode = sprintf('%d',ObservatoryNode);
+end
+if isnumeric(MountGeoName)
+    MountGeoName    = sprintf('%d',MountGeoName);
+end
+if isnumeric(CamGeoName)
+    CamGeoName = sprintf('%d',CamGeoName);
+end
 FileName = sprintf('%s.%s.%s.%s_%s_%s_%s_%s_%s.%s_%s_%s.%s', ...
                    ProjectName, ObservatoryNode, MountGeoName, CamGeoName, ImageDateTime, Filter, FieldID, ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, ImageFormat);
 

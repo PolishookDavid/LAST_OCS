@@ -23,16 +23,20 @@
 classdef focuser <obs.LAST_Handle
     
     properties
-        Pos=NaN;
+        Pos double     = NaN;
     end
     
     properties (GetAccess=public, SetAccess=private)
-        Status='unknown';
-        LastPos=NaN;
+        Status char    = 'unknown';
+        LastPos double = NaN;
     end
+    
+    properties (Hidden, GetAccess=public, SetAccess=private)
+        IsConnected logical    = false;
+    end
+    
         
     properties (SetAccess=public, GetAccess=private)
-%        RelPos=NaN;
         FocuserType       = NaN;
         FocuserUniqueName = NaN;
     end
@@ -40,6 +44,8 @@ classdef focuser <obs.LAST_Handle
     properties (Hidden=true)
         Handle;
         LogFile;
+        PromptMirrorLock logical    = true;  % Prompt the user to check if mirror is locked
+        Address                              % focuser address
     end
 
     % non-API-demanded properties, Enrico's judgement
@@ -55,28 +61,45 @@ classdef focuser <obs.LAST_Handle
     end
 
     
+    % constructor and destructor
     methods
-        % constructor and destructor
         function Focuser=focuser(varargin)
-
-           if (isempty(varargin))
-              Answer = input('Is the mirror unlocked? [y/n]\n', 's');
-              if strcmpi(Answer,'y')
-                 Focuser.Handle=inst.CelestronFocuser;
-              else
-                 if Focuser.Verbose, fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n'); end
-%                 Focuser.LogFile.writeLog('Release the mirror of the telescope using the two black nobs at the bottom!!!')
-                 delete(Focuser);
-              end
-           else
-              switch varargin{1}
-                 case 'Robot'
-                    % The robot assumes the mirror of the telescope is
-                    % unlocked, thus the focuser can move.
-                    Focuser.Handle=inst.CelestronFocuser;
-              end
-           end
-           % Connecting to port in a separate method
+            % Focuser constructor
+            % Input  : * ..,key,val,...
+            %            'PromptMirrorLock' - Default is true.
+            %            'Config' - Config file name.
+            % Output : - A focuser object
+            
+            InPar = inputParser;
+            addOptional(InPar,'PromptMirrorLock',true);
+            addOptional(InPar,'Config',[]);         % config file name
+            addOptional(InPar,'ConfigStruct',struct());   % ConfigStruct
+            parse(InPar,varargin{:});
+            InPar = InPar.Results;
+            
+            Focuser.PromptMirrorLock = InPar.PromptMirrorLock;
+            Focuser.Config           = InPar.Config;
+            
+            if Focuser.PromptMirrorLock
+                fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n');
+                Answer = input('Is the mirror unlocked? [y/n]\n', 's');
+                switch lower(Answer)
+                    case 'y'
+                        % continue
+                        Cont = true;
+                    otherwise
+                        fprintf('Will not continue when mirror is locked\n');
+                        Cont = false;
+                        delete(Focuser);
+                end
+            else
+                Cont = true;
+            end
+            
+            if Cont
+                Focuser.Handle=inst.CelestronFocuser;
+            end
+             
         end
         
         function delete(Focuser)
@@ -87,16 +110,23 @@ classdef focuser <obs.LAST_Handle
 
     end
 
+    %getters and setters
     methods
-        %getters and setters
-        function focus=get.Pos(Focuser)
-            if (isnan(Focuser.Handle.Pos))
-               focus = NaN;
-               Focuser.LastError = "could not read focuser position. Focuser disconnected. *Connect or Check Cables*";
-            else
-               focus = Focuser.Handle.Pos;
-               Focuser.LastError = Focuser.Handle.LastError;
+        function PosVal=get.Pos(Focuser)
+            
+            PosVal = Focuser.Handle.Pos;
+            
+            if Focuser.IsConnected
+                % check for the case that the focuser is supposed to be
+                % connected but it is not
+                % In this case, reconnect
+
+                if (isnan(PosVal))
+                    Focser.connect(Focuser.Address);
+                end
+                PosVal = Focuser.Handle.Pos;
             end
+
         end
 
         function set.Pos(Focuser,focus)
@@ -156,5 +186,90 @@ classdef focuser <obs.LAST_Handle
            end
         end
 
+    end
+    
+    methods
+        function Success=connect(Obj,Address)
+            % Connect to a focus motor
+            % Input  : - A focuser object
+            %          - Address: [1 1 1] or config file name with
+            %            'config.focuser' substring or a port id.
+            % Output : - A sucess flag.
+            
+            ConfigBaseName      = 'config.focuser';
+            PhysicalPortKeyName = 'PhysicalPort';
+            
+            if nargin<2
+                Address = [];
+            end
+            
+            Obj.Address = Address;
+            
+            FocuserPort = [];
+            LogOwner    = 'focuser';
+            if isnumeric(Address)
+                % user provided address of the form [Node, Mount, Camera]
+                LogOwner = sprintf('focuser_%d_%d_%d',Address);
+            else
+                if ischar(Address)
+                    if contains(Address(1:7),'config.')
+                        % user provided a configuration file name
+                        
+                    else
+                        % user provided a USB port name
+                        FocuserPort = Address;
+                        
+                    end
+                else
+                    error('Unknown Address option');
+                end
+            end
+            
+            if isempty(FocuserPort)
+                % read configuration file
+                [ConfigStruct,ConfigFileName] = getConfigStruct(Obj,Address,ConfigBaseName,[]);
+                
+                Obj.ConfigStruct = ConfigStruct;
+                Obj.Config       = ConfigFileName;
+            end
+            
+            if Util.struct.isfield_notempty(Obj.ConfigStruct,PhysicalPortKeyName)
+                FocuserPort         = Obj.ConfigStruct.(PhysicalPortKeyName);
+                % convert the physical port name into port ID
+                [IDpaths,PortList]  = serialDevPath;
+                IndPort             = find(strcmp(FocuserPort,IDpaths));
+                FocuserPort         = PortList(IndPort);
+            end
+            
+            
+            % generate a LogFile
+            Obj.LogFile = logFile;
+            Obj.LogFile.logOwner = LogOwner;
+            if Util.struct.isfield_notempty(Obj.ConfigStruct,'LogFileDir')
+                Obj.LogFile.Dir = Obj.ConfigStruct.LogFileDir;
+            else
+                warning('LogFileDir not appear in Config file');
+                Obj.LogFile.writeLog('LogFileDir not appear in Config file');
+            end
+            
+            
+            if isempty(FocuserPort)
+                Obj.LogFile.writeLog('Error: FocuserPort is empty');
+            end
+            
+            % connect focuser
+            
+            Obj.Handle.connect(FocuserPort);
+            if (isempty(Obj.Handle.LastError))
+                Success = true;
+                Focuser.IsConnected = true;
+            else
+                Success = false;
+                Obj.LastError = Obj.Handle.LastError;
+                Focuser.IsConnected = false;
+            end
+
+        end
+        
     end
 end

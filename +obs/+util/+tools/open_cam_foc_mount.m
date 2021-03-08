@@ -8,7 +8,11 @@ M = obs.mount;
 M.connect([1 1]);
 
 F = obs.focuser;
-F.connect
+F.connect([1 1 3])
+
 
 C = obs.camera;
-C.connect(1,M,F);
+C.connect([1 1 3]);
+
+
+%%
