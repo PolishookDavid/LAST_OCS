@@ -507,9 +507,10 @@ classdef camera < obs.LAST_Handle
                         LocalPort       = obs.remoteClass.construct_port_number('camera',MountNumber,CameraObj.CameraNumber);
                         
                         RemoteName = 'M';
-                        MsgObj     = obs.remoteClass(RemoteName,DestinationIP,DestinationPort,LocalPort);
+                        MsgObj                    = obs.remoteClass(RemoteName,DestinationIP,DestinationPort,LocalPort);
+                        MsgObj.Messenger.CallbackRespond = false;
                         MsgObj.Messenger.connect;
-                        CameraObj.HandleMount = MsgObj;
+                        CameraObj.HandleMount     = MsgObj;
                         
                     end
                 end
@@ -1475,6 +1476,7 @@ classdef camera < obs.LAST_Handle
                     Info.RA  = Info.M_JDEC;
                     Info.DEC = Info.M_JRA;
                 end
+                Info.RA = mod(Info.RA,360);
             else
                 Info.RA  = Info.M_JDEC;
                 Info.DEC = Info.M_JRA;

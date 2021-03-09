@@ -71,6 +71,9 @@ RAD = 180./pi;
 PlotMarker    = 'o';
 PlotMinMarker = 'p';
 
+CenterPos = [3195 4788];
+Theta     = (0:60:300).';
+DefSeveralPositions = [CenterPos; CenterPos + 2000.*[cosd(Theta), sind(Theta)]];
 
 InPar = inputParser;
 addOptional(InPar,'FocusGuess',26000);  
@@ -82,12 +85,17 @@ addOptional(InPar,'BacklashPos',200);
 addOptional(InPar,'ExpTime',5);  
 addOptional(InPar,'NimExp',1);  
 addOptional(InPar,'ImageHalfSize',1000);  % If [] use full image
+addOptional(InPar,'SeveralPositions',DefSeveralPositions);  % If [] use full image
 addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');
 addOptional(InPar,'PixScale',1.25);  % "/pix
 addOptional(InPar,'Verbose',true);
 addOptional(InPar,'Plot',true);
 parse(InPar,varargin{:});
 InPar = InPar.Results;
+
+if ~isempty(SeveralPositions)
+    ImageHalfSize = [];
+end
 
 % deal with hardward objects
 warning('Add here treatment of OCS class / multiple cameras per process');
@@ -200,17 +208,35 @@ for Ipos=1:1:Nstep
             Image = single(imUtil.image.trim(CamObj(Icam).LastImage,InPar.ImageHalfSize.*ones(1,2),'center'));
         end
         
-        % filter image with filter bandk of gaussians with variable width
-        SN = imUtil.filter.filter2_snBank(Image,[],[],@imUtil.kernel2.gauss,InPar.SigmaVec);
-        [BW,Pos,MaxIsn]=imUtil.image.local_maxima(SN,1,5);
+        if isempty(InPar.SeveralPositions)
+            % filter image with filter bandk of gaussians with variable width
+            SN = imUtil.filter.filter2_snBank(Image,[],[],@imUtil.kernel2.gauss,InPar.SigmaVec);
+            [BW,Pos,MaxIsn]=imUtil.image.local_maxima(SN,1,5);
 
-        % remove sharp objects
-        Pos = Pos(Pos(:,4)~=1,:);
-        if isempty(Pos)
-            FocVal(Ipos) = NaN;
+            % remove sharp objects
+            Pos = Pos(Pos(:,4)~=1,:);
+            if isempty(Pos)
+                FocVal(Ipos,1,Icam) = NaN;
+            else
+                % instead one can check if the SN improves...
+                FocVal(Ipos,1,Icam) = 2.35.*InPar.PixScale.*InPar.SigmaVec(mode(Pos(Pos(:,3)>50,4),'all'));
+            end
         else
-            % instead one can check if the SN improves...
-            FocVal(Ipos,Icam) = 2.35.*InPar.PixScale.*InPar.SigmaVec(mode(Pos(Pos(:,3)>50,4),'all'));
+            % measure focus at several positions
+            SN = imUtil.filter.filter2_snBank(Image,[],[],@imUtil.kernel2.gauss,InPar.SigmaVec);
+            [BW,Pos,MaxIsn]=imUtil.image.local_maxima(SN,1,5);
+            Pos = Pos(Pos(:,4)~=1,:);
+            Nsp = numel(InPar.SeveralPositions);
+            MaxRad = 1000;
+            for Isp=1:1:Nsp
+                DistPos = Util.Geom.plane_dist(InPar.SeveralPositions(Isp,1),InPar.SeveralPositions(Isp,2),Pos(:,1),Pos(:,2));
+                Flag = DistPos<MaxRad;
+                if isempty(Pos(Flag,:))
+                    FocVal(Ipos,1,Icam) = NaN;
+                else
+                    FocVal(Ipos,Isp,Icam) = 2.35.*InPar.PixScale.*InPar.SigmaVec(mode(Pos(Pos(Flag,3)>50,4),'all'));
+                end
+            end
         end
     end
     
@@ -248,11 +274,13 @@ Res.PosVec      = FocusValCam;
 Res.FocVal      = FocVal;
 
 %Extram = Util.find.find_local_extramum(flipud(PosVec),flipud(FocVal));
-for Icam=1:1:Ncam
-    FullPosVec = (min(Res.PosVec(:,Icam)):1:max(Res.PosVec(:,Icam)))';
-    FullFocVal = interp1(Res.PosVec(:,Icam),Res.FocVal(:,Icam),FullPosVec,'makima');
-    [Res.BestFocFWHM(Icam),MinInd] = min(FullFocVal);
-    Res.BestFocVal(Icam) = FullPosVec(MinInd);
+for Isp=1:1:Nsp
+    for Icam=1:1:Ncam
+        FullPosVec = (min(Res.PosVec(:,Icam)):1:max(Res.PosVec(:,Icam)))';
+        FullFocVal(Isp,Icam) = interp1(Res.PosVec(:,Icam),Res.FocVal(:,Isp,Icam),FullPosVec,'makima');
+        [Res.BestFocFWHM(Isp,Icam),MinInd] = min(FullFocVal(Isp,Icam));
+        Res.BestFocVal(Isp,Icam) = FullPosVec(MinInd);
+    end
 end
 
 if InPar.Verbose

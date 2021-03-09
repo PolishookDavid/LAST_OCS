@@ -245,9 +245,11 @@ classdef mount <obs.LAST_Handle
                 % writing is performed
                 MountObj.LogFile = logFile;
                 MountObj.LogFile.FileNameTemplate = [];
+                MountObj.LogFile.Dir = '~';
             else
                 MountObj.LogFileDir = ConfigStruct.LogFileDir;
                 MountObj.LogFile.logOwner = sprintf('mount_%d_%d',MountAddress);
+                MountObj.LogFile.Dir = ConfigStruct.LogFileDir;
             end
             
             % write logFile
@@ -350,6 +352,9 @@ classdef mount <obs.LAST_Handle
             else
                 MountObj.LogFile.writeLog('can not disconnect mount because IsConnected=false')
                 MountObj.LastError = 'can not disconnect mount because IsConnected=false';
+            end
+            if ~isempty(MountObj.LogFile)
+                MountObj.LogFile.delete;
             end
         end   
         
