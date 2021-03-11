@@ -1,7 +1,7 @@
 function [Res] = focus_loop(CamObj,MountObj,FocObj,SensObj,varargin)
 % Execute focus loop on LAST telescope
 % Package: +obs.util.tools
-% Description: Obtain an image with each focus value, and measure the FWHM
+% Description: Obtain an image with each focus value, and measure the FWHMF
 %              as a function of focus. Interpolate the best focus value.
 %              The focus loop assumes that there is a backlash in the
 %              system. In the begining, the focus is set to StartPos
@@ -73,9 +73,9 @@ PlotMinMarker = 'p';
 
 
 InPar = inputParser;
-addOptional(InPar,'FocusGuess',26000);  
-addOptional(InPar,'HalfRange',200);  
-addOptional(InPar,'Step',40);  
+addOptional(InPar,'FocusGuess',20500);  
+addOptional(InPar,'HalfRange',400);  
+addOptional(InPar,'Step',100);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  
 addOptional(InPar,'BacklashPos',200);  
@@ -166,7 +166,13 @@ end
 CamObj.ExpTime = InPar.ExpTime;
 
 FocVal = nan(Nstep,2);
-for Ipos=1:1:Nstep
+
+Cont = true;
+Ipos = 0;
+while Cont
+    Ipos = Ipos+1;
+    
+    
     if InPar.Verbose
         for Icam=1:1:Ncam
             fprintf('Camera %d -- Testing focus position: %f (number %d out of %d)',Icam,FocusValCam(Ipos,Icam), Ipos, Nstep);
@@ -240,6 +246,11 @@ for Ipos=1:1:Nstep
         %CamObj.LastImage = [];
     end
     
+    if Ipos>=Nstep || exist('~/abort_focus','file')>0
+        Cont = false;
+    end
+        
+
 end
     
 

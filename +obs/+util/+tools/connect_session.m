@@ -2,17 +2,17 @@
 %
 
 
-%X = inst.XerxesMount;
-%X.connect
-% M = obs.mount;
-% M.connect([1 1]);
-% 
-% F = obs.focuser;
-% F.connect
-% 
-% C = obs.camera;
-% C.connect([1 1 3]);
-% 
+X = inst.XerxesMount;
+X.connect
+M = obs.mount;
+M.connect([1 1]);
+
+F = obs.focuser;
+F.connect
+
+C = obs.camera;
+C.connect([1 1 3]);
+
 
 %%
 

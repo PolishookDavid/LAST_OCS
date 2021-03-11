@@ -3,11 +3,12 @@ function plot_image_quality(Image)
 % Input  : - Image matrix, A SIM object or a FITS file name.
 % Example:
 % obs.util.tools.plot_image_quality('LAST.1.1.3_20210308.171055.469_clear__sci_raw.n_im_1.fits')
+% obs.util.tools.plot_image_quality(C.LastImage);
 
 if isnumeric(Image)
     % Image is a matrix
     S = SIM;
-    S.Im = Image;
+    S.Im = single(Image);
 elseif SIM.issim(Image)
     S = Image;
 elseif ischar(Image)
@@ -17,7 +18,7 @@ else
 end
 
 
-S = mextractor(S,'Gain',1);
+S = mextractor(S,'Gain',1,'Thresh',10);
 F = S.Cat(:,S.Col.SN)>30 & S.Cat(:,S.Col.SN)<100 & S.Cat(:,S.Col.SN)>S.Cat(:,S.Col.SN_UNF) & S.Cat(:,S.Col.SN)>S.Cat(:,S.Col.SN_ADD_1);
 [X,Y,Mn,Mnin,Mmean,MmedX2]=Util.stat.cell_stat(S.Cat(F,[S.Col.XWIN_IMAGE S.Col.YWIN_IMAGE S.Col.X2WIN_IMAGE]),[1024 1024],[1 6354 1 9576]);
 [X,Y,Mn,Mnin,Mmean,MmedY2]=Util.stat.cell_stat(S.Cat(F,[S.Col.XWIN_IMAGE S.Col.YWIN_IMAGE S.Col.Y2WIN_IMAGE]),[1024 1024],[1 6354 1 9576]);

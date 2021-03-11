@@ -60,6 +60,7 @@ classdef camera < obs.LAST_Handle
         CameraNumSDK double                         % Camera number in the SDK
         CameraNumber double                         %  1       2      3      4
         CameraPos char         = '';                % 'NE' | 'SE' | 'SW' | 'NW'
+        AllCamNames cell       = {};                % A list of all identified cameras - populated on first connect
     end
         
     properties(Hidden)
@@ -135,18 +136,22 @@ classdef camera < obs.LAST_Handle
     methods
         
         
-        function CameraObj=camera(CameraType)
+        function CameraObj=camera(CameraType,Ncam)
             % Camera object constructor
             % This function does not populate the Handle property
             % This is done in the connect stage
             % Input  : - CameraType: 'QHY' | 'ZWO'
+            %          - Number of cameras. Default is 1.
             % Example: C=obs.camera('qhy')
             
             DefaultCameraType    = 'QHY';
             
     
-            if nargin<1
-                CameraType = DefaultCameraType;
+            if nargin<2
+                Ncam = 1;
+                if nargin<1
+                    CameraType = DefaultCameraType;
+                end
             end
             
             switch lower(CameraType)
@@ -156,12 +161,15 @@ classdef camera < obs.LAST_Handle
                     error('Unsupported CameraType option');
             end
             
-            CameraObj.CameraType = CameraType;
-            
+            %CameraObj(1,Ncam) = CameraObj;
+            %for Icam=1:1:Ncam
+            Icam = 1;
+            CameraObj(Icam).CameraType = CameraType;
+
             % read Header comments into ConfigHeader
             ConfigHeaderFileName = 'config.HeaderKeywordComment.txt';
-            CameraObj.ConfigHeader = CameraObj.loadConfiguration(ConfigHeaderFileName, false);
-            
+            CameraObj(Icam).ConfigHeader = CameraObj(Icam).loadConfiguration(ConfigHeaderFileName, false);
+            %end
             
         end
        
@@ -170,11 +178,12 @@ classdef camera < obs.LAST_Handle
     
     % static methods
     methods (Static)
-        function CameraNumSDK=identify_all_cameras(CameraName,HandleDriver)
+        function [AllCamNames,CameraNumSDK]=identify_all_cameras(CameraName,HandleDriver)
             % Identify all QHY cameras connected to the computer
             % Input  : - CameraName (e.g.., 'QHY367C-e2f51243929ddaaf5').
             %          - Handle driver. If empty, then will created
-            % Output : - Camera number as identified by the SDK
+            % Output : - A cell array of all identified cameras
+            %          - Camera number as identified by the SDK
             % Tested : with QHY/SDK 21-2-1 
             %  https://www.qhyccd.com/file/repository/publish/SDK/210201/sdk_linux64_21.02.01.tgz
             % Example: CameraNumSDK=obs.camera.identify_all_cameras(CameraName,HandleDriver)
@@ -189,132 +198,15 @@ classdef camera < obs.LAST_Handle
             Q.verbose   = false;                % optional if you want to see less blabber
             AllCamNames = Q.allQHYCameraNames;
 
-            %CameraNumSDK = find(strcmp(AllCamNames,'QHY367C-e2f51243929ddaaf5'));
-            CameraNumSDK = find(strcmp(AllCamNames,CameraName));
+            if nargout>1
+                %CameraNumSDK = find(strcmp(AllCamNames,'QHY367C-e2f51243929ddaaf5'));
+                CameraNumSDK = find(strcmp(AllCamNames,CameraName));
+            end
         end
        
         
     end
 
-    
-    % Aux
-%     methods
-%         
-%         
-%         function [ConfigStruct,ConfigLogical,ConfigPhysical,ConfigFileNameLogical,ConfigFileNamePhysical]=readConfig(Obj,Address,ConfigBaseName,PhysicalKeyName)
-%             % read configuration (logical and physical) file into
-%             % ConfigStruct.
-%             % Description: Read the logical configuration file, the
-%             %              physical configuration file and the mount onfig file, and:
-%             %              store it in ConfigStruct
-%             %              To update the properties in the object according
-%             %              to properties in the Config file use:
-%             %              updatePropFromConfig
-%             %              Mount config will be read into M.ConfigMount
-%             % Input  : - Mount object
-%             %          - This can be:
-%             %            1. A mount address which is a vector of
-%             %               [NodeNumber, MountNumber]
-%             %            2. A mount configuration file name (string).
-%             %            3. Empty [default]. In this case, some default
-%             %               values will be used.
-%             %          - ConfigBaseName. Default is 'config.camera'.
-%             %          - Keyword in the logical configuration under which
-%             %            the physical device name reside.
-%             %            If this is not provided than will not read the
-%             %            physical device config.
-%             % Output : - Merged Structure of logical and physical config.
-%             %          - Structure of the logical configuration 
-%             %          - Structure of the physical configuration 
-%             %          - Logical config file name
-%             %          - Physical config file name
-%             
-%             if nargin<4
-%                 PhysicalKeyName = [];
-%                 if nargin<3
-%                     ConfigBaseName = 'config.camera';
-%                     if nargin<2
-%                         Address = [];
-%                     end
-%                 end
-%             end
-%             % read the configuratin file
-%             if ischar(Address)
-%                 ConfigFileNameLogical = Address;
-%             else
-%                 switch numel(Address)
-%                     case 1
-%                         ConfigFileNameLogical = sprintf('%s_%d.txt',ConfigBaseName,Address);
-%                     case 2
-%                         ConfigFileNameLogical = sprintf('%s_%d_%d.txt',ConfigBaseName,Address);
-%                     case 3
-%                         ConfigFileNameLogical = sprintf('%s_%d_%d_%d.txt',ConfigBaseName,Address);
-%                     otherwise
-%                         % no config file
-%                         ConfigFileNameLogical = [];
-%                 end
-%             end
-%             Obj.Config = ConfigFileNameLogical;
-%             
-%             ConfigLogical  = [];
-%             ConfigPhysical = [];
-%             ConfigFileNamePhysical = [];
-%             if ~isempty(Obj.Config)
-%                 
-%                 ConfigLogical = Obj.loadConfiguration(Obj.Config, false);
-%                 
-%                 if ~isempty(PhysicalKeyName)
-%                     % read the physical name - e.g., CameraName
-%                     PhysicalName           = ConfigLogical.(PhysicalKeyName);
-%                     ConfigFileNamePhysical = sprintf('config.%s.txt',PhysicalName);
-%                     ConfigPhysical         = Obj.loadConfiguration(ConfigFileNamePhysical, false);
-%                     
-%                     % merge with ConfigLogical
-%                     ConfigStruct = Util.struct.mergeStruct(ConfigLogical,ConfigPhysical);
-%                 else
-%                     ConfigStruct = ConfigLogical;
-%                 end
-%                 
-%                 Obj.ConfigStruct = ConfigStruct;
-%                 
-%                 % read mount config
-%                 ConfigMountFileName = sprintf('config.mount_%d_%d.txt',Address(1:2));
-%                 Obj.ConfigMount = Obj.loadConfiguration(ConfigMountFileName, false);
-%                 
-%             end
-%             
-%             
-%             
-%             
-%         end
-%             
-%         function Obj=updatePropFromConfig(Obj,ListProp,ConfigStruct)
-%             % Update the properties in the Object according to their
-%             % value in ConfigStruct.
-%             % Input  : - An object (e.g., obs.camera object).
-%             %          - A cell array of properties to copy from the
-%             %            ConfigStruct to the object.
-%             %            E.g.,
-%             %            {'CameraType','CameraName','CameraModel'}
-%             %          - ConfigStruct: A structure containing the
-%             %            Config file content. If not provided, then will
-%             %            be taken from the Obj.ConfigStruct.
-%             if nargin<3
-%                 ConfigStruct = Obj.ConfigStruct;
-%             end
-% 
-%             Nprop = numel(ListProp);
-%             for Iprop=1:1:Nprop
-%                 if isfield(ConfigStruct,ListProp{Iprop})
-%                     Obj.(ListProp{Iprop}) = ConfigStruct.(ListProp{Iprop});
-%                 else
-%                     Obj.LogFile.writeLog(sprintf('Error: Propery %s was not found in ConfigStruct',ListProp{Iprop}));
-%                 end
-%             end
-%         end
-%                 
-%         
-%     end
     
     % connect
     methods 
@@ -362,6 +254,10 @@ classdef camera < obs.LAST_Handle
             InPar = InPar.Results;
 
 
+            if numel(CameraObj)>1
+                error('Connect operation works on a single camera at a time');
+            end
+            
             
             ConfigBaseName  = 'config.camera';
             PhysicalKeyName = 'CameraName';
@@ -424,7 +320,13 @@ classdef camera < obs.LAST_Handle
 
                 switch lower(CameraObj.CameraType)
                     case 'qhy'
-                        CameraNumSDK = obs.camera.identify_all_cameras(CameraName);
+                        if isempty(CameraObj(1).AllCamNames)
+                            [AllCamNames,CameraNumSDK] = obs.camera.identify_all_cameras(CameraName);
+                            CameraObj(1).AllCamNames = AllCamNames;
+                        else
+                            fprintf('use existing list of cameras');
+                            CameraNumSDK = find(strcmp(CameraObj(1).AllCamNames,CameraName));
+                        end
                     case 'zwo'
                         error('ZWO auto camera number option is not supported');
                     otherwise
@@ -551,21 +453,27 @@ classdef camera < obs.LAST_Handle
         function Success=disconnect(CameraObj)
            % Close the connection with the camera registered in the current camera object
            
-           if CameraObj.IsConnected
-              
-              % Call disconnect using the camera handle object
-              Success = CameraObj.Handle.disconnect;
-              CameraObj.IsConnected = ~Success;
-              
-              CameraObj.LogFile.writeLog(sprintf('Disconnect CameraName: %s',CameraObj.CameraName));
+           N = numel(CameraObj);
+           for I=1:1:N
+               if CameraObj(I).IsConnected
+
+                  % Call disconnect using the camera handle object
+                  Success(I) = CameraObj(I).Handle.disconnect;
+                  CameraObj(I).IsConnected = ~Success;
+
+                  CameraObj(I).LogFile.writeLog(sprintf('Disconnect CameraName: %s',CameraObj(I).CameraName));
+               end
            end
         end
 
         function delete(CameraObj)
             % Delete properly driver object + set IsConnected to false
             
-            CameraObj.Handle.delete;
-            CameraObj.IsConnected = false;
+            N = numel(CameraObj);
+            for I=1:1:N
+                CameraObj(I).Handle.delete;
+                CameraObj(I).IsConnected = false;
+            end
         end
 
         % abort 
@@ -578,66 +486,88 @@ classdef camera < obs.LAST_Handle
         % ExpTime
         function Output=get.ExpTime(Obj)
             % getter template
-            if Obj.IsConnected 
-                Output = Obj.Handle.ExpTime;
-            else
-                ErrorStr = 'Can not get ExpTime because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.ExpTime;
+                else
+                    ErrorStr = 'Can not get ExpTime because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         function set.ExpTime(Obj,InputPar)
             % setter template
-            if Obj.IsConnected 
-                if InputPar>Obj.MaxExpTime
-                    Obj.LogFile.writeLog(sprintf('Error: Requested ExpTime is above MaxExpTime of %f s',Obj.MaxExpTime));
-                    error('Requested ExpTime is above MaxExpTime of %f s',Obj.MaxExpTime);
+            
+            N = numel(Obj);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    if InputPar>Obj(I).MaxExpTime
+                        Obj(I).LogFile.writeLog(sprintf('Error: Requested ExpTime is above MaxExpTime of %f s',Obj(I).MaxExpTime));
+                        error('Requested ExpTime is above MaxExpTime of %f s',Obj(I).MaxExpTime);
+                    end
+                    Obj(I).Handle.ExpTime = InputPar;
+                else
+                    ErrorStr = 'Can not set ExpTime because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.Handle.ExpTime = InputPar;
-            else
-                ErrorStr = 'Can not set ExpTime because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
-                end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         % Temperature
         function Output=get.Temperature(Obj)
             % getter template
-            if Obj.IsConnected 
-                Output = Obj.Handle.Temperature;
-            else
-                ErrorStr = 'Can not get Tempearture because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.Temperature;
+                else
+                    ErrorStr = 'Can not get Tempearture because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
+
                 end
-                Obj.LogFile.writeLog(ErrorStr);
-                
             end
         end
         
         function set.Temperature(Obj,InputPar)
             % setter template
-            if Obj.IsConnected 
-                Obj.Handle.Temperature = InputPar;
-            else
-                ErrorStr = 'Can not set Tempearture because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N = numel(Obj);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Obj(I).Handle.Temperature = InputPar;
+                else
+                    ErrorStr = 'Can not set Tempearture because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
+
                 end
-                Obj.LogFile.writeLog(ErrorStr);
-                
             end
         end
         
         % Status
         function Output=get.Status(Obj)
             % getter template
+            
+            if numel(Obj)>1
+                error('Status getter works on a single element camera object');
+            end
             if Obj.IsConnected 
                 Output = Obj.Handle.CamStatus;
             else
@@ -653,48 +583,67 @@ classdef camera < obs.LAST_Handle
         % CoolingPower
         function Output=get.CoolingPower(Obj)
             % getter template
-            if Obj.IsConnected 
-                Output = Obj.Handle.CoolingPower;
-            else
-                ErrorStr = 'Can not get CoolingPower because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.CoolingPower;
+                else
+                    ErrorStr = 'Can not get CoolingPower because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         % TimeStart
         function Output=get.TimeStart(Obj)
             % getter template
-            if Obj.IsConnected 
-                Output = Obj.Handle.TimeStart;
-            else
-                ErrorStr = 'Can not get TimeStart because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.TimeStart;
+                else
+                    ErrorStr = 'Can not get TimeStart because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         % TimeEnd
         function Output=get.TimeEnd(Obj)
             % getter template
-            if Obj.IsConnected 
-                Output = Obj.Handle.TimeEnd;
-            else
-                ErrorStr = 'Can not get TimeEnd because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.TimeEnd;
+                else
+                    ErrorStr = 'Can not get TimeEnd because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         % LastError
         function Output=get.LastError(Obj)
             % getter template
+            
+            if numel(Obj)>1
+                error('LastError getter works on a single element camera object');
+            end
             if Obj.IsConnected 
                 Output = Obj.Handle.LastError;
             else
@@ -709,6 +658,10 @@ classdef camera < obs.LAST_Handle
         % LastImage
         function Output=get.LastImage(Obj)
             % getter template
+            
+            if numel(Obj)>1
+                error('LastImage getter works on a single element camera object');
+            end
             if Obj.IsConnected 
                 Output = Obj.Handle.LastImage;
             else
@@ -726,14 +679,19 @@ classdef camera < obs.LAST_Handle
             % for an explanation of gain & offset vs. dynamics, see
             %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
             %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
-            if Obj.IsConnected 
-                Output = Obj.Handle.ReadMode;
-            else
-                ErrorStr = 'Can not get ReadMode because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.ReadMode;
+                else
+                    ErrorStr = 'Can not get ReadMode because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
@@ -742,14 +700,18 @@ classdef camera < obs.LAST_Handle
             % for an explanation of gain & offset vs. dynamics, see
             %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
             %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
-            if Obj.IsConnected 
-                Obj.Handle.ReadMode = InputPar;
-            else
-                ErrorStr = 'Can not set ReadMode because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N = numel(Obj);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Obj(I).Handle.ReadMode = InputPar;
+                else
+                    ErrorStr = 'Can not set ReadMode because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
@@ -759,14 +721,19 @@ classdef camera < obs.LAST_Handle
             % for an explanation of gain & offset vs. dynamics, see
             %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
             %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
-            if Obj.IsConnected 
-                Output = Obj.Handle.Offset;
-            else
-                ErrorStr = 'Can not get Offset because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.Offset;
+                else
+                    ErrorStr = 'Can not get Offset because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
@@ -775,14 +742,18 @@ classdef camera < obs.LAST_Handle
             % for an explanation of gain & offset vs. dynamics, see
             %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
             %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
-            if Obj.IsConnected 
-                Obj.Handle.Offset = InputPar;
-            else
-                ErrorStr = 'Can not set Offset because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N = numel(Obj);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Obj(I).Handle.Offset = InputPar;
+                else
+                    ErrorStr = 'Can not set Offset because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
@@ -792,14 +763,19 @@ classdef camera < obs.LAST_Handle
             % for an explanation of gain & offset vs. dynamics, see
             %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
             %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
-            if Obj.IsConnected 
-                Output = Obj.Handle.Gain;
-            else
-                ErrorStr = 'Can not get Gain because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N      = numel(Obj);
+            Output = nan(1,N);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Output(I) = Obj(I).Handle.Gain;
+                else
+                    ErrorStr = 'Can not get Gain because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
@@ -808,20 +784,28 @@ classdef camera < obs.LAST_Handle
             % for an explanation of gain & offset vs. dynamics, see
             %  https://www.qhyccd.com/bbs/index.php?topic=6281.msg32546#msg32546
             %  https://www.qhyccd.com/bbs/index.php?topic=6309.msg32704#msg32704
-            if Obj.IsConnected 
-                Obj.Handle.Gain = InputPar;
-            else
-                ErrorStr = 'Can not set Gain because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N = numel(Obj);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Obj(I).Handle.Gain = InputPar;
+                else
+                    ErrorStr = 'Can not set Gain because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         % Binning
         function Output=get.Binning(Obj)
             % getter template
+            
+            if numel(Obj)>1
+                error('Binning getter works on a single element camera object');
+            end
             if Obj.IsConnected 
                 Output = Obj.Handle.Binning;
             else
@@ -835,20 +819,28 @@ classdef camera < obs.LAST_Handle
         
         function set.Binning(Obj,InputPar)
             % setter template
-            if Obj.IsConnected 
-                Obj.Handle.Binning = InputPar;
-            else
-                ErrorStr = 'Can not set Binning because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N = numel(Obj);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Obj(I).Handle.Binning = InputPar;
+                else
+                    ErrorStr = 'Can not set Binning because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         % CoolingStatus
         function Output=get.CoolingStatus(Obj)
             % getter template
+            
+            if numel(Obj)>1
+                error('CoolingStatus getter works on a single element camera object');
+            end
             if Obj.IsConnected 
                 Output = Obj.Handle.CoolingStatus;
             else
@@ -862,18 +854,41 @@ classdef camera < obs.LAST_Handle
         
         function set.CoolingStatus(Obj,InputPar)
             % setter template
-            if Obj.IsConnected 
-                Obj.Handle.CoolingStatus = InputPar;
-            else
-                ErrorStr = 'Can not set CoolingPower because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
+            
+            N = numel(Obj);
+            for I=1:1:N
+                if Obj(I).IsConnected 
+                    Obj(I).Handle.CoolingStatus = InputPar;
+                else
+                    ErrorStr = 'Can not set CoolingPower because camera may be not connected';
+                    if Obj(I).Verbose
+                        warning(ErrorStr);
+                    end
+                    Obj(I).LogFile.writeLog(ErrorStr);
                 end
-                Obj.LogFile.writeLog(ErrorStr);
             end
         end
         
         
+        % MountHandle
+        function set.HandleMount(Obj,InputPar)
+            % setter for HandleMount - disconnect Messenger of
+            % obs.remoteClass object
+           
+            if numel(Obj)>1
+                error('MountHandle setter works on a single element camera object');
+            end
+            
+            I = 1;
+            if isa(Obj(I).HandleMount,'obs.remoteClass')
+                % disconnect remote class messenger before insertion
+                Obj(I).HandleMount.Messenger.disconnect;
+            end
+            Obj(I).HandleMount = InputPar;
+            
+        end
+            
+            
     end
     
     % callback, timers, wiats
@@ -882,6 +897,11 @@ classdef camera < obs.LAST_Handle
             % A callback function: if the camera is idle than stop time,
             % save and display image
             % Input  : - Camera object.
+            
+            if numel(CameraObj)>1
+                error('callbackSaveAndDisplay works on a single element camera object');
+            end
+            
             
             % This function may work in two manners:
             % 1. Check for idle status - however, this is problematic when
@@ -940,40 +960,62 @@ classdef camera < obs.LAST_Handle
         end
         
         function Flag = waitFinish(CameraObj)
-            % wait until the camera ended exposing, readout, and writing image and returned to idle mode
+            % wait until all camera ended exposing, readout, and writing image and returned to idle mode
 
             WaitTime = 0.01;
             Flag = false;
             
-            if CameraObj.Verbose
+            if CameraObj(1).Verbose
                 fprintf('Wait for idle camera\n');
             end
             
-            StopWaiting = false;
-            while ~StopWaiting
+            N = numel(CameraObj);
+            
+            StopWaiting(1,N) = false;
+            while ~all(StopWaiting)
                 
                 pause(WaitTime);
-                Status = CameraObj.Status;
-                switch lower(Status)
-                    case {'exposing','reading'}
-                        % do nothing - continue waiting
-                        
-                    case 'idle'
-                        StopWaiting = true;
-                        Flag = true;
-                        
-                    otherwise
-                        StopWaiting = true;
-                        if CameraObj.Verbose
-                            warning('waitFinish encounter an illegal camera status: %s',Status);
-                        end
-                        CameraObj.LogFile.writeLog(sprintf('waitFinish encounter an illegal camera status: %s',Status));
+                for I=1:1:N
+                    Status = CameraObj(I).Status;
+                    switch lower(Status)
+                        case {'exposing','reading'}
+                            % do nothing - continue waiting
+
+                        case 'idle'
+                            StopWaiting(I) = true;
+
+                        otherwise
+                            StopWaiting(I) = true;
+                            if CameraObj(I).Verbose
+                                warning('waitFinish encounter an illegal camera status: %s',Status);
+                            end
+                            CameraObj(I).LogFile.writeLog(sprintf('waitFinish encounter an illegal camera status: %s',Status));
+                    end
                 end
+                if all(StopWaiting)
+                    Flag = true;
+                end
+                
             end
                         
         end
 
 
+        function AllFlag = isIdle(CameraObj)
+            % Return true (per camera) if camera is idle
+            
+            N = numel(CameraObj);
+            AllFlag = false(1,N);
+            for I=1:1:N
+                switch lower(CameraObj(I).Status)
+                    case 'idle'
+                        AllFlag(I) = true;
+                    otherwise
+                        % do nothing (already false)
+                end
+            end
+            
+        end
         
     end
         
@@ -999,7 +1041,7 @@ classdef camera < obs.LAST_Handle
             %            Default is false.
             % Output : - Sucess flag.
 
-            MinExpTimeForSave = 4;  % [s] Minimum ExpTime below SaveDuringNextExp is disabled
+            MinExpTimeForSave = 5;  % [s] Minimum ExpTime below SaveDuringNextExp is disabled
             
             if nargin<4
                 WaitFinish = false;
@@ -1012,107 +1054,96 @@ classdef camera < obs.LAST_Handle
             end
             %ExpTime = CameraObj.ExpTime;
             
+            if numel(unique(ExpTime))>1
+                error('When multiple cameras all ExpTime need to be the same');
+            end
+            ExpTime = ExpTime(1);
+            
+            SaveMode = 1;  % 2 has a bug - LastImage time is not correct - fix by adding a LastImageTime prop
+            if ExpTime<MinExpTimeForSave && SaveMode==2
+                error('In SaveMode=2 ExpTime must be above %f s',MinExpTimeForSave);
+            end
+            
+            
+            Ncam = numel(CameraObj);
+            
             Flag = false;
-            if CameraObj.IsConnected
+            if all([CameraObj.IsConnected])
                 Status = CameraObj.Status;
                 %SaveDuringNextExp = CameraObj.SaveDuringNextExp;
-                switch lower(CameraObj.Status)
-                    case 'idle'
-                        % take Nimages Exposures
-                        for Iimage=1:1:Nimages
-                            % Execute exposure command
-                            CameraObj.Handle.takeExposure(ExpTime);
+                
+                % take Nimages Exposures
+                for Iimage=1:1:Nimages
+                    
+                    if all(isIdle(CameraObj))
+                        % all cameras are idle
+                        
+                        for Icam=1:1:Ncam
                             
-                            if CameraObj.Verbose
+                            % Execute exposure command
+                            CameraObj(Icam).Handle.takeExposure(ExpTime);
+
+                            if CameraObj(Icam).Verbose
                                 fprintf('Start Exposure %d of %d: ExpTime=%.3f s\n',Iimage,Nimages,ExpTime);
                             end
-                            CameraObj.LogFile.writeLog(sprintf('Start Exposure %d of %d: ExpTime=%.3f s',Iimage,Nimages,ExpTime));
-                            
-                            % save
-                            % There are three modes:
-                            % 1. Do nothing - save the image while the next
-                            % exposure is takem.
-                            % 2. Save the previously taken image
-                            % 3. Save the image immidetily after it is
-                            % taken (when camera is idle).
-                            
-                            
-%                             if AbortSequence
-%                                 SaveMode = 3;
-%                             else
-%                                 if SaveDuringNextExp && ExpTime>MinExpTimeForSave
-%                                     if Iimage==1 
-%                                         if Nimages>1
-%                                             % first out of sequence
-%                                             SaveMode = 1;
-%                                         else
-%                                             % first out of one
-%                                             SaveMode = 3;
-%                                         end
-%                                     else
-%                                         if Iimage==Nimage
-%                                             % The last image out of many
-%                                             SaveMode = 3;
-%                                         else
-%                                             % not the first and not the last
-%                                             SaveMode = 2;
-%                                         end
-%                                     end
-%                                 else
-%                                     SaveMode = 3;
-%                                 end
-%                             end
+                            CameraObj(Icam).LogFile.writeLog(sprintf('Start Exposure %d of %d: ExpTime=%.3f s',Iimage,Nimages,ExpTime));
 
-                            SaveMode = 3;
-                                
+                            
                             switch SaveMode
                                 case 1
-                                    % save the image while the next image
-                                    % is taken
-                                    % assume the image will be store in
-                                    % LastImage
-                                    CameraObj.waitFinish;
-                                case 2
-                                    % save the previous image
-                                    if (CameraObj.SaveOnDisk)
-                                        CameraObj.saveCurImage;
-                                    end
-                                    CameraObj.waitFinish
-                                case 3
                                     % start a callback timer that will save
                                     % the image immidetly after it is taken
-                                    
+
                                     % start timer
-                                    CameraObj.ReadoutTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate',...
+                                    CameraObj(Icam).ReadoutTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate',...
                                                                    'Name', 'camera-timer',...
                                                                    'Period', 0.2, 'StartDelay', max(0,ExpTime-1),...
                                                                    'TimerFcn', @CameraObj.callbackSaveAndDisplay,...
                                                                    'ErrorFcn', 'beep');
-                                    start(CameraObj.ReadoutTimer);
-                                    %CameraObj.LogFile.writeLog('Start image readout timer')
-                                    
-                                    if WaitFinish
-                                        % blocking
-                                        CameraObj.waitFinish;
-                                    end
+                                    start(CameraObj(Icam).ReadoutTimer);
+                                case 2
+                                    % do nothing
                                 otherwise
                                     error('Unknown SaveMode option');
                             end
-                            
-                        end  % end for loop
-                        Flag = true;
-           
-                    otherwise
-                        if CameraObj.Verbose
-                            fprintf('Can not take Exposure because camera is %s instead of idle\n',Status);
+                        end  % end of Icam loop
+                        
+                        switch SaveMode
+                            case 2
+                                % save and display while the next image
+                                % is taken
+                                if Iimage>1
+                                    for Icam=1:1:Ncam
+                                        callbackSaveAndDisplay(CameraObj(Icam));
+                                    end
+                                end
                         end
-                        CameraObj.LogFile.writeLog(sprintf('Can not take Exposure because camera is %s instead of idle\n',Status));
+                        
+                        if WaitFinish
+                            % blocking
+                            CameraObj.waitFinish;
+                        end
+
+                    else
+                        % not idle
+                        if all([CameraObj.Verbose])
+                            fprintf('Can not take Exposure because at least one camera is not idle\n');
+                        end
+                        CameraObj.LogFile.writeLog(sprintf('Can not take Exposure because at least one camera is not idle'));
+                    end
+                         
+                end  % end for loop
+                switch SaveMode
+                    case 2
+                        for Icam=1:1:Ncam
+                            callbackSaveAndDisplay(CameraObj(Icam));
+                        end
+                    otherwise
+                        % do nothing
                 end
-            else
-                if CameraObj.Verbose
-                    fprintf('Can not take Exposure because camera is not connected\n');
-                end
-                CameraObj.LogFile.writeLog(sprintf('Can not take Exposure because camera is not connected\n'));
+                
+                Flag = true;
+                
             end
             
         end
