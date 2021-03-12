@@ -58,7 +58,7 @@ classdef camera < obs.LAST_Handle
         CameraModel char       = 'QHY600M-PH';
         CameraName char        = '';
         CameraNumSDK double                         % Camera number in the SDK
-        CameraNumber double                         %  1       2      3      4
+        CameraNumber double    = NaN                %  1       2      3      4
         CameraPos char         = '';                % 'NE' | 'SE' | 'SW' | 'NW'
         AllCamNames cell       = {};                % A list of all identified cameras - populated on first connect
     end
@@ -218,6 +218,61 @@ classdef camera < obs.LAST_Handle
     
     % connect
     methods 
+        function CameraObj=newconnect(CameraObj,CameraAddress,varargin)
+            %
+            % Example: C.connect(1) % single number interpreted as CameraNumSDK
+            %          C.connect; % like previous
+            
+            InPar = inputParser;
+            addOptional(InPar,'MountH',[]);   % Mount Handle | [] | 'messenger'
+            addOptional(InPar,'FocuserH',[]); % Focuser Handle | []
+            parse(InPar,varargin{:});
+            InPar = InPar.Results;
+
+            ConfigBaseName  = 'config.camera';
+            PhysicalKeyName = 'CameraName';
+            % list of properties to update according to Config file content
+            ListProp        = {'CameraType',...
+                               'CameraModel',...
+                               'CameraName',...
+                               'CameraNumber',...
+                               'CameraPos',...
+                               'ReadMode',...
+                               'Offset',...
+                               'Gain',...
+                               'Binning',...
+                               'Filter',...
+                               'LogFileDir'};
+                           
+            if isempty(CameraAddress)
+                CameraAddress = 1;
+            end
+            if isnumeric(CameraAddress) && numel(CameraAddress)==1
+                % CameraAddress is interpreted as CamerNumSDK
+                
+            else
+                if isnumeric(CameraAddress) && numel(CameraAddress)==3
+                    % CameraAddress is [Node, Mount, Number]
+                    
+                elseif ischar(CameraAddress)
+                    switch lower(CameraAddress)
+                        case 'all'
+                            % connect to all available cameras
+                            
+                        otherwise
+                            error('Unknwon CameraAdress option');
+                    end
+                else
+                    error('Unknwon CameraAdress option');
+                end
+            end
+                    
+                
+            
+
+            
+        end
+        
         function CameraObj=connect(CameraObj,CameraAddress,varargin)    
             % Connect an obs.camera object to a camera
             % Description: Connect the camera to obs.camera object
