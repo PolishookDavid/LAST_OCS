@@ -161,14 +161,22 @@ classdef camera < obs.LAST_Handle
                     error('Unsupported CameraType option');
             end
             
-            %CameraObj(1,Ncam) = CameraObj;
-            %for Icam=1:1:Ncam
-            Icam = 1;
-            CameraObj(Icam).CameraType = CameraType;
-
+            CameraObj.CameraType = CameraType;
+            
             % read Header comments into ConfigHeader
             ConfigHeaderFileName = 'config.HeaderKeywordComment.txt';
-            CameraObj(Icam).ConfigHeader = CameraObj(Icam).loadConfiguration(ConfigHeaderFileName, false);
+            CameraObj.ConfigHeader = CameraObj.loadConfiguration(ConfigHeaderFileName, false);
+            
+            
+            
+            %CameraObj(1,Ncam) = CameraObj;
+            %for Icam=1:1:Ncam
+            %Icam = 1;
+            %CameraObj(Icam).CameraType = CameraType;
+
+            % read Header comments into ConfigHeader
+            %ConfigHeaderFileName = 'config.HeaderKeywordComment.txt';
+            %CameraObj(Icam).ConfigHeader = CameraObj(Icam).loadConfiguration(ConfigHeaderFileName, false);
             %end
             
         end
