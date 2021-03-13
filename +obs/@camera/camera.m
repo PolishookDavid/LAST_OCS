@@ -54,6 +54,8 @@ classdef camera < obs.LAST_Handle
     
     % Camera ID
     properties(Hidden, GetAccess = public, SetAccess = public)
+        NodeNumber double      = NaN;
+        MountNumber double     = NaN;
         CameraType char        = 'QHY';
         CameraModel char       = 'QHY600M-PH';
         CameraName char        = '';
@@ -189,15 +191,19 @@ classdef camera < obs.LAST_Handle
         function [AllCamNames,CameraNumSDK]=identify_all_cameras(CameraName,HandleDriver)
             % Identify all QHY cameras connected to the computer
             % Input  : - CameraName (e.g.., 'QHY367C-e2f51243929ddaaf5').
-            %          - Handle driver. If empty, then will created
+            %            Default is empty (i.e. return all names).
+            %          - Handle driver. If empty, then will be created
             % Output : - A cell array of all identified cameras
             %          - Camera number as identified by the SDK
             % Tested : with QHY/SDK 21-2-1 
             %  https://www.qhyccd.com/file/repository/publish/SDK/210201/sdk_linux64_21.02.01.tgz
-            % Example: CameraNumSDK=obs.camera.identify_all_cameras(CameraName,HandleDriver)
+            % Example: [AllCamName,CameraNumSDK]=obs.camera.identify_all_cameras(CameraName,HandleDriver)
             
             if nargin<2
                 HandleDriver = [];
+                if nargin<1
+                    CameraName = [];
+                end
             end
             
             if isempty(HandleDriver)
@@ -206,9 +212,11 @@ classdef camera < obs.LAST_Handle
             Q.verbose   = false;                % optional if you want to see less blabber
             AllCamNames = Q.allQHYCameraNames;
 
-            if nargout>1
+            if nargout>1 && ~isempty(CameraName)
                 %CameraNumSDK = find(strcmp(AllCamNames,'QHY367C-e2f51243929ddaaf5'));
                 CameraNumSDK = find(strcmp(AllCamNames,CameraName));
+            else
+                CameraNumSDK = [];
             end
         end
        
@@ -216,8 +224,39 @@ classdef camera < obs.LAST_Handle
     end
 
     
+    
+    
     % connect
     methods 
+        function Result=search_key_in_all_config(Obj,ConfigBaseName,Keys)
+            % Search some keyword in all configuration files
+            
+            PWD = pwd;
+            ConfigDir = configfile.pathname;
+            cd(ConfigDir)
+            Files = dir(sprintf('%s*',ConfigBaseName));
+            cd(PWD);
+            
+            Nkey = numel(Keys);
+            
+            N = numel(Files);
+            for I=1:1:N
+                Struct = loadConfiguration(Obj,Files(I).name,false);
+                % search Keys
+                for Ikey=1:1:Nkey
+                    if isfield(Struct,Keys{Ikey})
+                        Result(I).(Keys{Ikey}) = Struct.(Keys{Ikey});
+                    else
+                        Result(I).(Keys{Ikey})  = NaN;
+                    end
+                end
+                
+            end
+                
+            
+        end
+        
+        
         function CameraObj=newconnect(CameraObj,CameraAddress,varargin)
             %
             % Example: C.connect(1) % single number interpreted as CameraNumSDK
@@ -232,7 +271,9 @@ classdef camera < obs.LAST_Handle
             ConfigBaseName  = 'config.camera';
             PhysicalKeyName = 'CameraName';
             % list of properties to update according to Config file content
-            ListProp        = {'CameraType',...
+            ListProp        = {'NodeNumber',...
+                               'MountNumber',...
+                               'CameraType',...
                                'CameraModel',...
                                'CameraName',...
                                'CameraNumber',...
@@ -247,17 +288,40 @@ classdef camera < obs.LAST_Handle
             if isempty(CameraAddress)
                 CameraAddress = 1;
             end
+            
+            ConfigStruct = [];
             if isnumeric(CameraAddress) && numel(CameraAddress)==1
                 % CameraAddress is interpreted as CamerNumSDK
+                % A single camera is connected
+                Ncam = 1;
+                AllCamNumSDK = CameraAddress;
+                AllCamName   = {};
                 
             else
                 if isnumeric(CameraAddress) && numel(CameraAddress)==3
                     % CameraAddress is [Node, Mount, Number]
+                    % A single camera is connected
+                    % Read config file
+                    [ConfigStruct] = readConfig(CameraObj,CameraAddress,...
+                                    ConfigBaseName,PhysicalKeyName);
+                                
+                    [AllCamName,AllCamNumSDK]=obs.camera.identify_all_cameras(ConfigStruct.CameraName);
+                    AllCamName = AllCamName(AllCamNumSDK);
+                    Ncam       = 1;
+                    
+                    
                     
                 elseif ischar(CameraAddress)
                     switch lower(CameraAddress)
                         case 'all'
                             % connect to all available cameras
+                            
+                            % return a list of all camera names
+                            AllCamName = obs.camera.identify_all_cameras;
+                            
+                            % open all cameras
+                            Ncam = numel(AllCamName);
+                            AllCamNumSDK = (1:1:Ncam).';
                             
                         otherwise
                             error('Unknwon CameraAdress option');
@@ -266,7 +330,82 @@ classdef camera < obs.LAST_Handle
                     error('Unknwon CameraAdress option');
                 end
             end
+            % Now we have
+            % AllCamName
+            % AllCamNumSDK
+            % Ncam
+            
+            for Icam=1:1:Ncam
+                % connect to each camera
+                if Icam>1
+                    CameraObj(Icam) = imUtil.util.class.full_copy(CameraObj(1));
+                end
+               
+                % connect camera
+                CameraObj(Icam).CameraNumSDK = AllCamNumSDK(Icam);
+                switch lower(CameraObj(Icam).CameraType)
+                    case 'qhy'
+                        CameraObj(Icam).Handle = inst.QHYccd(CameraObj(Icam).CameraNumSDK);
+                    case 'zwo'
+                        CameraObj(Icam).Handle = inst.ZWOASICamera(CameraObj(Icam).CameraNumSDK);
+                    otherwise
+                        error('Unknown CameraType option');
+                end
+                CameraObj(Icam).CameraName = CameraObj(Icam).Handle.CameraName;
+                
+                % populate the rest of the parameters from the config file
+                
+                % load physical config file
+                ConfigFileNamePhysical = sprintf('config.%s.txt',CameraObj(Icam).CameraName);
+                ConfigPhysical         = CameraObj.loadConfiguration(ConfigFileNamePhysical, false);
+                
+                % load corresponding logical config file
+                % search in all config files
+                Result = CameraObj.search_key_in_all_config(ConfigBaseName,{'CameraName','NodeNumber','MountNumber','CameraNumber'});
+                Ires = find(strcmp(CameraObj(Icam).CameraName,{Result.CameraName}));
+                
+                if isempty(Ires)
+                    % config file not found
+                    ConfigStruct = [];
+                    Address = [NaN NaN NaN];
+                    CameraObj(Icam).ConfigStruct = ConfigPhysical;
+                elseif  numel(Ires)>1
+                    error('More than one config file with the same camera name was found');
                     
+                else
+                    Address = [Result(Ires).NodeNumber, Result(Ires).MountNumber, Result(Ires).CameraNumber];
+                    [ConfigStruct] = getConfigStruct(CameraObj(Icam),Address,ConfigBaseName,PhysicalKeyName);
+                    CameraObj(Icam).ConfigStruct = ConfigStruct;
+                    CameraObj(Icam).updatePropFromConfig(ListProp,CameraObj(Icam).ConfigStruct);
+                end
+                
+                
+                % treat LogFile
+                CameraObj(Icam).LogFile = logFile;
+                if isempty(CameraObj(Icam).LogFileDir)
+                    % do not write logFile
+                    CameraObj(Icam).LogFile.FileNameTemplate = '';    
+                else
+                    % write logFile
+                    CameraObj(Icam).LogFile.LogFileDir = CameraObj(Icam).LogFileDir;
+                    CameraObj(Icam).LogFile.logOwner = sprintf('Camera_%d_%d_%d',Address);
+                end
+                % write logFile
+                CameraObj(Icam).LogFile.writeLog(sprintf('Attempt to connect to camera %s',ConfigStruct.CameraName));
+                
+                % verify connection and write log
+                if isnan(CameraObj(Icam).Temperature)
+                    LogMsg = sprintf('Was not able to connect to camera');
+                    CameraObj(Icam).IsConnected = false;
+                else
+                    LogMsg = sprintf('Camera connected sucssefuly');
+                    CameraObj(Icam).IsConnected = true;
+                end
+                CameraObj(Icam).LogFile.writeLog(LogMsg);
+                if CameraObj(Icam).Verbose
+                    fprintf('%s\n',LogMsg);
+                end
+            end
                 
             
 
