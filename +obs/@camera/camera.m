@@ -170,6 +170,9 @@ classdef camera < obs.LAST_Handle
             CameraObj.ConfigHeader = CameraObj.loadConfiguration(ConfigHeaderFileName, false);
             
             
+            for Icam=2:1:Ncam
+                CameraObj(Icam) = imUtil.util.class.full_copy(CameraObj(1));
+            end
             
             %CameraObj(1,Ncam) = CameraObj;
             %for Icam=1:1:Ncam
@@ -228,43 +231,19 @@ classdef camera < obs.LAST_Handle
     
     % connect
     methods 
-        function Result=search_key_in_all_config(Obj,ConfigBaseName,Keys)
-            % Search some keyword in all configuration files
-            
-            PWD = pwd;
-            ConfigDir = configfile.pathname;
-            cd(ConfigDir)
-            Files = dir(sprintf('%s*',ConfigBaseName));
-            cd(PWD);
-            
-            Nkey = numel(Keys);
-            
-            N = numel(Files);
-            for I=1:1:N
-                Struct = loadConfiguration(Obj,Files(I).name,false);
-                % search Keys
-                for Ikey=1:1:Nkey
-                    if isfield(Struct,Keys{Ikey})
-                        Result(I).(Keys{Ikey}) = Struct.(Keys{Ikey});
-                    else
-                        Result(I).(Keys{Ikey})  = NaN;
-                    end
-                end
-                
-            end
-                
-            
-        end
         
         
-        function CameraObj=newconnect(CameraObj,CameraAddress,varargin)
+        
+        function CameraObj=connect(CameraObj,CameraAddress,varargin)
             %
             % Example: C.connect(1) % single number interpreted as CameraNumSDK
             %          C.connect; % like previous
+            %          C.connect([1 1 3]);
             
             InPar = inputParser;
             addOptional(InPar,'MountH',[]);   % Mount Handle | [] | 'messenger'
             addOptional(InPar,'FocuserH',[]); % Focuser Handle | []
+            addOptional(InPar,'ConstructMessenger',false);
             parse(InPar,varargin{:});
             InPar = InPar.Results;
 
@@ -335,12 +314,13 @@ classdef camera < obs.LAST_Handle
             % AllCamNumSDK
             % Ncam
             
+            if numel(CameraObj)~=Ncam
+                error('Number of identified camera is %d while number of elements in object is %d - must be equal',numel(CameraObj),Ncam);
+            end
+            
             for Icam=1:1:Ncam
                 % connect to each camera
-                if Icam>1
-                    CameraObj(Icam) = imUtil.util.class.full_copy(CameraObj(1));
-                end
-               
+                
                 % connect camera
                 CameraObj(Icam).CameraNumSDK = AllCamNumSDK(Icam);
                 switch lower(CameraObj(Icam).CameraType)
@@ -351,6 +331,14 @@ classdef camera < obs.LAST_Handle
                     otherwise
                         error('Unknown CameraType option');
                 end
+                
+                Sucess = CameraObj(Icam).Handle.connect(CameraObj(Icam).CameraNumSDK);
+                if Sucess
+                    CameraObj(Icam).IsConnected = true;
+                else
+                    CameraObj(Icam).IsConnected = false;
+                end
+                                
                 CameraObj(Icam).CameraName = CameraObj(Icam).Handle.CameraName;
                 
                 % populate the rest of the parameters from the config file
@@ -380,6 +368,7 @@ classdef camera < obs.LAST_Handle
                 end
                 
                 
+                
                 % treat LogFile
                 CameraObj(Icam).LogFile = logFile;
                 if isempty(CameraObj(Icam).LogFileDir)
@@ -387,18 +376,52 @@ classdef camera < obs.LAST_Handle
                     CameraObj(Icam).LogFile.FileNameTemplate = '';    
                 else
                     % write logFile
-                    CameraObj(Icam).LogFile.LogFileDir = CameraObj(Icam).LogFileDir;
+                    CameraObj(Icam).LogFile.Dir      = CameraObj(Icam).LogFileDir;
                     CameraObj(Icam).LogFile.logOwner = sprintf('Camera_%d_%d_%d',Address);
                 end
                 % write logFile
-                CameraObj(Icam).LogFile.writeLog(sprintf('Attempt to connect to camera %s',ConfigStruct.CameraName));
+                if isempty(ConfigStruct)
+                    CameraObj(Icam).LogFile.writeLog(sprintf('Attempt to connect to camera'));
+                else
+                    CameraObj(Icam).LogFile.writeLog(sprintf('Attempt to connect to camera %s',ConfigStruct.CameraName));
+                end
+                
+                
+                % Handles for external objects
+                CameraObj(Icam).HandleMount   = InPar.MountH;
+                CameraObj(Icam).HandleFocuser = InPar.FocuserH;
+
+                if InPar.ConstructMessenger && isempty(CameraObj(Icam).HandleMount)
+                    % if user didn't provide handles
+                    % try to see if there is IP/Port info in Config file
+
+                    % check if config is available
+                    Port = NaN;
+                    if ~isnan(CameraObj(Icam).MountNumber)
+
+                        DestinationIP   = CameraObj.ConfigMount.MountHostIP;
+                        DestinationPort = obs.remoteClass.construct_port_number('mount', CameraObj(Icam).MountNumber,CameraObj(Icam).CameraNumber);
+                        LocalPort       = obs.remoteClass.construct_port_number('camera',CameraObj(Icam).MountNumber,CameraObj(Icam).CameraNumber);
+
+                        RemoteName = 'M';
+                        MsgObj                    = obs.remoteClass(RemoteName,DestinationIP,DestinationPort,LocalPort);
+                        MsgObj.Messenger.CallbackRespond = false;
+                        MsgObj.Messenger.connect;
+                        CameraObj.HandleMount     = MsgObj;
+
+                    end
+                end
+            
+                
+                
+                
                 
                 % verify connection and write log
                 if isnan(CameraObj(Icam).Temperature)
-                    LogMsg = sprintf('Was not able to connect to camera');
+                    LogMsg = sprintf('Was not able to connect to camera %d',Icam);
                     CameraObj(Icam).IsConnected = false;
                 else
-                    LogMsg = sprintf('Camera connected sucssefuly');
+                    LogMsg = sprintf('Camera %d connected sucssefuly',Icam);
                     CameraObj(Icam).IsConnected = true;
                 end
                 CameraObj(Icam).LogFile.writeLog(LogMsg);
@@ -412,7 +435,7 @@ classdef camera < obs.LAST_Handle
             
         end
         
-        function CameraObj=connect(CameraObj,CameraAddress,varargin)    
+        function CameraObj=connectold(CameraObj,CameraAddress,varargin)    
             % Connect an obs.camera object to a camera
             % Description: Connect the camera to obs.camera object
             %              Performs the following steps:
@@ -1261,7 +1284,9 @@ classdef camera < obs.LAST_Handle
             end
             ExpTime = ExpTime(1);
             
-            SaveMode = 1;  % 2 has a bug - LastImage time is not correct - fix by adding a LastImageTime prop
+            SaveMode = 2;
+            WaitFinish = true;
+            
             if ExpTime<MinExpTimeForSave && SaveMode==2
                 error('In SaveMode=2 ExpTime must be above %f s',MinExpTimeForSave);
             end
@@ -1271,7 +1296,7 @@ classdef camera < obs.LAST_Handle
             
             Flag = false;
             if all([CameraObj.IsConnected])
-                Status = CameraObj.Status;
+                %Status = CameraObj.Status;
                 %SaveDuringNextExp = CameraObj.SaveDuringNextExp;
                 
                 % take Nimages Exposures
@@ -1680,7 +1705,7 @@ classdef camera < obs.LAST_Handle
             end
             
             %Info.JD       = juliandate(CameraObj.Handle.LastImageTime);
-            Info.JD       = 1721058.5 + CameraObj.TimeStart;
+            Info.JD       = 1721058.5 + CameraObj.Handle.TimeStartLastImage;
             %Info.ExpTime  = CameraObj.Handle.LastImageExpTime;
             Info.ExpTime  = CameraObj.ExpTime;
             Info.LST      = celestial.time.lst(Info.JD,Info.ObsLon./RAD,'a').*360;  % deg
