@@ -48,7 +48,9 @@ classdef unitCS <obs.LAST_Handle
     properties(Hidden)
         %        
         HandleMount      % mount handle
-        HandleCamera     % 4 elements of camera handles
+        HandleCamera     %
+        HandleRemoteC    %
+        BaseCameraName char     = 'C';
         
         MountConfigStruct struct     = struct();
         CameraConfigStruct struct    = struct();
@@ -104,51 +106,99 @@ classdef unitCS <obs.LAST_Handle
             end
         end
         
-        function UnitObj=connect(UnitObj,varargin)
+        function Obj=connect(Obj,varargin)
             %
             
             
             InPar = inputParser;
+            addOptional(InPar,'MountType','Xerxes');
             addOptional(InPar,'AddressMount',[1 1]);
             addOptional(InPar,'CameraNumber',3); %[1 3]);
-            
+            addOptional(InPar,'CameraRemote',[]); %[1 3]);
+            addOptional(InPar,'CameraType','QHY');
+            addOptional(InPar,'RemoteCameraName','C');  % if empty then do not populate
             parse(InPar,varargin{:});
             InPar = InPar.Results;
             
-            MountConfigStruct = readConfig(UnitObj,InPar.AddressMount,...
-                                    'config.mount','MountName');
-                                
             Ncam = numel(InPar.CameraNumber);
-            for Icam=1:1:Ncam
-                CameraConfigStruct(Icam) = readConfig(UnitObj,[InPar.AddressMount, InPar.CameraNumber(Icam)],...
-                                    'config.camera','CameraName');
-            end
-                
-            UnitObj.MountConfigStruct  = MountConfigStruct;
-            UnitObj.CameraConfigStruct = CameraConfigStruct;
             
-            % connect to mount
-            M = obs.mount(MountConfigStruct.MountType);
+            if Obj.Verbose
+                fprintf('Connect to mount Node=%d, Mount=%d\n',InPar.AddressMount);
+            end
+            
+            M = obs.mount(InPar.MountType);
             M.connect(InPar.AddressMount);
             
-            % connect to focuser
+            % connect to fcusers and cameras
+            C = obs.camera(InPar.CameraType,Ncam);
             for Icam=1:1:Ncam
-                F(Icam) = obs.focuser;
-                F(Icam).connect;
+                F(Icam) = obs.camera;
+                F(Icam).connect([InPar.AddressMount InPar. CameraNumber(Icam)]);
+                
+                C(Icam) = obs.camera;
+                C(Icam).connect([InPar.AddressMount InPar. CameraNumber(Icam)], 'MountH',M, 'FocuserH',F(Icam));
             end
             
-            % connect to camera
-            for Icam=1:1:Ncam
-                C(Icam) = obs.camera(CameraConfigStruct(Icam).CameraType);
-                C(Icam).connect([InPar.AddressMount, InPar.CameraNumber(Icam)]);
-                C(Icam).HandleMount  = M;
-                C(Icam).HandleFocuser = F;
+            if ~isempty(InPar.CameraRemoteName)
+                Obj.CameraRemoteName = InPar.CameraRemoteName;
             end
             
-            UnitObj.HandleMount  = M;
-            UnitObj.HandleCamera = C;
+            % connect remote cameras
+            if isempty(InPar.CameraRemote)
+                RemoteC = [];
+            else
+                RemoteC      = InPar.CameraRemote; % This should be a connected object
+                RemoteC.Name = Obj.CameraRemoteName;
+                
+            end
+            
+            Obj.HandleMount   = M;
+            Obj.HandleCamera  = C;
+            Obj.HandleRemoteC = RemoteC;
+            
+            
+            
                 
         end
+        
+        function Val=getCameraProp(Obj,Prop)
+            % a general getter for camera property
+            % Example: Obj.getCameraProp('ExpTime');
+            
+            % get info from remote cameras
+            % check how many cameras are remotely connected
+            Nrc = Obj.classCommand(Obj.HandleRemoteC,'numel','(1:end)');
+            Nc  = numel(Obj.HandleCamera);
+            
+            Ind = 0;
+            % get remote prop
+            for Irc=1:1:Nrc
+                Ind = Ind + 1;
+                Tmp = Obj.classCommand(Obj.HandleRemoteC,Prop,Irc);
+                if ischar(Tmp)
+                    Val{Ind} = Tmp;
+                elseif isnumeric(Tmp)
+                    Val(Ind) = Tmp;
+                else
+                    error('Unknown classCommand return option');
+                end
+            end
+            
+            for Ic=1:1:Nc
+                Ind = Ind + 1;
+                Tmp = Obj.HandleCamera(Ic).(Prop);
+                if ischar(Tmp)
+                    Val{Ind} = Tmp;
+                elseif isnumeric(Tmp)
+                    Val(Ind) = Tmp;
+                else
+                    error('Unknown classCommand return option');
+                end
+            end
+            
+            
+        end
+        
         
     end
     
@@ -232,6 +282,8 @@ classdef unitCS <obs.LAST_Handle
             
             Val = UnitObj.HandleMount.Status;
         end
+        
+        
     end
     
     % setters/getters for camera
