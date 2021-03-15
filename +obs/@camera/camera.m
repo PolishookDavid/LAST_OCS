@@ -1139,7 +1139,9 @@ classdef camera < obs.LAST_Handle
             
                 % camera is ready
                 % Stop timer
-                stop(CameraObj.ReadoutTimer);
+                if ~isempty(CameraObj.ReadoutTimer)
+                    stop(CameraObj.ReadoutTimer);
+                end
 
 
                 % Save the image according to setting.
@@ -1260,8 +1262,8 @@ classdef camera < obs.LAST_Handle
             SaveMode = 2;
             %WaitFinish = true;
             
-            if ExpTime<MinExpTimeForSave && SaveMode==2
-                error('In SaveMode=2 ExpTime must be above %f s',MinExpTimeForSave);
+            if Nimages>1 && ExpTime<MinExpTimeForSave && SaveMode==2
+                error('If SaveMode=2 and Nimages>1 then ExpTime must be above %f s',MinExpTimeForSave);
             end
             
             
@@ -1281,9 +1283,7 @@ classdef camera < obs.LAST_Handle
                         for Icam=1:1:Ncam
                             
                             % Execute exposure command
-size(CameraObj(Icam).LastImage)
                             CameraObj(Icam).Handle.takeExposure(ExpTime);
-size(CameraObj(Icam).LastImage)
                             if CameraObj(Icam).Verbose
                                 fprintf('Start Exposure %d of %d: ExpTime=%.3f s\n',Iimage,Nimages,ExpTime);
                             end
@@ -1569,7 +1569,7 @@ size(CameraObj(Icam).LastImage)
             
             
             %ProjectName      = sprintf('LAST.%d.%02d.%d',NodeNumber,MountNumber,CameraObj.CameraNumber);
-            ImageDate        = datestr(CameraObj.TimeStart,'yyyymmdd.HHMMSS.FFF');
+            ImageDate        = datestr(CameraObj.Handle.TimeStartLastImage,'yyyymmdd.HHMMSS.FFF');
             %ObservatoryNode  = num2str(ConfigNode.ObservatoryNode);
             %MountGeoName     = num2str(ConfigMount.MountGeoName);
 
@@ -1591,6 +1591,10 @@ size(CameraObj(Icam).LastImage)
 
             % Construct header
             % OLD: Header = CameraObj.updateHeader;
+            
+            if CameraObj.Verbose
+                fprintf('Writing image name %s to disk\n',CameraObj.LastImageName);
+            end
 
             % Write fits
             FITS.write(single(CameraObj.Handle.LastImage), CameraObj.LastImageName,'Header',HeaderCell,'DataType','single');

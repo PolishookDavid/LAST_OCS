@@ -63,9 +63,7 @@ classdef unitCS <obs.LAST_Handle
             % Input  : - Mount type ['xerxes'] | 'ioptron'
             %
             
-           
-            
-            
+          
             
 %             if nargin >= 1
 %               % Derive mount type from the user
