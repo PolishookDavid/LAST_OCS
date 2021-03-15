@@ -89,7 +89,7 @@ classdef camera < obs.LAST_Handle
     properties(Hidden)
         SaveOnDisk logical   = true; %false;   % A flag marking if the images should be wriiten to the disk after exposure
         ImageFormat char     = 'fits';    % The format of the written image
-        
+        SaveWhenIdle logical = true;      % will save LastImage even if camera is not idle
     end
     
     % display
@@ -1133,54 +1133,27 @@ classdef camera < obs.LAST_Handle
             % taking sequence of imaes.
             % 2. wait for LastImage to be non empty and LastImageSaved to
             % be false.
-            Method = 1;
             
-            %CameraObj.Status
-            switch Method
-                case 1
-
-                    switch lower(CameraObj.Status)
-                        case 'idle'
-                            % camera is ready
-                            % Stop timer
-                            stop(CameraObj.ReadoutTimer);
+            %size(CameraObj.LastImage)
+            if strcmp(CameraObj.Status,'idle') || CameraObj.SaveWhenIdle
+            
+                % camera is ready
+                % Stop timer
+                stop(CameraObj.ReadoutTimer);
 
 
-                            % Save the image according to setting.
-                            if (CameraObj.SaveOnDisk)
-                                CameraObj.saveCurImage;
-                            end
-                            CameraObj.LastImageSaved = true;
+                % Save the image according to setting.
+                if (CameraObj.SaveOnDisk)
+                    CameraObj.saveCurImage;
+                end
+                CameraObj.LastImageSaved = true;
 
-                            % Display the image according to setting.
-                            if (CameraObj.Display)
-                                CameraObj.displayImage;
-                            end
-                    end
-                    
-                case 2
-                    if ~isempty(CameraObj.LastImage) && ~CameraObj.LastImageSaved
-                        % new image that was not saved is present in buffer
-                        % Stop timer
-                        stop(CameraObj.ReadoutTimer);
-
-
-                        % Save the image according to setting.
-                        if (CameraObj.SaveOnDisk)
-                            CameraObj.saveCurImage;
-                        end
-                        CameraObj.LastImageSaved = true;
-
-                        % Display the image according to setting.
-                        if (CameraObj.Display)
-                            CameraObj.displayImage;
-                        end
-                        
-                    end
-
-                otherwise
-                    error('Unknown Method option');
+                % Display the image according to setting.
+                if (CameraObj.Display)
+                    CameraObj.displayImage;
+                end
             end
+                   
 
         end
         
@@ -1285,7 +1258,7 @@ classdef camera < obs.LAST_Handle
             ExpTime = ExpTime(1);
             
             SaveMode = 2;
-            WaitFinish = true;
+            %WaitFinish = true;
             
             if ExpTime<MinExpTimeForSave && SaveMode==2
                 error('In SaveMode=2 ExpTime must be above %f s',MinExpTimeForSave);
@@ -1308,40 +1281,42 @@ classdef camera < obs.LAST_Handle
                         for Icam=1:1:Ncam
                             
                             % Execute exposure command
+size(CameraObj(Icam).LastImage)
                             CameraObj(Icam).Handle.takeExposure(ExpTime);
-
+size(CameraObj(Icam).LastImage)
                             if CameraObj(Icam).Verbose
                                 fprintf('Start Exposure %d of %d: ExpTime=%.3f s\n',Iimage,Nimages,ExpTime);
                             end
                             CameraObj(Icam).LogFile.writeLog(sprintf('Start Exposure %d of %d: ExpTime=%.3f s',Iimage,Nimages,ExpTime));
 
-                            
-                            switch SaveMode
+                        end  % end of Icam loop
+                        
+                        switch SaveMode
+                            case 1
                                 case 1
                                     % start a callback timer that will save
                                     % the image immidetly after it is taken
 
                                     % start timer
+                                    CameraObj(Icam).SaveWhenIdle = false;
                                     CameraObj(Icam).ReadoutTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate',...
                                                                    'Name', 'camera-timer',...
                                                                    'Period', 0.2, 'StartDelay', max(0,ExpTime-1),...
                                                                    'TimerFcn', @CameraObj.callbackSaveAndDisplay,...
                                                                    'ErrorFcn', 'beep');
                                     start(CameraObj(Icam).ReadoutTimer);
-                                case 2
-                                    % do nothing
-                                otherwise
-                                    error('Unknown SaveMode option');
-                            end
-                        end  % end of Icam loop
-                        
-                        switch SaveMode
                             case 2
                                 % save and display while the next image
                                 % is taken
                                 if Iimage>1
                                     for Icam=1:1:Ncam
+                                        if CameraObj(Icam).Verbose
+                                            fprintf('Save Image %d of camera %d\n',Iimage-1,Icam);
+                                        end
+                                        CameraObj(Icam).SaveWhenIdle = true;
+                                        %size(CameraObj(Icam).LastImage)
                                         callbackSaveAndDisplay(CameraObj(Icam));
+                                        
                                     end
                                 end
                         end
@@ -1349,6 +1324,7 @@ classdef camera < obs.LAST_Handle
                         if WaitFinish
                             % blocking
                             CameraObj.waitFinish;
+                            %size(CameraObj(Icam).LastImage)
                         end
 
                     else
@@ -1360,10 +1336,16 @@ classdef camera < obs.LAST_Handle
                     end
                          
                 end  % end for loop
+                
                 switch SaveMode
                     case 2
                         for Icam=1:1:Ncam
+                            if CameraObj(Icam).Verbose
+                                fprintf('Save Image %d of camera %d\n',Nimages,Icam);
+                            end
+                            CameraObj(Icam).SaveWhenIdle = true;
                             callbackSaveAndDisplay(CameraObj(Icam));
+                            
                         end
                     otherwise
                         % do nothing
@@ -1497,6 +1479,7 @@ classdef camera < obs.LAST_Handle
             %           divide by flat propr to display.
             %           Default is to use the CameraObj.DivideByFlat property.
             
+            
             if nargin<4
                 DivideByFlat = CameraObj.DivideByFlat;
                 if nargin<3
@@ -1552,6 +1535,7 @@ classdef camera < obs.LAST_Handle
         function saveCurImage(CameraObj)
             % Save last image to disk according the user's settings
             % Also set LastImageSaved to true, until a new image is arrive
+            
             
             % Construct directory name to save image in
             DirName = obs.util.config.constructDirName('raw');
