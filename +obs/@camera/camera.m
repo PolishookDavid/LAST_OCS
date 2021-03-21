@@ -34,6 +34,9 @@ classdef camera < obs.LAST_Handle
     
     properties(Hidden)
         Filter char            = '';          % Filter Name % not in driver
+        Pos double             = NaN;         % Focuser position
+        LastPos double         = NaN;         % focuser last position
+        FocuserStatus          = [];          % focuser status
     end
     
     % camera setup
@@ -95,6 +98,7 @@ classdef camera < obs.LAST_Handle
     % display
     properties(Hidden)
         Display              = 'ds9';   % 'ds9' | 'matlab' | ''
+        Frame double         = [];
         DisplayZoom double   = 0.08;    % ds9 zoom
         DivideByFlat logical = true;    % subtract dark and divide by flat before dispaly
     end
@@ -239,6 +243,10 @@ classdef camera < obs.LAST_Handle
             % Example: C.connect(1) % single number interpreted as CameraNumSDK
             %          C.connect; % like previous
             %          C.connect([1 1 3]);
+            
+            if nargin<2
+                CameraAddress = [];
+            end
             
             InPar = inputParser;
             addOptional(InPar,'MountH',[]);   % Mount Handle | [] | 'messenger'
@@ -687,6 +695,9 @@ classdef camera < obs.LAST_Handle
                   CameraObj(I).IsConnected = ~Success;
 
                   CameraObj(I).LogFile.writeLog(sprintf('Disconnect CameraName: %s',CameraObj(I).CameraName));
+                  if ~isempty(CameraObj(I).LogFile)
+                      CameraObj(I).LogFile.delete;
+                  end
                end
            end
         end
@@ -1113,7 +1124,57 @@ classdef camera < obs.LAST_Handle
             
         end
             
+        
+        % focuser
+        function Val=get.Pos(Obj)
+            % getters
             
+            N = numel(Obj);
+            Val = nan(1,N);
+            for I=1:1:N
+                if ~isempty(Obj(I).HandleFocuser)
+                    Val(I) = Obj(I).HandleFocuser.Pos;
+                end
+            end
+        end
+        
+        function set.Pos(Obj,Val)
+            % setters
+            
+            if ~isempty(Obj.HandleFocuser)
+                Obj.HandleFocuser.Pos = Val;
+            else
+                warning('Can not set focus position because there is no focuser handle');
+                Obj.LogFile.writeLog('Can not set focus position because there is no focuser handle');
+            end
+        end    
+        
+        function Val=get.LastPos(Obj)
+            % getters
+            
+            N = numel(Obj);
+            Val = nan(1,N);
+            for I=1:1:N
+                if ~isempty(Obj(I).HandleFocuser)
+                    Val(I) = Obj(I).HandleFocuser.LastPos;
+                end
+            end
+        end
+        
+        function Val=get.FocuserStatus(Obj)
+            % getters
+            
+            N = numel(Obj);
+            Val = cell(1,N);
+            for I=1:1:N
+                if ~isempty(Obj(I).HandleFocuser)
+                    Val{I} = Obj(I).HandleFocuser.Status;
+                end
+            end
+        end
+        
+        
+        
     end
     
     % callback, timers, wiats
@@ -1225,7 +1286,7 @@ classdef camera < obs.LAST_Handle
     % basic functions
     % takeExposure
     methods
-        function Flag=takeExposure(CameraObj,ExpTime,Nimages,WaitFinish)
+        function Flag=takeExposure(CameraObj,ExpTime,Nimages,varargin)
             % Take a single or multiple number of exposures
             % Package: +obs.@mount
             % Input  : - A camera object.
@@ -1233,23 +1294,43 @@ classdef camera < obs.LAST_Handle
             %            the CameraObj.ExpTime, and the CameraObj.ExpTime
             %            will be set to this value.
             %          - Number of images to obtain. Default is 1.
-            %          - waitFinish flag: if true than will act as a
-            %            blocking function and return the prompt after the
-            %            last image is downloaded.
-            %            if false, will return thre prompt, after the last
-            %            image has started.
-            %            Default is false.
+            %          * ...,key,val,...
+            %            'WaitFinish' - default is true.
+            %            'SaveMode' - default is 2.
+            %            'ImType' - default is [].
+            %            'Object' - default is [].
             % Output : - Sucess flag.
 
+            
+            InPar = inputParser;
+            addOptional(InPar,'WaitFinish',true);
+            addOptional(InPar,'ImType',[]);
+            addOptional(InPar,'Object',[]);
+            addOptional(InPar,'SaveMode',2);
+            parse(InPar,varargin{:});
+            InPar = InPar.Results;
+           
+            if InPar.SaveMode==1 && numel(CameraObj)>1
+                error('SaveMode=1 is allowed only for a single camera');
+            end
+            
+            
+            if ~isempty(InPar.ImType)
+                % update ImType
+                CameraObj.ImType = InPar.ImType;
+            end
+            if ~isempty(InPar.Object)
+                % update ImType
+                CameraObj.Object = InPar.Object;
+            end
+            
             MinExpTimeForSave = 5;  % [s] Minimum ExpTime below SaveDuringNextExp is disabled
             
-            if nargin<4
-                WaitFinish = false;
-                if nargin<3
-                    Nimages = 1;
-                    if nargin<2
-                        ExpTime = CameraObj.ExpTime;
-                    end
+           
+            if nargin<3
+                Nimages = 1;
+                if nargin<2
+                    ExpTime = CameraObj.ExpTime;
                 end
             end
             %ExpTime = CameraObj.ExpTime;
@@ -1258,11 +1339,8 @@ classdef camera < obs.LAST_Handle
                 error('When multiple cameras all ExpTime need to be the same');
             end
             ExpTime = ExpTime(1);
-            
-            SaveMode = 2;
-            %WaitFinish = true;
-            
-            if Nimages>1 && ExpTime<MinExpTimeForSave && SaveMode==2
+                        
+            if Nimages>1 && ExpTime<MinExpTimeForSave && InPar.SaveMode==2
                 error('If SaveMode=2 and Nimages>1 then ExpTime must be above %f s',MinExpTimeForSave);
             end
             
@@ -1291,20 +1369,19 @@ classdef camera < obs.LAST_Handle
 
                         end  % end of Icam loop
                         
-                        switch SaveMode
+                        switch InPar.SaveMode
                             case 1
-                                case 1
-                                    % start a callback timer that will save
-                                    % the image immidetly after it is taken
+                                % start a callback timer that will save
+                                % the image immidetly after it is taken
 
-                                    % start timer
-                                    CameraObj(Icam).SaveWhenIdle = false;
-                                    CameraObj(Icam).ReadoutTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate',...
-                                                                   'Name', 'camera-timer',...
-                                                                   'Period', 0.2, 'StartDelay', max(0,ExpTime-1),...
-                                                                   'TimerFcn', @CameraObj.callbackSaveAndDisplay,...
-                                                                   'ErrorFcn', 'beep');
-                                    start(CameraObj(Icam).ReadoutTimer);
+                                % start timer
+                                CameraObj(Icam).SaveWhenIdle = false;
+                                CameraObj(Icam).ReadoutTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate',...
+                                                               'Name', 'camera-timer',...
+                                                               'Period', 0.2, 'StartDelay', max(0,ExpTime-1),...
+                                                               'TimerFcn', @CameraObj.callbackSaveAndDisplay,...
+                                                               'ErrorFcn', 'beep');
+                                start(CameraObj(Icam).ReadoutTimer);
                             case 2
                                 % save and display while the next image
                                 % is taken
@@ -1321,7 +1398,7 @@ classdef camera < obs.LAST_Handle
                                 end
                         end
                         
-                        if WaitFinish
+                        if InPar.WaitFinish
                             % blocking
                             CameraObj.waitFinish;
                             %size(CameraObj(Icam).LastImage)
@@ -1337,7 +1414,7 @@ classdef camera < obs.LAST_Handle
                          
                 end  % end for loop
                 
-                switch SaveMode
+                switch InPar.SaveMode
                     case 2
                         for Icam=1:1:Ncam
                             if CameraObj(Icam).Verbose
@@ -1502,7 +1579,12 @@ classdef camera < obs.LAST_Handle
                     switch lower(Display)
                         case 'ds9'
                             % Display in ds9 each camera in a different frame
-                            ds9(Image, 'frame', CameraObj.CameraNumSDK)
+                            if isempty(CameraObj.Frame)
+                                Frame = CameraObj.CameraNumSDK;
+                            else
+                                Frame = CameraObj.Frame;
+                            end
+                            ds9(Image, 'frame', Frame);
 
                             if ~isempty(DisplayZoom)
                                 ds9.zoom(DisplayZoom, DisplayZoom);
@@ -1624,7 +1706,7 @@ classdef camera < obs.LAST_Handle
             Info.BZERO    = 0.0;
             Info.BSCALE   = 1.0;
             Info.IMTYPE   = CameraObj.ImType;
-                        
+            Info.OBJECT   = CameraObj.Object;            
             % Gain
             Key   = 'GAIN';
             Field = Key;

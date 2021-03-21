@@ -271,5 +271,17 @@ classdef focuser <obs.LAST_Handle
 
         end
         
+        function disconnect(Obj)
+            % disconnect focuser
+            
+            N = numel(Obj);
+            for I=1:1:N
+                Obj(I).Handle.disconnect;
+                if ~isempty(Obj(I).LogFile)
+                    Obj(I).LogFile.delete;
+                end
+            end
+        end
+        
     end
 end

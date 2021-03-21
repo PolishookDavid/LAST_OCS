@@ -354,8 +354,10 @@ classdef mount <obs.LAST_Handle
                 MountObj.LastError = 'can not disconnect mount because IsConnected=false';
             end
             if ~isempty(MountObj.LogFile)
-                MountObj.LogFile.delete;
+                %MountObj.LogFile.delete;
+                %MountObj.LogFile = [];
             end
+            
         end   
         
         function abort(MountObj)

@@ -32,15 +32,18 @@ InPar = InPar.Results;
 
 
 
-Lon = M.MountPos(1);  % deg
-Lat = M.MountPos(2);  % deg
+Lon = M.ObsLon;  % deg
+Lat = M.ObsLat;  % deg
 
 % select grid
 Grid = obs.util.tools.hadec_grid('NstepGC',InPar.NstepGC,'MinAM',InPar.MinAM,'Lat',Lat,'AzAltLimit',InPar.AzAltLimit);
 
 
 % set exposure time
-C.ExpTime = InPar.ExpTime;
+Ncam = numel(C);
+for Icam=1:1:Ncam
+    C(Icam).ExpTime = InPar.ExpTime;
+end
 
 Ntarget = numel(Grid.HA);
 for Itarget=1:1:Ntarget
@@ -86,22 +89,22 @@ for Itarget=1:1:Ntarget
     C.takeExposure;
 
     %--- wait for image ---
-    C.waitFinish;
-    FileName = C.LastImageName;
+    %C.waitFinish;
+    %FileName = C.LastImageName;
 
-    try
-        %--- astrometry ---
-        ResAst = obs.util.tools.astrometry_center(FileName,'RA',Res(Itarget).MountRA./RAD,...
-                                                     'Dec',Res(Itarget).MountDec./RAD);
-        % save results
-        Res(Itarget).FileName    = FileName;
-        Res(Itarget).AstR        = ResAst.AstR;
-        Res(Itarget).AstAssymRMS = ResAst.AstR.AssymErr;
-        Res(Itarget).AstRA       = ResAst.CenterRA;
-        Res(Itarget).AstDec      = ResAst.CenterDec;
-    
-        
-    end
+%     try
+%         %--- astrometry ---
+%         ResAst = obs.util.tools.astrometry_center(FileName,'RA',Res(Itarget).MountRA./RAD,...
+%                                                      'Dec',Res(Itarget).MountDec./RAD);
+%         % save results
+%         Res(Itarget).FileName    = FileName;
+%         Res(Itarget).AstR        = ResAst.AstR;
+%         Res(Itarget).AstAssymRMS = ResAst.AstR.AssymErr;
+%         Res(Itarget).AstRA       = ResAst.CenterRA;
+%         Res(Itarget).AstDec      = ResAst.CenterDec;
+%     
+%         
+%     end
     
     toc
 end

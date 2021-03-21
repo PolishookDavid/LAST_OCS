@@ -33,6 +33,7 @@ classdef unitCS <obs.LAST_Handle
         
         % focusers
         Pos                % vector of 4 positions
+        LastPos
         FocuserStatus      % cell array of 4 status
         
         
@@ -50,10 +51,12 @@ classdef unitCS <obs.LAST_Handle
         HandleMount      % mount handle
         HandleCamera     %
         HandleRemoteC    %
-        BaseCameraName char     = 'C';
+        CameraRemoteName char        = 'C';
         
         MountConfigStruct struct     = struct();
         CameraConfigStruct struct    = struct();
+        
+        Verbose logical              = true;
     end
     
 
@@ -90,7 +93,6 @@ classdef unitCS <obs.LAST_Handle
 
         function delete(UnitObj)
             % delete mount object and related sub objects
-            delete(UnitObj.HandleFocuser);
             delete(UnitObj.HandleMount);
             delete(UnitObj.HandleCamera);
             
@@ -99,11 +101,11 @@ classdef unitCS <obs.LAST_Handle
         function UnitObj=disconnect(UnitObj)
             % disconnect all objects
             
-            UnitObj.HandleMount.disconnect;
             for I=1:1:numel(UnitObj.HandleCamera)
                 UnitObj.HandleCamera(I).HandleFocuser.disconnect;
                 UnitObj.HandleCamera(I).disconnect;
             end
+            UnitObj.HandleMount.disconnect;
         end
         
         function Obj=connect(Obj,varargin)
@@ -113,15 +115,14 @@ classdef unitCS <obs.LAST_Handle
             InPar = inputParser;
             addOptional(InPar,'MountType','Xerxes');
             addOptional(InPar,'AddressMount',[1 1]);
-            addOptional(InPar,'CameraNumber',3); %[1 3]);
+            addOptional(InPar,'Ncam',2);
+            %addOptional(InPar,'CameraNumber',[1 3]); %[1 3]);
             addOptional(InPar,'CameraRemote',[]); %[1 3]);
             addOptional(InPar,'CameraType','QHY');
-            addOptional(InPar,'RemoteCameraName','C');  % if empty then do not populate
+            addOptional(InPar,'CameraRemoteName','C');  % if empty then do not populate
             parse(InPar,varargin{:});
             InPar = InPar.Results;
-            
-            Ncam = numel(InPar.CameraNumber);
-            
+                        
             if Obj.Verbose
                 fprintf('Connect to mount Node=%d, Mount=%d\n',InPar.AddressMount);
             end
@@ -130,14 +131,22 @@ classdef unitCS <obs.LAST_Handle
             M.connect(InPar.AddressMount);
             
             % connect to fcusers and cameras
-            C = obs.camera(InPar.CameraType,Ncam);
+            C = obs.camera(InPar.CameraType,InPar.Ncam);
+            C.connect('all');
+            Ncam = numel(C);
+            
+            pause(3);
+               
+            
             for Icam=1:1:Ncam
-                F(Icam) = obs.camera;
-                F(Icam).connect([InPar.AddressMount InPar. CameraNumber(Icam)]);
-                
-                C(Icam) = obs.camera;
-                C(Icam).connect([InPar.AddressMount InPar. CameraNumber(Icam)], 'MountH',M, 'FocuserH',F(Icam));
+                F(Icam) = obs.focuser;
+                F(Icam).connect([InPar.AddressMount C(Icam).CameraNumber]);
+                % assign focuser to camera using CameraNumber
+                C(Icam).HandleFocuser = F(Icam);
             end
+            
+            
+            
             
             if ~isempty(InPar.CameraRemoteName)
                 Obj.CameraRemoteName = InPar.CameraRemoteName;
@@ -167,7 +176,11 @@ classdef unitCS <obs.LAST_Handle
             
             % get info from remote cameras
             % check how many cameras are remotely connected
-            Nrc = Obj.classCommand(Obj.HandleRemoteC,'numel','(1:end)');
+            if isempty(Obj.HandleRemoteC)
+                Nrc = 0;
+            else
+                Nrc = Obj.classCommand(Obj.HandleRemoteC,'numel','(1:end)');
+            end
             Nc  = numel(Obj.HandleCamera);
             
             Ind = 0;
@@ -189,6 +202,8 @@ classdef unitCS <obs.LAST_Handle
                 Tmp = Obj.HandleCamera(Ic).(Prop);
                 if ischar(Tmp)
                     Val{Ind} = Tmp;
+                elseif iscellstr(Tmp)
+                    Val{Ind} = Tmp{1};
                 elseif isnumeric(Tmp)
                     Val(Ind) = Tmp;
                 else
@@ -204,6 +219,33 @@ classdef unitCS <obs.LAST_Handle
     
     % setters/getters for mount
     methods
+        % general
+        function Val=get.Status(UnitObj)
+            % general status: idle | tracking | busy
+            
+            CheckFocuser = false;  % set to true in case you want to check also the focuser status
+            
+            % check status of all devices
+            Val = 'busy';
+            MS = UnitObj.MountStatus;
+            if strcmp(MS,'idle') || strcmp(MS,'tracking')
+                CamStatus = UnitObj.CameraStatus;
+                if all(strcmp(CamStatus,'idle'))
+                    if CheckFocuser
+                        FocStatus = UnitObj.FocuserStatus;
+                    else
+                        FocStatus = {'idle'};
+                    end
+                    if all(strcmp(FocStatus,'idle'))
+                        Val = MS;
+                    end
+                end
+                
+            end
+               
+            
+        end
+        
         %--- Mount ---
         function Val=get.RA(UnitObj)
             % getters
@@ -292,62 +334,36 @@ classdef unitCS <obs.LAST_Handle
         function Val=get.CameraStatus(UnitObj)
             % getters
             
-            Ncam = numel(UnitObj.HandleCamera);
-            Val  = cell(1,Ncam);
-            for Icam=1:1:Ncam
-                Val{Icam} = UnitObj.HandleCamera(Icam).Status;
-            end
+            Val = UnitObj.getCameraProp('Status');
+            
         end
         
         function Val=get.Temperature(UnitObj)
             % getters
            
-            Ncam = numel(UnitObj.HandleCamera);
-            Val  = nan(1,Ncam);
-            for Icam=1:1:Ncam
-                Val(Icam) = UnitObj.HandleCamera(Icam).Temperature;
-            end
+            Val = UnitObj.getCameraProp('Temperature');
+            
         end
         
         function set.Temperature(UnitObj,Val)
             % setters
            
-            Ncam = numel(UnitObj.HandleCamera);
-            if numel(Val)==1
-                Val = Val + zeros(1,Ncam);
-            end
-            if numel(Val)~=Ncam
-                error('Number of Temperature must be 1 or equal to the number of cameras: %d',Ncam);
-            end
-            for Icam=1:1:Ncam
-                UnitObj.HandleCamera(Icam).Temperature = Val(Icam);
-            end
+            error('set does not work yet');
             
         end
         
         function Val=get.ExpTime(UnitObj)
             % getters
            
-            Ncam = numel(UnitObj.HandleCamera);
-            Val  = nan(1,Ncam);
-            for Icam=1:1:Ncam
-                Val(Icam) = UnitObj.HandleCamera(Icam).ExpTime;
-            end
+            Val = UnitObj.getCameraProp('ExpTime');
+            
         end
             
         function set.ExpTime(UnitObj,Val)
-            % getters
+            % setters
            
-            Ncam = numel(UnitObj.HandleCamera);
-            if numel(Val)==1
-                Val = Val + zeros(1,Ncam);
-            end
-            if numel(Val)~=Ncam
-                error('Number of ExpTime must be 1 or equal to the number of cameras: %d',Ncam);
-            end
-            for Icam=1:1:Ncam
-                UnitObj.HandleCamera(Icam).ExpTime = Val(Icam);
-            end
+            error('set does not work yet');
+            
         end   
        
        
@@ -359,41 +375,30 @@ classdef unitCS <obs.LAST_Handle
         function Val=get.Pos(UnitObj)
             % getters
             
-            Ncam = numel(UnitObj.HandleCamera);
-            Val  = nan(1,Ncam);
-            for Icam=1:1:Ncam
-                Val(Icam) = UnitObj.HandleCamera(Icam).HandleFocuser.Pos;
-            end
-            
+            Val = UnitObj.getCameraProp('Pos');
+
         end
         
         function set.Pos(UnitObj,Val)
             % setters
             % If NaN then do not move focus
            
-            Ncam = numel(UnitObj.HandleCamera);
-            if numel(Val)==1
-                Val = Val + zeros(1,Ncam);
-            end
-            if numel(Val)~=Ncam
-                error('Number of Pos must be 1 or equal to the number of cameras: %d',Ncam);
-            end
-            for Icam=1:1:Ncam
-                if ~isnan(Val(Icam))
-                    UnitObj.HandleCamera(Icam).Status = Val(Icam);
-                end
-            end
+            error('set does not work yet');
             
+            
+        end
+        
+        function Val=get.LastPos(UnitObj)
+            % getters
+            
+            Val = UnitObj.getCameraProp('LastPos');
+
         end
         
         function Val=get.FocuserStatus(UnitObj)
             % getters
+            Val = UnitObj.getCameraProp('FocuserStatus');
             
-            Ncam = numel(UnitObj.HandleCamera);
-            Val  = cell(1,Ncam);
-            for Icam=1:1:Ncam
-                Val{Icam} = UnitObj.HandleCamera(Icam).Status;
-            end
         end
         
     end
@@ -406,31 +411,29 @@ classdef unitCS <obs.LAST_Handle
             [varargout{1:1:nargout}] = UnitObj.HandleMount.goto(varargin{:});
         end
         
-        function Flag=takeExposure(UnitObj,ExpTime,Nimages)
+        function Flag=takeExposure(UnitObj,varargin)
             % takeExposure (see also obs.camera.takeExposure)
-            % Input  : - A unit object
-            %        : - A vector of Exposure times, one per camera
-            %            If scalar, then set all ExpTime to the same value.
-            %            If not given then use ExpTime property.
-            %          - Vector of number of images per camera.
-            %            If scalar, then use the same number for all
-            %            cameras. Default is 1.
+            % Input  : - A unit object.
+            %          - Exposure time [s]. If provided this will override
+            %            the CameraObj.ExpTime, and the CameraObj.ExpTime
+            %            will be set to this value.
+            %          - Number of images to obtain. Default is 1.
+            %          * ...,key,val,...
+            %            'WaitFinish' - default is true.
+            %            'SaveMode' - default is 2.
+            %            'ImType' - default is [].
+            %            'Object' - default is [].
+            % Example: U.takeExposure(1,1);
             
-            % Flag=takeExposure(CameraObj,ExpTime,Nimages,WaitFinish)
+            % start exposure on remote cameras
             
-            Ncam = numel(UnitObj.HandleCamera);
-            if numel(ExpTime)==1
-                ExpTime = ExpTime + zeros(1,Ncam);
-            end
-            if numel(Nimages)==1
-                Nimages = Nimages + zeros(1,Ncam);
-            end
             
-            error('takeExposure not ready');
-            for Icam=1:1:Ncam
-                
-                Flag(Icam) = UnitObj.HandleCamera.takeExposure();
-            end
+            % start exposures on local cameras
+            
+            %set ImType and Object
+            
+            Flag = UnitObj.HandleCamera.takeExposure(varargin{:});
+            
         end
         
         

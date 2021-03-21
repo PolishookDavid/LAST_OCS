@@ -73,9 +73,9 @@ PlotMinMarker = 'p';
 
 
 InPar = inputParser;
-addOptional(InPar,'FocusGuess',20500);  
-addOptional(InPar,'HalfRange',400);  
-addOptional(InPar,'Step',100);  
+addOptional(InPar,'FocusGuess',33000);  
+addOptional(InPar,'HalfRange',200);  
+addOptional(InPar,'Step',40);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  
 addOptional(InPar,'BacklashPos',200);  
@@ -291,6 +291,8 @@ end
 % go to best focus
 fprintf('Set focus to best value\n');
 for Icam=1:1:Ncam
+    %Noam and David
+    FocObj(Icam).Pos = Res.BestFocVal(Icam)+InPar.BaclashPos;
     FocObj(Icam).Pos = Res.BestFocVal(Icam);
 end
 for Icam=1:1:Ncam
