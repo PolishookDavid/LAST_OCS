@@ -8,7 +8,9 @@ function DirName = constructDirName(DirType)
       % Old config file reading (before Dec 2020):
 %      BaseDir = obs.util.config.readSystemConfigFile('ImagesBaseDir');
       % New config file reading (after Dec 2020):
-      Config=obs.util.config.read_config_file('/home/last/config/config.node.txt');
+      
+      Config = configfile.read_config('config.node.txt');
+      
       BaseDir = Config.ImagesBaseDir;
 
       

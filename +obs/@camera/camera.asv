@@ -696,7 +696,7 @@ classdef camera < obs.LAST_Handle
 
                   CameraObj(I).LogFile.writeLog(sprintf('Disconnect CameraName: %s',CameraObj(I).CameraName));
                   if ~isempty(CameraObj(I).LogFile)
-                      %CameraObj(I).LogFile.delete;
+                      CameraObj(I).LogFile.delete;
                   end
                end
            end
@@ -1355,18 +1355,12 @@ classdef camera < obs.LAST_Handle
                 % take Nimages Exposures
                 for Iimage=1:1:Nimages
                     
-                    %if isIdle(CameraObj(1))
-                    if all(isIdle(CameraObj))
+                    if isIdle(CameraObj(1))
+                    %if all(isIdle(CameraObj))
                         % all cameras are idle
                         
                         for Icam=1:1:Ncam
-%                             if Icam>1
-%                                 if isIdle(CameraObj(Icam))
-%                                     % continue
-%                                 else
-%                                     CameraObj(Icam).waitFinish;
-%                                 end
-%                             end
+                            if 
                             
                             % Execute exposure command
                             CameraObj(Icam).Handle.takeExposure(ExpTime);
@@ -1374,6 +1368,7 @@ classdef camera < obs.LAST_Handle
                                 fprintf('Start Exposure %d of %d: ExpTime=%.3f s\n',Iimage,Nimages,ExpTime);
                             end
                             CameraObj(Icam).LogFile.writeLog(sprintf('Start Exposure %d of %d: ExpTime=%.3f s',Iimage,Nimages,ExpTime));
+
                         end  % end of Icam loop
                         
                         switch InPar.SaveMode
