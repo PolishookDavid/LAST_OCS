@@ -365,6 +365,18 @@ classdef camera < obs.LAST_Handle
                     ConfigStruct = [];
                     Address = [NaN NaN NaN];
                     CameraObj(Icam).ConfigStruct = ConfigPhysical;
+                    CameraObj(Icam).ConfigStruct.ProjectName = 'LAST';
+                    CameraObj(Icam).ConfigStruct.NodeNumber  = 0;
+                    CameraObj(Icam).ConfigStruct.MountNumber = 0;
+                    CameraObj(Icam).ConfigStruct.CameraNumber = 0;
+                    CameraObj(Icam).ConfigStruct.Filter = 'Unknown';
+                    CameraObj(Icam).ConfigStruct.DataDir = '';
+                    CameraObj(Icam).ConfigStruct.BaseDir = pwd;
+                    [Dummy, Host] = system('hostname');
+                    CameraObj(Icam).ConfigStruct.DarkDBDir = ['/', Host(1:6), '/data/ServiceImages/darkDB'];
+                    CameraObj(Icam).ConfigStruct.FlatDBDir = ['/', Host(1:6), '/data/ServiceImages/flatDB'];
+                    warning('Checking unknown camera - images will be saved on current directory. Delete after use')
+                    
                 elseif  numel(Ires)>1
                     error('More than one config file with the same camera name was found');
                     
@@ -1537,13 +1549,14 @@ classdef camera < obs.LAST_Handle
             OrigDir = pwd;
             
             % need to clean this part:
-            cd /media/last/data2/ServiceImages
-            Dark = FITS.read2sim('Dark.fits');
-            S = load('Flat.mat');  % need to update the image
-            cd(OrigDir);
-            Flat = S.Flat;
-            Flat.Im = Flat.Im./nanmedian(Flat.Im,'all');
-
+%             cd /media/last/data2/ServiceImages
+%             cd /last02/data/serviceImages
+            Dark = FITS.read2sim(fullfile(CameraObj.ConfigStruct.DarkDBDir, 'Dark.fits'));
+%            S = load(fullfile(CameraObj.ConfigStruct.FlatDBDir,'Flat.mat'));  % need to update the image
+%             cd(OrigDir);
+%             Flat = S.Flat;
+%             Flat.Im = Flat.Im./nanmedian(Flat.Im,'all');
+            Flat = FITS.read2sim(fullfile(CameraObj.ConfigStruct.FlatDBDir,'Flat.fits'));  % need to update the image
             ImageToDisplay = ImageToDisplay(:,1:6387);
             Flat.Im        = Flat.Im(:,1:6387);
 
