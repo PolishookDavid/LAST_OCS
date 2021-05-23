@@ -73,13 +73,13 @@ PlotMinMarker = 'p';
 
 
 InPar = inputParser;
-addOptional(InPar,'FocusGuess',33000);  
+addOptional(InPar,'FocusGuess',32900);  
 addOptional(InPar,'HalfRange',200);  
 addOptional(InPar,'Step',40);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  
 addOptional(InPar,'BacklashPos',200);  
-addOptional(InPar,'ExpTime',5);  
+addOptional(InPar,'ExpTime',3);  
 addOptional(InPar,'NimExp',1);  
 addOptional(InPar,'ImageHalfSize',1000);  % If [] use full image
 addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');
