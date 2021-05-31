@@ -334,7 +334,7 @@ classdef unitCS <obs.LAST_Handle
         function Val=get.CameraStatus(UnitObj)
             % getters
             
-            Val = UnitObj.getCameraProp('Status');
+P            Val = UnitObj.getCameraProp('Status');
             
         end
         

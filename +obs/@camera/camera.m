@@ -100,7 +100,7 @@ classdef camera < obs.LAST_Handle
         Display              = 'ds9';   % 'ds9' | 'matlab' | ''
         Frame double         = [];
         DisplayZoom double   = 0.08;    % ds9 zoom
-        DivideByFlat logical = true;    % subtract dark and divide by flat before dispaly
+        DivideByFlat logical = false;    % subtract dark and divide by flat before dispaly
     end
     
         
@@ -1315,7 +1315,8 @@ classdef camera < obs.LAST_Handle
 
             
             InPar = inputParser;
-            addOptional(InPar,'WaitFinish',true);
+%            addOptional(InPar,'WaitFinish',true);
+            addOptional(InPar,'WaitFinish',false);
             addOptional(InPar,'ImType',[]);
             addOptional(InPar,'Object',[]);
             addOptional(InPar,'SaveMode',2);
