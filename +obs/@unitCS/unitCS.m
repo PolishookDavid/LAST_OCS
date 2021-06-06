@@ -23,8 +23,7 @@ classdef unitCS <obs.LAST_Handle
         MountStatus
         
         % Cameras
-        CameraStatus        % cell array of 4 values
-        
+        CameraStatus        % cell array of 4 values       
         Temperature         % Vector of Temp of 4 cameras
         ExpTime    = 1      % vector of 4 ExpTime
         ImType     = 'sci';
@@ -34,9 +33,7 @@ classdef unitCS <obs.LAST_Handle
         Pos                % vector of 4 positions
         LastPos
         FocuserStatus      % cell array of 4 status
-        
-        
-        
+            
     end
 
     properties(GetAccess=public, SetAccess=private)
