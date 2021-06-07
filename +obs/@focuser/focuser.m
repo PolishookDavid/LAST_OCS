@@ -50,7 +50,6 @@ classdef focuser <obs.LAST_Handle
 
     % non-API-demanded properties, Enrico's judgement
     properties (Hidden=true) 
-        Verbose=true; % for stdin debugging
         SerialResource % the serial object corresponding to Port
     end
     

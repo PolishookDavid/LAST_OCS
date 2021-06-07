@@ -51,8 +51,6 @@ classdef unitCS <obs.LAST_Handle
         
         MountConfigStruct struct     = struct();
         CameraConfigStruct struct    = struct();
-        
-        Verbose logical              = true;
     end
     
 
@@ -228,13 +226,6 @@ classdef unitCS <obs.LAST_Handle
         end
         
     end
-    
-    % general functions
-    methods 
         
-        
-        
-    end
-    
     
 end

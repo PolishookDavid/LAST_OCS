@@ -59,12 +59,10 @@ classdef mount <obs.LAST_Handle
     
     properties(Hidden)
         Handle             = [];     % Mound driver handle
-        LastError          = '';
         
         %LastRC    = '';
         LogFile            = logFile;
         LogFileDir char    = '';
-        Verbose logical    = true; % for stdin debugging
 
         IsConnected = false; % Connection status between class to camera
         %IsCounterWeightDown=true; % Test that this works as expected

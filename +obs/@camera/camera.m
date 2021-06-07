@@ -24,6 +24,7 @@ classdef camera < obs.LAST_Handle
         ImType char            = 'sci';       % The image type: science, flat, bias, dark
         Object char            = '';          % The name of the observed object/field
     end
+    
     properties(GetAccess = public, SetAccess = private)
         Status char            = 'unknown';   % The status of the camera: idle, exposing, reading, unknown
         CoolingPower double    = NaN;         % The cooling power precentage of the camera
@@ -51,8 +52,7 @@ classdef camera < obs.LAST_Handle
     
     % limits
     properties(Hidden)    
-        MaxExpTime    = 300;        % Maximum exposure time in seconds
-        
+        MaxExpTime    = 300;        % Maximum exposure time in seconds       
     end
     
     % Camera ID
@@ -69,7 +69,6 @@ classdef camera < obs.LAST_Handle
     end
         
     properties(Hidden)
-    
         IsConnected         = false;       % A flag marking if the computer code is connected to the camera    
         LogFile             = '';          % FileName. If not provided, then if LogFileDir is not available than do not write LogFile.
         LogFileDir;
@@ -103,33 +102,25 @@ classdef camera < obs.LAST_Handle
         DivideByFlat logical = false;    % subtract dark and divide by flat before dispaly
     end
     
-        
-        
         %DisplayMatlabFig = 0; % Will be updated after first image  % When presenting image in matlab, on what figure number to present
         %DisplayAllImage = true;   % Display the entire image, using ds9.zoom
         %DisplayZoomValueAllImage = 0.08;  % Value for ds9.zoom, to present the entire image
         %DisplayReducedIm = true;   % Remove the dark and flat field before display
         %CCDnum = 0;         % ????   % Perhaps obselete. Keep here until we sure it should be removed
 	
-   
     
-    properties (Hidden,Transient)
-        Verbose logical    = true;
-        
+    properties (Hidden,Transient)        
         Handle;           % Handle to camera driver class
         HandleMount;      % Handle to mount driver class
         HandleFocuser;    % Handle to focuser driver class
         
         ReadoutTimer;     % A timer object to operate after exposure start,  to wait until the image is ready.
-        
-        LastError = '';   % The last error message
-       
+               
         %ImageFormat = 'fits';    % The format of the written image
         %MaxExpTime = 1800;  % Maximum exposure time in seconds
         % The serial number of the last image - not implemented anymore
-        %LastImageSearialNum = 0;
-        % A flag marking if to print software printouts or not
-        
+        %LastImageSerialNum = 0;
+        % A flag marking if to print software printouts or not        
     end
     
     
