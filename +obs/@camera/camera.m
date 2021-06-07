@@ -85,6 +85,7 @@ classdef camera < obs.LAST_Handle
         TimeEnd double       = [];
         %TimeStartPrev double = [];  % This is the start time as obtained from the camera immediately after the camera return to idle state.
         %TimeEndtPrev double  = [];
+        LastError  % FIXME - vector, overrides LAST_Handle.LastError
     end
     
     % save
@@ -207,7 +208,7 @@ classdef camera < obs.LAST_Handle
             if isempty(HandleDriver)
                 Q       = inst.QHYccd;          % create one camera object and DO NOT connect yet
             end
-            Q.verbose   = false;                % optional if you want to see less blabber
+            Q.Verbose   = false;                % optional if you want to see less blabber
             AllCamNames = Q.allQHYCameraNames;
 
             if nargout>1 && ~isempty(CameraName)
