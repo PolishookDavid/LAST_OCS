@@ -66,20 +66,23 @@ function connect(MountObj,MountAddress,MountType)
         % writing is performed
         MountObj.LogFile = logFile;
         MountObj.LogFile.FileNameTemplate = [];
-        MountObj.LogFile.Dir = '~';
+        % .Dir missing in Astropack's LogFile
+        MountObj.LogFile.LogPath = '~';
     else
         MountObj.LogFileDir = ConfigStruct.LogFileDir;
-        MountObj.LogFile.logOwner = sprintf('mount_%d_%d',MountAddress);
-        MountObj.LogFile.Dir = ConfigStruct.LogFileDir;
+        % .logOwner missing in Astropack's LogFile
+        % MountObj.LogFile.logOwner = sprintf('mount_%d_%d',MountAddress);
+        % .Dir missing in Astropack's LogFile
+        MountObj.LogFile.LogPath = ConfigStruct.LogFileDir;
     end
 
     % write logFile
-    MountObj.LogFile.writeLog(sprintf('Connecting to mount address: %d %d %d / Name: %s',MountAddress,MountObj.MountName));
+    MountObj.LogFile.write(sprintf('Connecting to mount address: %d %d %d / Name: %s',MountAddress,MountObj.MountName));
 
 
     switch lower(MountObj.MountType)
         case 'xerxes'
-            if Util.struct.isfield_notempty(MountObj.ConfigStruct,'PhysicalPort')
+            if tools.struct.isfield_notempty(MountObj.ConfigStruct,'PhysicalPort')
                 PhysicalPort = MountObj.ConfigStruct.PhysicalPort;
                 MountPort    = idpath_to_port(PhysicalPort);
             else
@@ -98,7 +101,7 @@ function connect(MountObj,MountAddress,MountType)
     MountObj.IsConnected = Success;
 
     if Success
-        MountObj.LogFile.writeLog('Mount is connected successfully')
+        MountObj.LogFile.write('Mount is connected successfully')
 
         %MountObj.MountModel = MountObj.Handle.MountModel;
 
@@ -108,13 +111,13 @@ function connect(MountObj,MountAddress,MountType)
             if isfield(MountObj.Handle.FullStatus,'Lon')
                 MountObj.ObsLon = MountObj.Handle.FullStatus.Lon;
             else
-                MountObj.LogFile.writeLog('Lon is not available');
+                MountObj.LogFile.write('Lon is not available');
                 error('Lon is not available');
             end
             if isfield(MountObj.Handle.FullStatus,'Lat')
                 MountObj.ObsLat = MountObj.Handle.FullStatus.Lat;
             else
-                MountObj.LogFile.writeLog('Lat is not available');
+                MountObj.LogFile.write('Lat is not available');
                 error('Lat is not available');
             end
         else
@@ -123,19 +126,19 @@ function connect(MountObj,MountAddress,MountType)
 %                     if isfield(ConfigLogical,'ObsLon')
 %                         MountObj.ObsLon = ConfigLogical.ObsLon;
 %                     else
-%                         MountObj.LogFile.writeLog('ObsLon is not available');
+%                         MountObj.LogFile.write('ObsLon is not available');
 %                         warning('ObsLon is not available');
 %                     end
 %                     if isfield(ConfigLogical,'ObsLat')
 %                         MountObj.ObsLat = ConfigLogical.ObsLat;
 %                     else
-%                         MountObj.LogFile.writeLog('ObsLat is not available');
+%                         MountObj.LogFile.write('ObsLat is not available');
 %                         warning('ObsLat is not available');
 %                     end
 %                     if isfield(ConfigLogical,'ObsHeight')
 %                         MountObj.ObsHeight = ConfigLogical.ObsHeight;
 %                     else
-%                         MountObj.LogFile.writeLog('ObsHeight is not available');
+%                         MountObj.LogFile.write('ObsHeight is not available');
 %                         warning('ObsHeight is not available');
 %                     end
 
@@ -147,7 +150,7 @@ function connect(MountObj,MountAddress,MountType)
         end
 
     else
-        MountObj.LogFile.writeLog('Mount was not connected successfully')
+        MountObj.LogFile.write('Mount was not connected successfully')
         MountObj.LastError = sprintf("Mount %s is disconnected", num2str(ConfigMount.MountNumber));
     end
 

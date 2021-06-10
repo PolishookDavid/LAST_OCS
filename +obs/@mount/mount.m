@@ -60,7 +60,7 @@ classdef mount < obs.LAST_Handle
     properties(Hidden)
         Handle             = [];     % Mound driver handle
         %LastRC    = '';
-        LogFile            = logFile;
+        LogFile            = LogFile;
         LogFileDir char    = '';
         IsConnected = false; % Connection status between class to camera
         %IsCounterWeightDown=true; % Test that this works as expected
