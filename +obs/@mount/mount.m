@@ -130,7 +130,7 @@ classdef mount < obs.LAST_Handle
         function MountObj=mount(MountType)  
             % mount class constructor
             % Package: +obs/@mount
-            % Input  : name of the mount class dtriver (e.g. 'XerxesMount',
+            % Input  : name of the mount class driver (e.g. 'XerxesMount',
             %         'iOptronCEM120')
             % Example: M=obs.mount('XerxesMount')
             
@@ -149,10 +149,14 @@ classdef mount < obs.LAST_Handle
         end
         
         function delete(MountObj)
-            % delete mount object and related sub objects
-            MountObj.Handle.delete;
-            % Delete the timer
-            delete(MountObj.SlewingTimer);
+            % delete mount object and related sub objects (if they were
+            % defined)
+            try
+                MountObj.Handle.delete;
+                % Delete the timer
+                delete(MountObj.SlewingTimer);
+            catch
+            end
         end
         
     end

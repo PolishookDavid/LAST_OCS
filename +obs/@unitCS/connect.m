@@ -19,7 +19,7 @@ function Obj=connect(Obj,varargin)
     M = obs.mount(InPar.MountType);
     M.connect(InPar.AddressMount);
 
-    % connect to fcusers and cameras
+    % connect to focusers and cameras
     C = obs.camera(InPar.CameraType,InPar.Ncam);
     C.connect('all');
     Ncam = numel(C);

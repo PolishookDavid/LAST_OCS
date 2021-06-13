@@ -10,7 +10,7 @@
 % Settings parameters options:
 %
 
-classdef unitCS <obs.LAST_Handle
+classdef unitCS < obs.LAST_Handle
 
     properties (Dependent)
         % mount direction and motion
@@ -47,8 +47,7 @@ classdef unitCS <obs.LAST_Handle
         HandleMount      % mount handle
         HandleCamera     %
         HandleRemoteC    %
-        CameraRemoteName char        = 'C';
-        
+        CameraRemoteName char        = 'C';        
         MountConfigStruct struct     = struct();
         CameraConfigStruct struct    = struct();
     end
@@ -57,8 +56,8 @@ classdef unitCS <obs.LAST_Handle
     methods
         % constructor, destructor and connect
         function UnitObj=unitCS()
-            % mount class constructor
-            % Package: +obs/@mount            
+            % unit class constructor
+            % Package: +obs/@unitCS            
         end
         
 

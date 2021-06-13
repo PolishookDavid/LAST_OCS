@@ -10,9 +10,11 @@ function connect(MountObj,MountAddress,MountType)
     %            2. A mount configuration file name (string).
     %            3. Empty [default]. In this case, some default
     %               values will be used.
-    %          - MountType : 'xerxes' | 'ioptron'.
+    %          - MountType : class name of the mount driver, e.g
+    %                  'XerxesMount' | 'iOptronCEM120' (without 'inst.'
+    %                      prefix)
     %            If not given will attempt to read from Config
-    % Example: M.connect([],'xerxes')
+    % Example: M.connect([],'XerxesMount')
 
     ConfigBaseName  = 'config.mount';
     PhysicalKeyName = 'MountName';
@@ -32,7 +34,7 @@ function connect(MountObj,MountAddress,MountType)
     end
 
     if nargin==3
-        MountObj.MountType = MountType;
+        MountObj.MountType = inst.(MountType);
     end
 
     if ischar(MountAddress)
@@ -47,7 +49,6 @@ function connect(MountObj,MountAddress,MountType)
         ConfigStruct   = [];
         ConfigLogical  = [];
         ConfigPhysical = [];
-
     else
         [ConfigStruct] = getConfigStruct(MountObj,...
                             MountAddress,...
@@ -74,25 +75,21 @@ function connect(MountObj,MountAddress,MountType)
 
     % write logFile
     MountObj.LogFile.write(sprintf('Connecting to mount address: %d %d %d / Name: %s',MountAddress,MountObj.MountName));
-
-
-    switch lower(MountObj.MountType)
-        case 'xerxes'
-            if tools.struct.isfield_notempty(MountObj.ConfigStruct,'PhysicalPort')
-                PhysicalPort = MountObj.ConfigStruct.PhysicalPort;
-                MountPort    = idpath_to_port(PhysicalPort);
-            else
-                MountPort = [];
-            end
-
-        case 'ioptron'
-            % TODO: This need to be in the Config file
-            MountObj.MountIP = '192.168.11.254';
-            MountPort = MountObj.MountIP;
-        otherwise
-            error('Unknown MountType option - provide as input argument to connect');
+    
+    % DUBIOUS replacement of original code for PhysicalPort vs. MountIP
+    %  which defied abstraction. CHECK.
+    if isSerialPort(MountObj.ConfigStruct.PhysicalPort)
+        MountPort = MountObj.ConfigStruct.PhysicalPort;
+    elseif isPCIusb(MountObj.ConfigStruct.PhysicalPort)
+        MountPort = idpath_to_port(MountObj.ConfigStruct.PhysicalPort);
+    elseif isIPnum(MountObj.ConfigStruct.PhysicalPort)
+        % notably for iOptron
+        MountObj.MountIP = MountObj.ConfigStruct.PhysicalPort;
+        MountPort = MountObj.MountIP;
+    else
+        error('PhysicalPort not legal for the mount')
     end
-
+    
     Success = MountObj.Handle.connect(MountPort);
     MountObj.IsConnected = Success;
 
@@ -117,34 +114,9 @@ function connect(MountObj,MountAddress,MountType)
                 error('Lat is not available');
             end
         else
-
-            % Take coordinates from Config - already taken 
-%                     if isfield(ConfigLogical,'ObsLon')
-%                         MountObj.ObsLon = ConfigLogical.ObsLon;
-%                     else
-%                         MountObj.LogFile.write('ObsLon is not available');
-%                         warning('ObsLon is not available');
-%                     end
-%                     if isfield(ConfigLogical,'ObsLat')
-%                         MountObj.ObsLat = ConfigLogical.ObsLat;
-%                     else
-%                         MountObj.LogFile.write('ObsLat is not available');
-%                         warning('ObsLat is not available');
-%                     end
-%                     if isfield(ConfigLogical,'ObsHeight')
-%                         MountObj.ObsHeight = ConfigLogical.ObsHeight;
-%                     else
-%                         MountObj.LogFile.write('ObsHeight is not available');
-%                         warning('ObsHeight is not available');
-%                     end
-
-            %MountObj.MountPos = [MountObj.MountCoo.ObsLon MountObj.MountCoo.ObsLat MountObj.MountCoo.ObsHeight];
-            % Update UTC clock on mount for iOptron
-            %if(strcmp(MountObj.MountType, 'iOptron'))
-            %    MountObj.Handle.MountUTC = 'dummy';
-            %end
+            % coordinates from Config - already taken, or default -
+            %  don't bother to trap if all fields are available
         end
-
     else
         MountObj.LogFile.write('Mount was not connected successfully')
         MountObj.LastError = sprintf("Mount %s is disconnected", num2str(ConfigMount.MountNumber));
