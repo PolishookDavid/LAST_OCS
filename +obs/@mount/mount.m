@@ -130,23 +130,20 @@ classdef mount < obs.LAST_Handle
         function MountObj=mount(MountType)  
             % mount class constructor
             % Package: +obs/@mount
-            % Input  : - Mount type ['xerxes'] | 'ioptron'
-            % Example: M=obs.mount('xerxes')
+            % Input  : name of the mount class dtriver (e.g. 'XerxesMount',
+            %         'iOptronCEM120')
+            % Example: M=obs.mount('XerxesMount')
             
             if nargin<1
-                MountType = 'Xerxes';
+                MountType = 'XerxesMount';
             end
             MountObj.MountType = MountType;
             
-
             % Open a driver object for the mount
-            switch lower(MountObj.MountType)
-                case 'xerxes'
-                    MountObj.Handle=inst.XerxesMount();
-                case 'ioptron'
-                    MountObj.Handle=inst.iOptronCEM120();
-                otherwise
-                    error('Unknown MountType');
+            try
+                MountObj.Handle=inst.(MountType);
+            catch
+                error('Unknown MountType');
             end
             
         end

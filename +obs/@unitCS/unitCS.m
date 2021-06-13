@@ -56,38 +56,16 @@ classdef unitCS <obs.LAST_Handle
 
     methods
         % constructor, destructor and connect
-        function MountObj=unitCS()
+        function UnitObj=unitCS()
             % mount class constructor
-            % Package: +obs/@mount
-            % Input  : - Mount type ['xerxes'] | 'ioptron'
-            %
-                     
-%             if nargin >= 1
-%               % Derive mount type from the user
-%               MountObj.MountType = MountType;
-%             else
-%               % Use Xerxes mount as default
-%               MountObj.MountType = 'Xerxes';
-%             end
-% 
-%             % Open a driver object for the mount
-%             switch lower(MountObj.MountType)
-%                 case 'xerxes'
-%                     MountObj.Handle=inst.XerxesMount();
-%                 case 'ioptron'
-%                     MountObj.Handle=inst.iOptronCEM120();
-%                 otherwise
-%                     error('Unknown MountType');
-%             end
-            
+            % Package: +obs/@mount            
         end
         
 
         function delete(UnitObj)
             % delete mount object and related sub objects
             delete(UnitObj.HandleMount);
-            delete(UnitObj.HandleCamera);
-            
+            delete(UnitObj.HandleCamera);    
         end
                         
     end

@@ -2,7 +2,7 @@ function Obj=connect(Obj,varargin)
     % description to be written yet....
 
     InPar = inputParser;
-    addOptional(InPar,'MountType','Xerxes');
+    addOptional(InPar,'MountType','XerxesMount');
     addOptional(InPar,'AddressMount',[1 1]);
     addOptional(InPar,'Ncam',2);
     %addOptional(InPar,'CameraNumber',[1 3]); %[1 3]);
