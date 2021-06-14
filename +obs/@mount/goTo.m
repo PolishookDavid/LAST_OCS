@@ -69,20 +69,18 @@ function [Flag,RA,Dec,Aux]=goTo(MountObj, Long, Lat, varargin)
                 MountObj.LogFile.writeLog('Error: Attempt to slew telescope while parking');
                 error('Can not slew telescope while parking');
             otherwise
-
                 % Convert input into RA/Dec [input deg, output deg]
-                switch lower(MountObj.MountType)
-                    case 'xerxes'
-                        % output is equinox of date
+                try
+                    OutputCooType=MountObj.Handle.CoordType;
+                    if strcmp(OutputCooType,'tdate')
+                        % why not 'tdate' altogether?
                         OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
-                    case 'ioptron'
-                        % output is J2000
-                        OutputCooType = 'J2000';
-                    otherwise
-                        MountObj.LogFile.writeLog('Error: Unknown MountModel option');
-                        error('Unknown MountModel option');
+                    end
+                catch
+                    warning('mount coordinate system not known - assuming Equinox of date');
+                    OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
                 end
-
+                
                 [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType);
 
                 if isnan(RA) || isnan(Dec)
@@ -100,7 +98,7 @@ function [Flag,RA,Dec,Aux]=goTo(MountObj, Long, Lat, varargin)
                     error('Attempting to move mount when ObsLon/ObsLat are unknown');
                 end
 
-                [Flag,FlagRes,Data] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
+                [Flag,FlagRes] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
                                                                       'Lon', MountObj.ObsLon./RAD, ...
                                                                       'Lat', MountObj.ObsLat./RAD, ...
                                                                       'AltMinConst', MountObj.MinAlt./RAD,...
@@ -117,12 +115,15 @@ function [Flag,RA,Dec,Aux]=goTo(MountObj, Long, Lat, varargin)
                     % Get error
                     MountObj.LastError = MountObj.Handle.LastError;
 
+                    % No NO NO
+                    % What is 'notify'? Get rid of timers. If it has to be
+                    %  blocking, block.
                     % Start timer (iOptron only) to notify when slewing is complete
-                    switch lower(MountObj.MountType)
-                        case 'ioptron'
-                            MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-                            start(MountObj.SlewingTimer);
-                    end
+%                     switch lower(MountObj.MountType)
+%                         case 'ioptron'
+%                             MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
+%                             start(MountObj.SlewingTimer);
+%                     end
                 else
                     % coordinates are not ok
                     MountObj.LogFile.writeLog('Coordinates are not valid - not slewing to requested target');

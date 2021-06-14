@@ -101,9 +101,13 @@ function setCoordinate(MountObj,NewRA,NewDec,MountRA,MountDec,CooSys)
     % update the encoders position
     %MountObj.Handle.setCoordinate(NewRA,NewDec,MountRA,MountDec);
 
+    % this is as of now wrong. And we do not want hardware conditionals
+    %  in the abstraction code
     switch lower(MountObj.MountType)
+        % MountType is now the class name
         case 'ioptron'
-            % not supported
+            % not supported (check - maybe it is, I just not implemented in
+            %  the driver)
             error('setCoordinate is not supported for iOptron mount');
 
         case 'xerxes'

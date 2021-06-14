@@ -17,17 +17,14 @@ function [RAJ,DecJ,HAJ,JD,Aux]=j2000(MountObj,varargin)
     MDec = MountObj.Dec;
     JD  = celestial.time.julday;
     LST = celestial.time.lst(JD,MountObj.ObsLon./RAD,'a').*360;  % [deg]
-
-    % For Xerxes these are tdate, while for iOptron J2000
-    switch lower(MountObj.MountType) %% this should be MountObj.Handle.MountType?
-        case 'xerxes'
-            InCooType = 'tdate';
-        case 'ioptron'
-            InCooType = 'J2000';
-        otherwise
-            warning('MountType unknown - assuming Equinox of date');
-            InCooType = 'tdate';
+   
+    try
+        InCooType=MountObj.Handle.CoordType;
+    catch
+        warning('coordinate system not given - assuming Equinox of date');
+        InCooType = 'tdate';
     end
+    
     % input/output are in deg
     [RAJ, DecJ, Aux] = celestial.coo.convert2equatorial(MRA, MDec, varargin{:},'InCooType',InCooType,'OutCooType',OutputCooType);
     HAJ        = LST - RAJ;  % [deg]
