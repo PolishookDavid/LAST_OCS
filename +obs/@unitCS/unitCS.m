@@ -55,7 +55,7 @@ classdef unitCS < obs.LAST_Handle
 
     methods
         % constructor, destructor and connect
-        function UnitObj=unitCS()
+        function UnitObj=unitCS(id)
             % unit class constructor
             % Package: +obs/@unitCS            
         end

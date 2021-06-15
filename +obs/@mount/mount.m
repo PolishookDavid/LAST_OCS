@@ -127,14 +127,14 @@ classdef mount < obs.LAST_Handle
         
     % constructor and destructor
     methods
-        function MountObj=mount(MountType)  
+        function MountObj=mount(id,MountType)
             % mount class constructor
             % Package: +obs/@mount
             % Input  : name of the mount class driver (e.g. 'XerxesMount',
             %         'iOptronCEM120')
             % Example: M=obs.mount('XerxesMount')
             
-            if nargin<1
+            if nargin<2
                 MountType = 'XerxesMount';
             end
             MountObj.MountType = MountType;
