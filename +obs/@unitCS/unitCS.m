@@ -57,7 +57,12 @@ classdef unitCS < obs.LAST_Handle
         % constructor, destructor and connect
         function UnitObj=unitCS(id)
             % unit class constructor
-            % Package: +obs/@unitCS            
+            % Package: +obs/@unitCS
+            if exist('id','var')
+                UnitObj.Id=id;
+            end
+            % load configuration
+            UnitObj.loadConfig(UnitObj.configFileName('create'))
         end
         
 
