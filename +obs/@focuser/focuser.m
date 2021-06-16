@@ -55,29 +55,22 @@ classdef focuser <obs.LAST_Handle
     
     properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
         FocusMotionTimer;
-        LastError='';
         Limits=[NaN,NaN];
     end
 
     
     % constructor and destructor
     methods
-        function Focuser=focuser(varargin)
+        function Focuser=focuser(id)
             % Focuser constructor
-            % Input  : * ..,key,val,...
-            %            'PromptMirrorLock' - Default is true.
-            %            'Config' - Config file name.
+            % Input  : the .Id label
             % Output : - A focuser object
-            
-            InPar = inputParser;
-            addOptional(InPar,'PromptMirrorLock',true);
-            addOptional(InPar,'Config',[]);         % config file name
-            addOptional(InPar,'ConfigStruct',struct());   % ConfigStruct
-            parse(InPar,varargin{:});
-            InPar = InPar.Results;
-            
-            Focuser.PromptMirrorLock = InPar.PromptMirrorLock;
-            Focuser.Config           = InPar.Config;
+            if exist('id','var')
+                Focuser.Id=id;
+            end
+            % load configuration
+            Focuser.loadConfig(Focuser.configFileName('create'))
+
             
             if Focuser.PromptMirrorLock
                 fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n');
@@ -163,28 +156,6 @@ classdef focuser <obs.LAST_Handle
             Focuser.LastError = Focuser.Handle.LastError;
         end
         
-        % Get the last error reported by the driver code
-        function LastError=get.LastError(Focuser)
-            LastError = Focuser.Handle.LastError;
-            Focuser.LogFile.writeLog(LastError)
-            if Focuser.Verbose, fprintf('%s\n', LastError); end
-        end
-
-        % Set an error, update log and print to command line
-        function set.LastError(Focuser,LastError)
-           % If the LastError is empty (e.g. if the previous command did
-           % not fail), do not keep or print it,
-           if (~isempty(LastError))
-              % If the error message is taken from the driver object, do NOT
-              % update the driver object.
-%              if (~strcmp(Focuser.Handle.LastError, LastError))
-%                 Focuser.Handle.LastError = LastError;
-%              end
-              Focuser.LogFile.writeLog(LastError)
-              if Focuser.Verbose, fprintf('%s\n', LastError); end
-           end
-        end
-
     end
     
     methods

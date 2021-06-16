@@ -1,12 +1,10 @@
-% Abstraction class for camera
+% Abstraction class for a single camera
 % Package: +obs.camera
 % Description: This abstraction class support and opperate the driver
 %              classes for either the QHY or ZWO detectors.
 % Some basic examples:
 %   C = obs.camera('QHY');  % create an empty camera object for a QHY device
 %   C.connect               % connect the camera
-%   C.connect([1 1 3])
-%
 %
 %   C.ExpTime = 1;          % set the Exposure time to 1s
 %   C.takeExposure;         % take a single exposure. Save and display the image
@@ -35,9 +33,6 @@ classdef camera < obs.LAST_Handle
     
     properties(Hidden)
         Filter char            = '';          % Filter Name % not in driver
-        Pos double             = NaN;         % Focuser position
-        LastPos double         = NaN;         % focuser last position
-        FocuserStatus          = [];          % focuser status
     end
     
     % camera setup
@@ -76,7 +71,6 @@ classdef camera < obs.LAST_Handle
         %Config char         = '';         % config file name
         %ConfigStruct struct = struct;     % structure containing the configuration parameters
         ConfigHeader struct = struct;     % structure containing additional header keywords with constants
-        ConfigMount struct  = struct;     % structure containing the mount configuration parameters
     end
     
     properties(Hidden, GetAccess = public, SetAccess = private)
@@ -85,7 +79,6 @@ classdef camera < obs.LAST_Handle
         TimeEnd double       = [];
         %TimeStartPrev double = [];  % This is the start time as obtained from the camera immediately after the camera return to idle state.
         %TimeEndtPrev double  = [];
-        LastError  % FIXME - vector, overrides LAST_Handle.LastError
     end
     
     % save
@@ -111,12 +104,8 @@ classdef camera < obs.LAST_Handle
 	
     
     properties (Hidden,Transient)        
-        Handle;           % Handle to camera driver class
-        HandleMount;      % Handle to mount driver class
-        HandleFocuser;    % Handle to focuser driver class
-        
-        ReadoutTimer;     % A timer object to operate after exposure start,  to wait until the image is ready.
-               
+        Handle;           % Handle to camera driver class        
+        ReadoutTimer;     % A timer object to operate after exposure start, to wait until the image is ready.
         %ImageFormat = 'fits';    % The format of the written image
         %MaxExpTime = 1800;  % Maximum exposure time in seconds
         % The serial number of the last image - not implemented anymore
@@ -128,58 +117,20 @@ classdef camera < obs.LAST_Handle
     % constructor and destructor
     methods
                 
-        function CameraObj=camera(CameraType,Ncam)
+        function CameraObj=camera(id)
             % Camera object constructor
-            % This function does not populate the Handle property
-            % This is done in the connect stage
-            % Input  : - CameraType: 'QHY' | 'ZWO'
-            %          - Number of cameras. Default is 1.
-            % Example: C=obs.camera('qhy')
-            
-            DefaultCameraType    = 'QHY';
-    
-            if nargin<2
-                Ncam = 1;
-                if nargin<1
-                    CameraType = DefaultCameraType;
-                end
+            if exist('id','var')
+                CameraObj.Id=id;
             end
-            
-            switch lower(CameraType)
-                case {'qhy','zwo'}
-                    % ok
-                otherwise
-                    error('Unsupported CameraType option');
-            end
-            
-            CameraObj.CameraType = CameraType;
-            
-            % read Header comments into ConfigHeader
-            ConfigHeaderFileName = 'config.HeaderKeywordComment.txt';
-            CameraObj.ConfigHeader = CameraObj.loadConfiguration(ConfigHeaderFileName, false);
-        
-            for Icam=2:1:Ncam
-                CameraObj(Icam) = imUtil.util.class.full_copy(CameraObj(1));
-            end
-            
-            %CameraObj(1,Ncam) = CameraObj;
-            %for Icam=1:1:Ncam
-            %Icam = 1;
-            %CameraObj(Icam).CameraType = CameraType;
-
-            % read Header comments into ConfigHeader
-            %ConfigHeaderFileName = 'config.HeaderKeywordComment.txt';
-            %CameraObj(Icam).ConfigHeader = CameraObj(Icam).loadConfiguration(ConfigHeaderFileName, false);
-            %end    
+            % load configuration
+            CameraObj.loadConfig(CameraObj.configFileName('create'))
         end
        
         function delete(CameraObj)
             % Delete properly driver object + set IsConnected to false
-            
-            N = numel(CameraObj);
-            for I=1:1:N
-                CameraObj(I).Handle.delete;
-                CameraObj(I).IsConnected = false;
+            if ~isempty(CameraObj.Handle)
+                CameraObj.Handle.delete;
+                CameraObj.IsConnected = false;
             end
         end
         
@@ -234,7 +185,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.ExpTime;
                 else
-                    ErrorStr = 'Can not get ExpTime because camera may be not connected';
+                    ErrorStr = 'Cannot get ExpTime because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -254,7 +205,7 @@ classdef camera < obs.LAST_Handle
                     end
                     Obj(I).Handle.ExpTime = InputPar;
                 else
-                    ErrorStr = 'Can not set ExpTime because camera may be not connected';
+                    ErrorStr = 'Cannot set ExpTime because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -272,7 +223,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.Temperature;
                 else
-                    ErrorStr = 'Can not get Tempearture because camera may be not connected';
+                    ErrorStr = 'Cannot get Temperature because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -290,7 +241,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Obj(I).Handle.Temperature = InputPar;
                 else
-                    ErrorStr = 'Can not set Tempearture because camera may be not connected';
+                    ErrorStr = 'Cannot set Temperature because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -309,7 +260,7 @@ classdef camera < obs.LAST_Handle
             if Obj.IsConnected 
                 Output = Obj.Handle.CamStatus;
             else
-                ErrorStr = 'Can not get Status because camera may be not connected';
+                ErrorStr = 'Cannot get Status because camera may be not connected';
                 if Obj.Verbose
                     warning(ErrorStr);
                 end
@@ -326,7 +277,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.CoolingPower;
                 else
-                    ErrorStr = 'Can not get CoolingPower because camera may be not connected';
+                    ErrorStr = 'Cannot get CoolingPower because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -344,7 +295,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.TimeStart;
                 else
-                    ErrorStr = 'Can not get TimeStart because camera may be not connected';
+                    ErrorStr = 'Cannot get TimeStart because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -362,7 +313,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.TimeEnd;
                 else
-                    ErrorStr = 'Can not get TimeEnd because camera may be not connected';
+                    ErrorStr = 'Cannot get TimeEnd because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -370,24 +321,7 @@ classdef camera < obs.LAST_Handle
                 end
             end
         end
-        
-        % LastError
-        function Output=get.LastError(Obj)
-            % getter template
-            if numel(Obj)>1
-                error('LastError getter works on a single element camera object');
-            end
-            if Obj.IsConnected 
-                Output = Obj.Handle.LastError;
-            else
-                ErrorStr = 'Can not get LastError because camera may be not connected';
-                if Obj.Verbose
-                    warning(ErrorStr);
-                end
-                Obj.LogFile.writeLog(ErrorStr);
-            end
-        end
-        
+                
         % LastImage
         function Output=get.LastImage(Obj)
             % getter template
@@ -397,7 +331,7 @@ classdef camera < obs.LAST_Handle
             if Obj.IsConnected 
                 Output = Obj.Handle.LastImage;
             else
-                ErrorStr = 'Can not get LastImage because camera may be not connected';
+                ErrorStr = 'Cannot get LastImage because camera may be not connected';
                 if Obj.Verbose
                     warning(ErrorStr);
                 end
@@ -414,7 +348,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.ReadMode;
                 else
-                    ErrorStr = 'Can not get ReadMode because camera may be not connected';
+                    ErrorStr = 'Cannot get ReadMode because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -430,7 +364,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Obj(I).Handle.ReadMode = InputPar;
                 else
-                    ErrorStr = 'Can not set ReadMode because camera may be not connected';
+                    ErrorStr = 'Cannot set ReadMode because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -448,7 +382,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.Offset;
                 else
-                    ErrorStr = 'Can not get Offset because camera may be not connected';
+                    ErrorStr = 'Cannot get Offset because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -467,7 +401,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Obj(I).Handle.Offset = InputPar;
                 else
-                    ErrorStr = 'Can not set Offset because camera may be not connected';
+                    ErrorStr = 'Cannot set Offset because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -485,7 +419,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Output(I) = Obj(I).Handle.Gain;
                 else
-                    ErrorStr = 'Can not get Gain because camera may be not connected';
+                    ErrorStr = 'Cannot get Gain because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -501,7 +435,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Obj(I).Handle.Gain = InputPar;
                 else
-                    ErrorStr = 'Can not set Gain because camera may be not connected';
+                    ErrorStr = 'Cannot set Gain because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -519,7 +453,7 @@ classdef camera < obs.LAST_Handle
             if Obj.IsConnected 
                 Output = Obj.Handle.Binning;
             else
-                ErrorStr = 'Can not get Binning because camera may be not connected';
+                ErrorStr = 'Cannot get Binning because camera may be not connected';
                 if Obj.Verbose
                     warning(ErrorStr);
                 end
@@ -534,7 +468,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Obj(I).Handle.Binning = InputPar;
                 else
-                    ErrorStr = 'Can not set Binning because camera may be not connected';
+                    ErrorStr = 'Cannot set Binning because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -552,7 +486,7 @@ classdef camera < obs.LAST_Handle
             if Obj.IsConnected 
                 Output = Obj.Handle.CoolingStatus;
             else
-                ErrorStr = 'Can not get CoolingPower because camera may be not connected';
+                ErrorStr = 'Cannot get CoolingPower because camera may be not connected';
                 if Obj.Verbose
                     warning(ErrorStr);
                 end
@@ -567,7 +501,7 @@ classdef camera < obs.LAST_Handle
                 if Obj(I).IsConnected 
                     Obj(I).Handle.CoolingStatus = InputPar;
                 else
-                    ErrorStr = 'Can not set CoolingPower because camera may be not connected';
+                    ErrorStr = 'Cannot set CoolingPower because camera may be not connected';
                     if Obj(I).Verbose
                         warning(ErrorStr);
                     end
@@ -575,65 +509,7 @@ classdef camera < obs.LAST_Handle
                 end
             end
         end
-           
-        % MountHandle
-        function set.HandleMount(Obj,InputPar)
-            % setter for HandleMount - disconnect Messenger of
-            % obs.remoteClass object           
-            if numel(Obj)>1
-                error('MountHandle setter works on a single element camera object');
-            end            
-            I = 1;
-            if isa(Obj(I).HandleMount,'obs.remoteClass')
-                % disconnect remote class messenger before insertion
-                Obj(I).HandleMount.Messenger.disconnect;
-            end
-            Obj(I).HandleMount = InputPar;
-        end
-        
-        % focuser
-        function Val=get.Pos(Obj)
-            % getters          
-            N = numel(Obj);
-            Val = nan(1,N);
-            for I=1:1:N
-                if ~isempty(Obj(I).HandleFocuser)
-                    Val(I) = Obj(I).HandleFocuser.Pos;
-                end
-            end
-        end
-        
-        function set.Pos(Obj,Val)
-            % setters       
-            if ~isempty(Obj.HandleFocuser)
-                Obj.HandleFocuser.Pos = Val;
-            else
-                warning('Can not set focus position because there is no focuser handle');
-                Obj.LogFile.writeLog('Can not set focus position because there is no focuser handle');
-            end
-        end    
-        
-        function Val=get.LastPos(Obj)
-            % getters
-            N = numel(Obj);
-            Val = nan(1,N);
-            for I=1:1:N
-                if ~isempty(Obj(I).HandleFocuser)
-                    Val(I) = Obj(I).HandleFocuser.LastPos;
-                end
-            end
-        end
-        
-        function Val=get.FocuserStatus(Obj)
-            % getters
-            N = numel(Obj);
-            Val = cell(1,N);
-            for I=1:1:N
-                if ~isempty(Obj(I).HandleFocuser)
-                    Val{I} = Obj(I).HandleFocuser.Status;
-                end
-            end
-        end
+                  
         
     end
     

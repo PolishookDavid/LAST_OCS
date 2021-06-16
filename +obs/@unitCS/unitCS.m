@@ -44,14 +44,21 @@ classdef unitCS < obs.LAST_Handle
 
     properties(Hidden)
         %        
-        HandleMount      % mount handle
-        HandleCamera     %
+        HandleMount      % handle to the mount(s) abstraction object
+        HandleCamera     % struct, handles to the camera abstraction objects
+        HandleFocuser    % struct, handles to the focuser abstraction objects
         HandleRemoteC    %
         CameraRemoteName char        = 'C';        
         MountConfigStruct struct     = struct();
         CameraConfigStruct struct    = struct();
     end
-    
+ 
+    properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
+        %these are set only when reading the configuration
+        NodeNumber = 0;
+        NumberLocalTelescopes
+        NumberRemoteTelescopes
+    end
 
     methods
         % constructor, destructor and connect
@@ -63,13 +70,26 @@ classdef unitCS < obs.LAST_Handle
             end
             % load configuration
             UnitObj.loadConfig(UnitObj.configFileName('create'))
+            
+            % populate mount, camera, focuser and power switches handles
+            N=UnitObj.NumberLocalTelescopes;
+            UnitObj.HandleMount=obs.mount(); % for now always one (could be 0 for slave?)
+            UnitObj.HandleCamera=cell(1,N);
+            UnitObj.HandleFocuser=cell(1,N);
+            for i=1:N
+                UnitObj.HandleCamera{i}=...
+                    obs.camera(sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i));
+                UnitObj.HandleFocuser{i}=...
+                    obs.focuser(sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i));
+            end
         end
         
 
         function delete(UnitObj)
-            % delete mount object and related sub objects
-            delete(UnitObj.HandleMount);
-            delete(UnitObj.HandleCamera);    
+            % delete mount object and related sub objects (??)
+%             delete(UnitObj.HandleMount);
+%             delete(UnitObj.HandleCamera);    
+%             delete(UnitObj.HandleFocuser);    
         end
                         
     end
