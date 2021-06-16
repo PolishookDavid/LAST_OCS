@@ -73,7 +73,8 @@ classdef unitCS < obs.LAST_Handle
             
             % populate mount, camera, focuser and power switches handles
             N=UnitObj.NumberLocalTelescopes;
-            UnitObj.HandleMount=obs.mount(); % for now always one (could be 0 for slave?)
+            UnitObj.HandleMount=...
+                obs.mount(sprintf('%d_%d',UnitObj.NodeNumber,1)); % for now always one (could be 0 for slave?)
             UnitObj.HandleCamera=cell(1,N);
             UnitObj.HandleFocuser=cell(1,N);
             for i=1:N
