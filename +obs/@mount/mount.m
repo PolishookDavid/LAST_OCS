@@ -41,7 +41,7 @@
 
 classdef mount < obs.LAST_Handle
 
-    properties (Dependent)
+    properties (Transient)
         % mount direction and motion
         RA(1,1) double     = NaN      % Deg
         Dec(1,1) double    = NaN      % Deg
@@ -62,7 +62,7 @@ classdef mount < obs.LAST_Handle
         %LastRC    = '';
         LogFile            = LogFile;
         LogFileDir char    = '';
-        IsConnected = false; % Connection status between class to camera
+        IsConnected = false; % Connection status between class to camera (??)
         %IsCounterWeightDown=true; % Test that this works as expected
     end
     
@@ -71,7 +71,6 @@ classdef mount < obs.LAST_Handle
         MountName char          = '';         % The mount serial ID - e.g., 'RAD21drive-932187746_DecD21Dual-13182557'
         MountModel char         = 'unknown';  % Mount model - e.g., 'Xerxes-20'
         MountClass char         = 'unknown';  % class of the mount driver - e.g., 'inst.XerxesMount'
-        MountNumber(1,1) double = NaN;
         ObsLon(1,1) double      = NaN;
         ObsLat(1,1) double      = NaN;
         ObsHeight(1,1) double   = NaN;
@@ -87,7 +86,7 @@ classdef mount < obs.LAST_Handle
     
     % communication
     properties(Hidden)
-        MountIP            % IP / used for iOptron        
+        PhysicalPort            % usb-serial bridge address / IP (for iOptron)        
     end
         
     % utils
@@ -134,7 +133,12 @@ classdef mount < obs.LAST_Handle
                 MountObj.Id=id;
             end
             % load configuration
-            MountObj.loadConfig(MountObj.configFileName('create'))            
+            MountObj.loadConfig(MountObj.configFileName('create'))
+            % eval because of
+            % https://github.com/EranOfek/AstroPack/issues/6#issuecomment-861471636
+            MountObj.Handle=eval(MountObj.MountClass);
+            % pass geographical coordinates to the driver
+            MountObj.Handle.MountPos=[MountObj.ObsLat,MountObj.ObsLon,MountObj.ObsHeight];
         end
         
         function delete(MountObj)
@@ -320,6 +324,17 @@ classdef mount < obs.LAST_Handle
                 MountObj.reportError('Mount object cannot report Status')
             end
         end
+        
+        function Status=get.IsEastOfPier(MountObj)
+            % getter for mount status
+            try
+                Status = MountObj.Handle.IsEastOfPier;
+            catch
+                Status = 'unknown';
+                MountObj.reportError('Mount object cannot report isEastOfPier')
+            end
+        end
+        
     end
 
     

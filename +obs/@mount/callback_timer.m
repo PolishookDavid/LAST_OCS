@@ -8,8 +8,7 @@ function callback_timer(MountObj, ~, ~)
     if (~strcmp(MountObj.Status, 'slewing'))
        stop(MountObj.SlewingTimer);
        % beep
-       MountObj.LogFile.writeLog('Slewing is complete')
-       %   if MountObj.Verbose, fprintf('Slewing is complete\n'); end
+       MountObj.report('Slewing is complete')
     end
 
 end
