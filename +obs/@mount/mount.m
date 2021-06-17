@@ -36,7 +36,7 @@
 %
 %     M.Handle;             % Direct excess to the driver object
 %
-% Author: David Polishook, Mar 2020
+% Author: Enrico Segre, Jun 2021
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 classdef mount < obs.LAST_Handle
@@ -58,7 +58,7 @@ classdef mount < obs.LAST_Handle
     end
     
     properties(Hidden)
-        Handle             = [];     % Mound driver handle
+        Handle   obs.LAST_Handle     % Mount driver handle
         %LastRC    = '';
         LogFile            = LogFile;
         LogFileDir char    = '';
@@ -70,9 +70,8 @@ classdef mount < obs.LAST_Handle
     properties(Hidden)
         MountName char          = '';         % The mount serial ID - e.g., 'RAD21drive-932187746_DecD21Dual-13182557'
         MountModel char         = 'unknown';  % Mount model - e.g., 'Xerxes-20'
-        MountType char          = 'unknown';  % MountType - e.g., 'Xerxes'
+        MountClass char         = 'unknown';  % class of the mount driver - e.g., 'inst.XerxesMount'
         MountNumber(1,1) double = NaN;
-        NodeNumber(1,1) double  = NaN;
         ObsLon(1,1) double      = NaN;
         ObsLat(1,1) double      = NaN;
         ObsHeight(1,1) double   = NaN;
@@ -81,7 +80,7 @@ classdef mount < obs.LAST_Handle
     % safety 
     properties(Hidden)
         MinAlt(1,1) double     = 15;   % deg
-        AzAltLimit double      = [[0, 15];[90, 15];[180, 15];[270, 15];[360, 15]]; % deg
+        AzAltLimit cell      = {0, 15; 90, 15; 180, 15; 270, 15; 360, 15}; % deg (cell because of yml conversion)
         HALimit double         = 120;  % deg
         ParkPos(1,2) double    = [0 0];   % HA, Dec [deg]
     end
@@ -151,125 +150,69 @@ classdef mount < obs.LAST_Handle
         
     end
     
-    
-    % static methods
-    methods (Static)
-        % THESE REEK. why there should be tests inide this class
-        %  in order to find if the object is of its class itself?
-        %  And if this is an abstraction class, what for should be checking
-        %  that the driver is really a driver object?
-        % I suspect that these come from a misuse of configuration layers,
-        %  or some other design mistake
-        function Ans=ismountObj(Obj)
-            % Return true if mount abstraction object.
-            % Example: Ans = obs.mount.ismountObj(M)           
-            Ans = isa(Obj,'obs.mount');
-        end
         
-        function Ans=ismountDriver(Obj)
-            % Return true if mount driver object.
-            % Example: Ans = obs.mount.ismountDriver(M)
-            Ans = isa(Obj,'inst.XerxesMount') || isa(Obj,'inst.iOptronCEM120');
-        end
-        
-    end
-    
-    
     % setters and getters
     methods
         function RA=get.RA(MountObj)
             % getter for RA [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if isempty(MountObj.Handle)
+            try
+                RA = MountObj.Handle.RA;
+            catch
                 RA = NaN;
-                % write error to logFile
-                MountObj.LogFile.writeLog('MountObj.Handle is empty');
-            else
-                if obs.mount.ismountDriver(MountObj.Handle)
-                    % a known mount object
-                    RA = MountObj.Handle.RA;
-                else
-                    RA = NaN;
-                    MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                end
+                MountObj.reportError('Mount object cannot report RA');
             end
         end
         
         function set.RA(MountObj,RA)
             % setter for RA [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if obs.mount.ismountDriver(MountObj.Handle)
-                % a known mount object
+            try
                 MountObj.Handle.RA = RA;
-            else
-                MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                error('MountObj.Handle is not of mountDriver class');
+            catch
+                MountObj.reportError('Mount object cannot set RA');
             end
         end
         
         function Dec=get.Dec(MountObj)
             % getter for Dec [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if isempty(MountObj.Handle)
+            try
+                Dec = MountObj.Handle.Dec;
+            catch
                 Dec = NaN;
-                % write error to logFile
-                MountObj.LogFile.writeLog('MountObj.Handle is empty');
-            else
-                if obs.mount.ismountDriver(MountObj.Handle)
-                    % a known mount object
-                    Dec = MountObj.Handle.Dec;
-                else
-                    Dec = NaN;
-                    MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                end
+                MountObj.reportError('Mount object cannot report Dec');
             end
         end
         
         function set.Dec(MountObj,Dec)
             % setter for Dec [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if obs.mount.ismountDriver(MountObj.Handle)
-                % a known mount object
+            try                % a known mount object
                 MountObj.Handle.Dec = Dec;
-            else
-                MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                error('MountObj.Handle is not of mountDriver class');
+            catch
+                MountObj.reportError('Mount object cannot set Dec');
             end
         end
        
         function HA=get.HA(MountObj)
             % getter for HA [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if isempty(MountObj.Handle)
+            % Equinox is date for Xerxes, and J2000 for iOptron            
+            try
+                HA = MountObj.Handle.HA;
+            catch
                 HA = NaN;
-                % write error to logFile
-                MountObj.LogFile.writeLog('MountObj.Handle is empty');
-            else
-                if obs.mount.ismountDriver(MountObj.Handle)
-                    % a known mount object
-                    HA = MountObj.Handle.HA;
-                else
-                    HA = NaN;
-                    MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                end
+                MountObj.reportError('Mount object cannot report HA');
             end
         end
         
         function set.HA(MountObj,HA)
             % setter for HA [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if obs.mount.ismountDriver(MountObj.Handle)
-                % a known mount object
+            try
                 MountObj.Handle.HA = HA;
-            else
-                MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                error('MountObj.Handle is not of mountDriver class');
+            catch
+                MountObj.reportError('Mount object cannot set HA');
             end
         end
         
@@ -277,84 +220,53 @@ classdef mount < obs.LAST_Handle
         function Az=get.Az(MountObj)
             % getter for Az [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if isempty(MountObj.Handle)
+            try
+                Az = MountObj.Handle.Az;
+            catch
                 Az = NaN;
-                % write error to logFile
-                MountObj.LogFile.writeLog('MountObj.Handle is empty');
-            else
-                if obs.mount.ismountDriver(MountObj.Handle)
-                    % a known mount object
-                    Az = MountObj.Handle.Az;
-                else
-                    Az = NaN;
-                    MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                end
+                MountObj.reportError('Mount object cannot report Az');
             end
         end
         
         function set.Az(MountObj,Az)
             % setter for Az [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if obs.mount.ismountDriver(MountObj.Handle)
-                % a known mount object
+            % Equinox is date for Xerxes, and J2000 for iOptron            
+            try
                 MountObj.Handle.Az = Az;
-            else
-                MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                error('MountObj.Handle is not of mountDriver class');
+            catch
+                MountObj.reportError('Mount object cannot set Az');
             end
         end
         
         function Alt=get.Alt(MountObj)
             % getter for Alt [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if isempty(MountObj.Handle)
+            try
+                Alt = MountObj.Handle.Alt;
+            catch
                 Alt = NaN;
-                % write error to logFile
-                MountObj.LogFile.writeLog('MountObj.Handle is empty');
-                
-            else
-                if obs.mount.ismountDriver(MountObj.Handle)
-                    % a known mount object
-                    Alt = MountObj.Handle.Alt;
-                    
-                else
-                    Alt = NaN;
-                    MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                end
+                MountObj.reportError('Mount object cannot report Alt');                
             end
         end
         
         function set.Alt(MountObj,Alt)
             % setter for Alt [deg]
             % Equinox is date for Xerxes, and J2000 for iOptron
-            
-            if obs.mount.ismountDriver(MountObj.Handle)
-                % a known mount object
+            try
                 MountObj.Handle.Alt = Alt;
-            else
-                MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                error('MountObj.Handle is not of mountDriver class');
+            catch
+                MountObj.reportError('Mount object cannot set Alt');
             end
         end
         
         function TrackingSpeed=get.TrackingSpeed(MountObj)
-            % getter for Tracking speed [Deg/s] in [HA, Dec]
-           
-            if isempty(MountObj.Handle)
+            % getter for Tracking speed [Deg/s] in [HA, Dec]           
+            try
+                TrackingSpeed = MountObj.Handle.TrackingSpeed;
+            catch
                 TrackingSpeed = [NaN NaN];
                 % write error to logFile
-                MountObj.LogFile.writeLog('MountObj.Handle is empty');
-            else
-                if obs.mount.ismountDriver(MountObj.Handle)
-                    % a known mount object
-                    TrackingSpeed = MountObj.Handle.TrackingSpeed;
-                else
-                    TrackingSpeed = NaN;
-                    MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                end
+                MountObj.reportError('Mount object cannot report TrackingSpeed');
             end
         end
         
@@ -375,7 +287,7 @@ classdef mount < obs.LAST_Handle
                     case 'lunar'
                         TrackingSpeed = [MountObj.SiderealRate - 360./27.3./86400, 0];
                     otherwise
-                        error('Unknwon TrackingSpeed string option');
+                        MountObj.reportError('Unknown TrackingSpeed string option');
                 end
             else
                 if numel(TrackingSpeed)==1
@@ -383,36 +295,31 @@ classdef mount < obs.LAST_Handle
                 elseif numel(TrackingSpeed)==2
                     % ok.
                 else
-                    error('TrackingSpeed must be a scalar, two element vector or string');
+                    MountObj.reportError('TrackingSpeed must be a scalar, two element vector or string');
                 end
-            end
-            
+            end            
             if max(abs(TrackingSpeed))>MaxSpeed
-                error('TrackingSpeed is above limit of %f deg/s',MaxSpeed);
+                MountObj.reportError('TrackingSpeed is above limit of %f deg/s',MaxSpeed);
             end
-            
-             if obs.mount.ismountDriver(MountObj.Handle)
-                % a known mount object
+
+            try
                 MountObj.Handle.TrackingSpeed = TrackingSpeed;
                 %MountObj.Handle.track(TrackingSpeed);  % activate tracking
-            else
-                MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                error('MountObj.Handle is not of mountDriver class');
+            catch
+                MountObj.reportError('Mount object cannot set TrackingSpeed')
             end
                 
         end
         
         function Status=get.Status(MountObj)
             % getter for mount status
-           
-            if obs.mount.ismountDriver(MountObj.Handle)
+            try
                 Status = MountObj.Handle.Status;
-            else
-                MountObj.LogFile.writeLog('MountObj.Handle is not of mountDriver class');
-                error('MountObj.Handle is not of mountDriver class');
+            catch
+                Status = 'unknown';
+                MountObj.reportError('Mount object cannot report Status')
             end
         end
-        
     end
 
     

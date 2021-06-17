@@ -44,13 +44,11 @@ classdef unitCS < obs.LAST_Handle
 
     properties(Hidden)
         %        
-        HandleMount      % handle to the mount(s) abstraction object
-        HandleCamera     % struct, handles to the camera abstraction objects
-        HandleFocuser    % struct, handles to the focuser abstraction objects
+        Mount  obs.LAST_Handle    % handle to the mount(s) abstraction object
+        Camera cell    % cell, handles to the camera abstraction objects
+        Focuser cell   % cell, handles to the focuser abstraction objects
         HandleRemoteC    %
         CameraRemoteName char        = 'C';        
-        MountConfigStruct struct     = struct();
-        CameraConfigStruct struct    = struct();
     end
  
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
@@ -73,14 +71,14 @@ classdef unitCS < obs.LAST_Handle
             
             % populate mount, camera, focuser and power switches handles
             N=UnitObj.NumberLocalTelescopes;
-            UnitObj.HandleMount=...
+            UnitObj.Mount=...
                 obs.mount(sprintf('%d_%d',UnitObj.NodeNumber,1)); % for now always one (could be 0 for slave?)
-            UnitObj.HandleCamera=cell(1,N);
-            UnitObj.HandleFocuser=cell(1,N);
+            UnitObj.Camera=cell(1,N);
+            UnitObj.Focuser=cell(1,N);
             for i=1:N
-                UnitObj.HandleCamera{i}=...
+                UnitObj.Camera{i}=...
                     obs.camera(sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i));
-                UnitObj.HandleFocuser{i}=...
+                UnitObj.Focuser{i}=...
                     obs.focuser(sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i));
             end
         end
@@ -88,9 +86,9 @@ classdef unitCS < obs.LAST_Handle
 
         function delete(UnitObj)
             % delete mount object and related sub objects (??)
-%             delete(UnitObj.HandleMount);
-%             delete(UnitObj.HandleCamera);    
-%             delete(UnitObj.HandleFocuser);    
+%             delete(UnitObj.Mount);
+%             delete(UnitObj.Camera);    
+%             delete(UnitObj.Focuser);    
         end
                         
     end
@@ -126,57 +124,57 @@ classdef unitCS < obs.LAST_Handle
         
         %--- Mount ---
         function Val=get.RA(UnitObj)
-            Val = UnitObj.HandleMount.RA;
+            Val = UnitObj.Mount.RA;
         end
        
         function set.RA(UnitObj,Val)
-            UnitObj.HandleMount.RA = Val;
+            UnitObj.Mount.RA = Val;
         end
        
         function Val=get.Dec(UnitObj)
-            Val = UnitObj.HandleMount.Dec;
+            Val = UnitObj.Mount.Dec;
         end
        
         function set.Dec(UnitObj,Val)
-            UnitObj.HandleMount.Dec = Val;
+            UnitObj.Mount.Dec = Val;
         end
         
         function Val=get.HA(UnitObj)
-            Val = UnitObj.HandleMount.HA;
+            Val = UnitObj.Mount.HA;
         end
        
         function set.HA(UnitObj,Val)
-            UnitObj.HandleMount.HA = Val;
+            UnitObj.Mount.HA = Val;
         end
         
         function Val=get.Az(UnitObj)
-            Val = UnitObj.HandleMount.Az;
+            Val = UnitObj.Mount.Az;
         end
        
         function set.Az(UnitObj,Val)
-            UnitObj.HandleMount.Az = Val;
+            UnitObj.Mount.Az = Val;
         end
         
         function Val=get.Alt(UnitObj)
-            Val = UnitObj.HandleMount.Alt;
+            Val = UnitObj.Mount.Alt;
         end
        
         function set.Alt(UnitObj,Val)
-            UnitObj.HandleMount.Alt = Val;
+            UnitObj.Mount.Alt = Val;
         end
         
         function Val=get.TrackingSpeed(UnitObj)
             % add description: vector of both axes, units in sidereal or what
-            Val = UnitObj.HandleMount.TrackingSpeed;
+            Val = UnitObj.Mount.TrackingSpeed;
         end
        
         function set.TrackingSpeed(UnitObj,Val)
             % add description: vector of both axes, units in sidereal or what
-            UnitObj.HandleMount.TrackingSpeed = Val;
+            UnitObj.Mount.TrackingSpeed = Val;
         end
         
         function Val=get.MountStatus(UnitObj)
-            Val = UnitObj.HandleMount.Status;
+            Val = UnitObj.Mount.Status;
         end
 
     end

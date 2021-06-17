@@ -1,13 +1,13 @@
 function abort(MountObj)
     % emergency stop
-    if MountObj.IsConnected
+    MountObj.report('Aborting mount movement\n')
 
-        MountObj.LogFile.writeLog('Abort mount slewing')
-
-        % Stop the mount motion through the driver object
+    % Stop the mount motion through the driver object
+    try
         MountObj.Handle.abort;
-
-        % Delete the slewing timer
-        delete(MountObj.SlewingTimer);
+    catch
+        MountObj.reportError('Mount handle cannot abort')
     end
+    % Delete the slewing timer
+    delete(MountObj.SlewingTimer);
 end
