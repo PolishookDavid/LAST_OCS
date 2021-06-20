@@ -53,10 +53,9 @@ classdef focuser <obs.LAST_Handle
             end
             % load configuration
             Focuser.loadConfig(Focuser.configFileName('create'))
-
             
             if Focuser.PromptMirrorLock
-                fprintf('Release the mirror of the telescope using the two black nobs at the bottom!!!\n');
+                fprintf('Release the mirror of the telescope using the two black knobs at the bottom!!!\n');
                 Answer = input('Is the mirror unlocked? [y/n]\n', 's');
                 switch lower(Answer)
                     case 'y'
@@ -72,7 +71,7 @@ classdef focuser <obs.LAST_Handle
             end
             
             if Cont
-                Focuser.Handle=inst.CelestronFocuser;
+               % boh...
             end
              
         end

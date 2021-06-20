@@ -56,6 +56,8 @@ classdef unitCS < obs.LAST_Handle
         NodeNumber = 0;
         NumberLocalTelescopes
         NumberRemoteTelescopes
+        FocuserDriver
+        CameraDriver
     end
 
     methods
@@ -76,10 +78,11 @@ classdef unitCS < obs.LAST_Handle
             UnitObj.Camera=cell(1,N);
             UnitObj.Focuser=cell(1,N);
             for i=1:N
+                telescope_label=sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i);
                 UnitObj.Camera{i}=...
-                    obs.camera(sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i));
-                UnitObj.Focuser{i}=...
-                    obs.focuser(sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i));
+                    obs.camera(telescope_label);
+                UnitObj.Focuser{i}=eval([UnitObj.FocuserDriver{i} ...
+                                        '(''' telescope_label ''')']);
             end
         end
         
