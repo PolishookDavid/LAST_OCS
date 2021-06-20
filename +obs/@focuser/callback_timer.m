@@ -1,5 +1,6 @@
 function callback_timer(Focuser, ~, ~)
 % After slewing, check if mount is in Idle status 
+%  (attempting to supersede such timer calls!)
 
 if (strcmp(Focuser.Status, 'idle'))
    stop(Focuser.FocusMotionTimer);
