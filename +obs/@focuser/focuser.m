@@ -20,13 +20,8 @@
 %
 % Author: David Polishook, Mar 2020
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-classdef focuser <obs.LAST_Handle
-    
-    properties (Hidden, GetAccess=public, SetAccess=private)
-        IsConnected logical    = false;
-    end
-    
-        
+classdef focuser < obs.LAST_Handle
+            
     properties (SetAccess=public, GetAccess=private)
         FocuserUniqueName = NaN;
     end
