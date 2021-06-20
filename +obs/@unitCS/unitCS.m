@@ -56,6 +56,7 @@ classdef unitCS < obs.LAST_Handle
         NodeNumber = 0;
         NumberLocalTelescopes
         NumberRemoteTelescopes
+        MountDriver
         FocuserDriver
         CameraDriver
     end
@@ -66,15 +67,19 @@ classdef unitCS < obs.LAST_Handle
             % unit class constructor
             % Package: +obs/@unitCS
             if exist('id','var')
+                if isnumeric(id)
+                    id=num2str(id);
+                end
                 UnitObj.Id=id;
             end
             % load configuration
             UnitObj.loadConfig(UnitObj.configFileName('create'))
             
             % populate mount, camera, focuser and power switches handles
+            % for now always one mount (could be 0 for slave?)
+            UnitObj.Mount=eval([UnitObj.MountDriver ...
+                            '(''' sprintf('%d_%d',UnitObj.NodeNumber,1) ''')']);...
             N=UnitObj.NumberLocalTelescopes;
-            UnitObj.Mount=...
-                obs.mount(sprintf('%d_%d',UnitObj.NodeNumber,1)); % for now always one (could be 0 for slave?)
             UnitObj.Camera=cell(1,N);
             UnitObj.Focuser=cell(1,N);
             for i=1:N
