@@ -29,6 +29,10 @@ classdef camera < obs.LAST_Handle
         CoolingPower double    = NaN;         % The cooling power precentage of the camera
         LastImageName char     = '';          % The name of the last image 
         LastImage                             % A matrix of the last image
+    
+        
+        
+        
         LastImageSaved logical = false;       % a flag indicating if the last image was saved.
     end
     
@@ -448,6 +452,12 @@ classdef camera < obs.LAST_Handle
                 if CameraObj(Icam).Verbose
                     fprintf('%s\n',LogMsg);
                 end
+                
+                % Set temperature to -5 degrees to prevent over heating of
+                % the cameras. This should be replaced later with a code
+                % that choose temperature according the camera CoolingPower
+                % (to be at ~50%). DP, Jun 30, 2021
+                CameraObj(Icam).Temperature = -5;
             end
                 
             
@@ -1315,8 +1325,8 @@ classdef camera < obs.LAST_Handle
 
             
             InPar = inputParser;
-%            addOptional(InPar,'WaitFinish',true);
-            addOptional(InPar,'WaitFinish',false);
+            addOptional(InPar,'WaitFinish',true);
+%            addOptional(InPar,'WaitFinish',false);
             addOptional(InPar,'ImType',[]);
             addOptional(InPar,'Object',[]);
             addOptional(InPar,'SaveMode',2);
@@ -1820,6 +1830,8 @@ classdef camera < obs.LAST_Handle
             end
             
             %Info.JD       = juliandate(CameraObj.Handle.LastImageTime);
+            % FFU: there is a problem here - the TimeStart... is not
+            % updated in time...
             Info.JD       = 1721058.5 + CameraObj.Handle.TimeStartLastImage;
             %Info.ExpTime  = CameraObj.Handle.LastImageExpTime;
             Info.ExpTime  = CameraObj.ExpTime;

@@ -8,7 +8,6 @@
 % Example: 
 %
 % Settings parameters options:
-
 %
 
 classdef unitCS <obs.LAST_Handle
@@ -110,7 +109,7 @@ classdef unitCS <obs.LAST_Handle
         
         function Obj=connect(Obj,varargin)
             %
-            
+            % Example: U.connect('Ncam',4)
             
             InPar = inputParser;
             addOptional(InPar,'MountType','Xerxes');

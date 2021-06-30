@@ -28,6 +28,7 @@ function [Res] = focus_loop(CamObj,MountObj,FocObj,SensObj,varargin)
 %                   If Half range is not consistent with step size, it will
 %                   readjusted.
 %                   Default is 120.
+
 %            'Step' - Focus loops steps. Default is 40.
 %            'FocusGuessTemp' - If the focus guess parameter is temperature
 %                   dependent. This is the nominal temperature of the
@@ -73,12 +74,12 @@ PlotMinMarker = 'p';
 
 
 InPar = inputParser;
-addOptional(InPar,'FocusGuess',35000);  
-addOptional(InPar,'HalfRange',250);  
-addOptional(InPar,'Step',50);  
+addOptional(InPar,'FocusGuess',35163);  
+addOptional(InPar,'HalfRange',200);  
+addOptional(InPar,'Step',40);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  
-addOptional(InPar,'BacklashPos',200);  
+addOptional(InPar,'BacklashPos',600);  
 addOptional(InPar,'ExpTime',3);  
 addOptional(InPar,'NimExp',1);  
 addOptional(InPar,'ImageHalfSize',1000);  % If [] use full image
@@ -216,7 +217,9 @@ while Cont
             FocVal(Ipos) = NaN;
         else
             % instead one can check if the SN improves...
-            FocVal(Ipos,Icam) = 2.35.*InPar.PixScale.*InPar.SigmaVec(mode(Pos(Pos(:,3)>50,4),'all'));
+            if(sum(Pos(:,3)>50)~=0)
+               FocVal(Ipos,Icam) = 2.35.*InPar.PixScale.*InPar.SigmaVec(mode(Pos(Pos(:,3)>50,4),'all'));
+            end
         end
     end
     
@@ -292,7 +295,7 @@ end
 fprintf('Set focus to best value\n');
 for Icam=1:1:Ncam
     %Noam and David
-    FocObj(Icam).Pos = Res.BestFocVal(Icam)+InPar.BaclashPos;
+    FocObj(Icam).Pos = Res.BestFocVal(Icam)+InPar.BacklashPos;
     FocObj(Icam).Pos = Res.BestFocVal(Icam);
 end
 for Icam=1:1:Ncam
