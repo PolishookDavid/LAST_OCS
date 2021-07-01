@@ -1,9 +1,9 @@
 function UnitObj=disconnect(UnitObj)
     % disconnect all objects of the Unit
 
-    for I=1:1:numel(UnitObj.HandleCamera)
-        UnitObj.HandleCamera(I).HandleFocuser.disconnect;
-        UnitObj.HandleCamera(I).disconnect;
+    for I=1:UnitObj.NumberLocalTelescopes
+        UnitObj.Camera{I}.disconnect;
+        UnitObj.Focuser{I}.disconnect;
     end
-    UnitObj.HandleMount.disconnect;
+    UnitObj.Mount.disconnect;
 end
