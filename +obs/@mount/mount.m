@@ -55,10 +55,7 @@ classdef mount < obs.LAST_Handle
     end
     
     % Mount ID
-    properties(Hidden)
-        MountName char          = '';         % The mount serial ID - e.g., 'RAD21drive-932187746_DecD21Dual-13182557'
-        MountModel char         = 'unknown';  % Mount model - e.g., 'Xerxes-20'
-        MountClass char         = 'unknown';  % class of the mount driver - e.g., 'inst.XerxesMount'
+    properties(Hidden=true)
         ObsLon(1,1) double      = NaN;
         ObsLat(1,1) double      = NaN;
         ObsHeight(1,1) double   = NaN;
@@ -66,10 +63,8 @@ classdef mount < obs.LAST_Handle
     
     % safety 
     properties(Hidden)
-        MinAlt(1,1) double     = 15;   % deg
         AzAltLimit cell      = {0, 15; 90, 15; 180, 15; 270, 15; 360, 15}; % deg (cell because of yml conversion)
         HALimit double         = 120;  % deg
-        ParkPos(1,2) double    = [0 0];   % HA, Dec [deg]
     end
     
     % communication
@@ -82,11 +77,7 @@ classdef mount < obs.LAST_Handle
         SlewingTimer;        
         TimeFromGPS logical     = false;        
     end
-    
-    properties(Hidden,Constant)
-        SiderealRate = 360/86164.0905; %sidereal tracking rate, degrees/sec
-    end
-    
+        
         
 %         IPaddress = '';
 %         Port = '';
@@ -124,9 +115,8 @@ classdef mount < obs.LAST_Handle
             MountObj.loadConfig(MountObj.configFileName('create'))
             % eval because of
             % https://github.com/EranOfek/AstroPack/issues/6#issuecomment-861471636
-            MountObj.Handle=eval(MountObj.MountClass);
             % pass geographical coordinates to the driver
-            MountObj.Handle.MountPos=[MountObj.ObsLat,MountObj.ObsLon,MountObj.ObsHeight];
+            MountObj.MountPos=[MountObj.ObsLat,MountObj.ObsLon,MountObj.ObsHeight];
         end
         
         function delete(MountObj)
@@ -185,6 +175,19 @@ classdef mount < obs.LAST_Handle
 %             end
 %                 
 %         end
+
+    % these are merely name translations from properties of the child class
+        function lon=get.ObsLon(M)
+            lon=M.MountPos(2);
+        end
+
+        function lat=get.ObsLat(M)
+            lat=M.MountPos(1);
+        end
+
+        function height=get.ObsHeight(M)
+            height=M.MountPos(3);
+        end
         
     end
 
