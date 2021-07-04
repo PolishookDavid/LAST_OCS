@@ -117,6 +117,23 @@ classdef mount < obs.LAST_Handle
             % https://github.com/EranOfek/AstroPack/issues/6#issuecomment-861471636
             % pass geographical coordinates to the driver
             MountObj.MountPos=[MountObj.ObsLat,MountObj.ObsLon,MountObj.ObsHeight];
+            
+            % Open the logFile (what do we want to do here? Open a different log
+            %  file for each device, or one for the whole unitCS?)
+            if isempty(MountObj.LogFile)
+                %         % create a logFile, but with empty TemplateFileName so no
+                %         % writing is performed
+                %         MountObj.LogFile = logFile;
+                %         MountObj.LogFile.FileNameTemplate = [];
+                %         % .Dir missing in Astropack's LogFile
+                %         MountObj.LogFile.LogPath = '~';
+            else
+                %         MountObj.LogFileDir = ConfigStruct.LogFileDir;
+                %         % .logOwner missing in Astropack's LogFile
+                %         % MountObj.LogFile.logOwner = sprintf('mount_%d_%d',MountAddress);
+                %         % .Dir missing in Astropack's LogFile
+                %         MountObj.LogFile.LogPath = ConfigStruct.LogFileDir;
+            end
         end
         
         function delete(MountObj)

@@ -1,6 +1,7 @@
 function Obj=connect(Obj,varargin)
-    % description to be written yet....
-
+    % To be redone completely once the relation between abstraction
+    %  connect and driver connect is clarified
+    
     InPar = inputParser;
     addOptional(InPar,'MountType','XerxesMount');
     addOptional(InPar,'AddressMount',[1 1]);
