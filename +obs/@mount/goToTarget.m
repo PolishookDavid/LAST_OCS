@@ -1,4 +1,4 @@
-function [Flag,RA,Dec,Aux]=goTo(MountObj, Long, Lat, varargin)
+function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
     % Send mount to coordinates/name and start tracking
     % Package: @mount
     % Description: Send mount to a given coordinates in some coordinate system
@@ -43,11 +43,11 @@ function [Flag,RA,Dec,Aux]=goTo(MountObj, Long, Lat, varargin)
     %          - A structure containing the intermidiate values.
     % License: GNU general public license version 3
     %     By : Eran Ofek                    Feb 2020
-    % Example: [DistRA,DistDec,Aux]=mount.goto(10,50)
-    %          mount.goto(10,50,'InCooType','a')
-    %          mount.goto('10:00:00','+50:00:00');
-    %          mount.goto('M31');
-    %          mount.goto('9804;',[],'NameServer','jpl')
+    % Example: [DistRA,DistDec,Aux]=mount.goToTarget(10,50)
+    %          mount.goToTarget(10,50,'InCooType','a')
+    %          mount.goToTarget('10:00:00','+50:00:00');
+    %          mount.goToTarget('M31');
+    %          mount.goToTarget('9804;',[],'NameServer','jpl')
     %--------------------------------------------------------------------------
 
     RAD = 180./pi;
@@ -71,7 +71,7 @@ function [Flag,RA,Dec,Aux]=goTo(MountObj, Long, Lat, varargin)
             otherwise
                 % Convert input into RA/Dec [input deg, output deg]
                 try
-                    OutputCooType=MountObj.Handle.CoordType;
+                    OutputCooType=MountObj.CoordType;
                     if strcmp(OutputCooType,'tdate')
                         % why not 'tdate' altogether?
                         OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
@@ -108,12 +108,9 @@ function [Flag,RA,Dec,Aux]=goTo(MountObj, Long, Lat, varargin)
                 if Flag
 
                     % Start slewing
-                    MountObj.Handle.goTo(RA, Dec, 'eq');
+                    MountObj.goTo(RA, Dec, 'eq');
 
                     % compare coordinates to requested coordinates
-
-                    % Get error
-                    MountObj.LastError = MountObj.Handle.LastError;
 
                     % No NO NO
                     % What is 'notify'? Get rid of timers. If it has to be

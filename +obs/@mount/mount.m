@@ -1,7 +1,7 @@
 % mount control handle class
 % Package: +obs/@mount
 % Description: operate mount drivers.
-%              Currently can work with Xerxes, iOptron and Celestron mounts
+%              Intended for working with Xerxes, iOptron and Celestron mounts
 % Input  : none.
 % Output : A mount class
 %     By :
@@ -42,19 +42,7 @@
 classdef mount < obs.LAST_Handle
 
     properties (Transient)
-        % mount direction and motion
-        RA(1,1) double     = NaN      % Deg
-        Dec(1,1) double    = NaN      % Deg
-        HA(1,1) double     = NaN      % Deg
-        Az(1,1) double     = NaN      % Deg
-        Alt(1,1) double    = NaN      % Deg
-        TrackingSpeed(1,2) double = [NaN NaN]  % Deg/s
-    end
-
-    properties (GetAccess=public, SetAccess=private)
-        % Mount configuration
-        Status  char       = 'unknown';   % 'unknown' | 'idle' | 'slewing' | 'tracking'
-        IsEastOfPier       = NaN;
+        % TrackingSpeed(1,2) double = [NaN NaN]  % Deg/s %% support 'sidereal', 'lunar'?
     end
     
     properties(Hidden)
@@ -157,183 +145,46 @@ classdef mount < obs.LAST_Handle
         
     % setters and getters
     methods
-        function RA=get.RA(MountObj)
-            % getter for RA [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try
-                RA = MountObj.Handle.RA;
-            catch
-                RA = NaN;
-                MountObj.reportError('Mount object cannot report RA');
-            end
-        end
-        
-        function set.RA(MountObj,RA)
-            % setter for RA [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try
-                MountObj.Handle.RA = RA;
-            catch
-                MountObj.reportError('Mount object cannot set RA');
-            end
-        end
-        
-        function Dec=get.Dec(MountObj)
-            % getter for Dec [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try
-                Dec = MountObj.Handle.Dec;
-            catch
-                Dec = NaN;
-                MountObj.reportError('Mount object cannot report Dec');
-            end
-        end
-        
-        function set.Dec(MountObj,Dec)
-            % setter for Dec [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try                % a known mount object
-                MountObj.Handle.Dec = Dec;
-            catch
-                MountObj.reportError('Mount object cannot set Dec');
-            end
-        end
-       
-        function HA=get.HA(MountObj)
-            % getter for HA [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron            
-            try
-                HA = MountObj.Handle.HA;
-            catch
-                HA = NaN;
-                MountObj.reportError('Mount object cannot report HA');
-            end
-        end
-        
-        function set.HA(MountObj,HA)
-            % setter for HA [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try
-                MountObj.Handle.HA = HA;
-            catch
-                MountObj.reportError('Mount object cannot set HA');
-            end
-        end
-        
-        
-        function Az=get.Az(MountObj)
-            % getter for Az [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try
-                Az = MountObj.Handle.Az;
-            catch
-                Az = NaN;
-                MountObj.reportError('Mount object cannot report Az');
-            end
-        end
-        
-        function set.Az(MountObj,Az)
-            % setter for Az [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron            
-            try
-                MountObj.Handle.Az = Az;
-            catch
-                MountObj.reportError('Mount object cannot set Az');
-            end
-        end
-        
-        function Alt=get.Alt(MountObj)
-            % getter for Alt [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try
-                Alt = MountObj.Handle.Alt;
-            catch
-                Alt = NaN;
-                MountObj.reportError('Mount object cannot report Alt');                
-            end
-        end
-        
-        function set.Alt(MountObj,Alt)
-            % setter for Alt [deg]
-            % Equinox is date for Xerxes, and J2000 for iOptron
-            try
-                MountObj.Handle.Alt = Alt;
-            catch
-                MountObj.reportError('Mount object cannot set Alt');
-            end
-        end
-        
-        function TrackingSpeed=get.TrackingSpeed(MountObj)
-            % getter for Tracking speed [Deg/s] in [HA, Dec]           
-            try
-                TrackingSpeed = MountObj.Handle.TrackingSpeed;
-            catch
-                TrackingSpeed = [NaN NaN];
-                % write error to logFile
-                MountObj.reportError('Mount object cannot report TrackingSpeed');
-            end
-        end
-        
-        function set.TrackingSpeed(MountObj,TrackingSpeed)
-            % setter for Tracking speed - THIS DOES NOT ACTIVATE TRACKING
-            % Use M.track to activate tracking
-            % Input  : - Mount object.
-            %          - [HA, Dec] speed, if scalar, than Dec speed is set
-            %            to zero.
-            %            String: 'sidereal' | 'sid' | 'lunar'
-            
-            MaxSpeed = 1;
-            
-            if ischar(TrackingSpeed)
-                switch lower(TrackingSpeed)
-                    case {'sidereal','sid'}
-                        TrackingSpeed = [MountObj.SiderealRate, 0];
-                    case 'lunar'
-                        TrackingSpeed = [MountObj.SiderealRate - 360./27.3./86400, 0];
-                    otherwise
-                        MountObj.reportError('Unknown TrackingSpeed string option');
-                end
-            else
-                if numel(TrackingSpeed)==1
-                    TrackingSpeed = [TrackingSpeed, 0];
-                elseif numel(TrackingSpeed)==2
-                    % ok.
-                else
-                    MountObj.reportError('TrackingSpeed must be a scalar, two element vector or string');
-                end
-            end            
-            if max(abs(TrackingSpeed))>MaxSpeed
-                MountObj.reportError('TrackingSpeed is above limit of %f deg/s',MaxSpeed);
-            end
-
-            try
-                MountObj.Handle.TrackingSpeed = TrackingSpeed;
-                %MountObj.Handle.track(TrackingSpeed);  % activate tracking
-            catch
-                MountObj.reportError('Mount object cannot set TrackingSpeed')
-            end
-                
-        end
-        
-        function Status=get.Status(MountObj)
-            % getter for mount status
-            try
-                Status = MountObj.Handle.Status;
-            catch
-                Status = 'unknown';
-                MountObj.reportError('Mount object cannot report Status')
-            end
-        end
-        
-        function Status=get.IsEastOfPier(MountObj)
-            % getter for mount status
-            try
-                Status = MountObj.Handle.IsEastOfPier;
-            catch
-                Status = 'unknown';
-                MountObj.reportError('Mount object cannot report isEastOfPier')
-            end
-        end
+%         function set.TrackingSpeed(MountObj,TrackingSpeed)
+%             % setter for Tracking speed - THIS DOES NOT ACTIVATE TRACKING
+%             % Use M.track to activate tracking
+%             % Input  : - Mount object.
+%             %          - [HA, Dec] speed, if scalar, than Dec speed is set
+%             %            to zero.
+%             %            String: 'sidereal' | 'sid' | 'lunar'
+%             
+%             MaxSpeed = 1;
+%             
+%             if ischar(TrackingSpeed)
+%                 switch lower(TrackingSpeed)
+%                     case {'sidereal','sid'}
+%                         TrackingSpeed = [MountObj.SiderealRate, 0];
+%                     case 'lunar'
+%                         TrackingSpeed = [MountObj.SiderealRate - 360./27.3./86400, 0];
+%                     otherwise
+%                         MountObj.reportError('Unknown TrackingSpeed string option');
+%                 end
+%             else
+%                 if numel(TrackingSpeed)==1
+%                     TrackingSpeed = [TrackingSpeed, 0];
+%                 elseif numel(TrackingSpeed)==2
+%                     % ok.
+%                 else
+%                     MountObj.reportError('TrackingSpeed must be a scalar, two element vector or string');
+%                 end
+%             end            
+%             if max(abs(TrackingSpeed))>MaxSpeed
+%                 MountObj.reportError('TrackingSpeed is above limit of %f deg/s',MaxSpeed);
+%             end
+% 
+%             try
+%                 MountObj.Handle.TrackingSpeed = TrackingSpeed;
+%                 %MountObj.Handle.track(TrackingSpeed);  % activate tracking
+%             catch
+%                 MountObj.reportError('Mount object cannot set TrackingSpeed')
+%             end
+%                 
+%         end
         
     end
 
