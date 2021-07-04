@@ -11,21 +11,21 @@
 %           ObsLon, ObsLat
 %           M.connect; 
 %           M.ObsLon = 35; M.ObsLat=32;
-%           M.goto(0,0,'ha')
+%           M.goToTarget(0,0,'ha')
 %           
 %           % connect with configuration file _1_1
 %           M.connect([1 1])
-%           M.goto(10,10,'ha')
+%           M.goToTarget(10,10,'ha')
 %
 %           M.stopMotors % dis-engage motors (mount in neutral)
 %
 % Settings parameters options:
 %     M.connect;      % Connect to the driver and mount controller
-%     M.goto(10,50)   % Send telescope to RA & Dec in degrees
-%     M.goto(10,50,'InCooType','a');  % Send telescope to Az & Alt in degrees
-%     M.goto('10:00:00','+50:00:00'); % Send telescope to RA & Dec in hours and degrees
-%     M.goto('M31');                  % Send to known target in SIMBAD catalog
-%     M.goto('9804;',[],'NameServer','jpl'); % Send to known moving target in JPL catalog
+%     M.goToTarget(10,50)   % Send telescope to RA & Dec in degrees
+%     M.goToTarget(10,50,'InCooType','a');  % Send telescope to Az & Alt in degrees
+%     M.goToTarget('10:00:00','+50:00:00'); % Send telescope to RA & Dec in hours and degrees
+%     M.goToTarget('M31');                  % Send to known target in SIMBAD catalog
+%     M.goToTarget('9804;',[],'NameServer','jpl'); % Send to known moving target in JPL catalog
 %     M.abort;                        % Abort telescope motion
 %     M.track;                        % Operate tracking in sidereal rate
 %     M.track(val);                   % Operate tracking in rate val in units of degrees/sec

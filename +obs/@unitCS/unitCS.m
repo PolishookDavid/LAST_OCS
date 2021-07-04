@@ -36,7 +36,7 @@ classdef unitCS < obs.LAST_Handle
         NodeNumber = 0;
         NumberLocalTelescopes
         NumberRemoteTelescopes
-        MountDriver
+        MountDriver = 'inst.XerxesSimulated';
         FocuserDriver
         CameraDriver
     end
