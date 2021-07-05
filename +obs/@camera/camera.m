@@ -1880,7 +1880,11 @@ classdef camera < obs.LAST_Handle
             Info.FOCUS    = commCommand(CameraObj, CameraObj.HandleFocuser,'Pos');
             Info.PRVFOCUS = commCommand(CameraObj, CameraObj.HandleFocuser,'LastPos');
             
-         
+            % camera temperature information
+            Info.TEMP_DET  = CameraObj.Temperature;
+            Info.COOLERPWR = CameraObj.CoolingPower;
+
+            
             
             % struct to HeaderCell + comments
             % Input : Info, CommentsDB
