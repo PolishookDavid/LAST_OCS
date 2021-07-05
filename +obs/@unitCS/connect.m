@@ -1,29 +1,15 @@
-function Obj=connect(Obj,varargin)
+function Unit=connect(Unit)
     % To be redone completely once the relation between abstraction
     %  connect and driver connect is clarified
     
-    InPar = inputParser;
-    addOptional(InPar,'MountType','XerxesMount');
-    addOptional(InPar,'AddressMount',[1 1]);
-    addOptional(InPar,'Ncam',2);
-    %addOptional(InPar,'CameraNumber',[1 3]); %[1 3]);
-    addOptional(InPar,'CameraRemote',[]); %[1 3]);
-    addOptional(InPar,'CameraType','QHY');
-    addOptional(InPar,'CameraRemoteName','C');  % if empty then do not populate
-    parse(InPar,varargin{:});
-    InPar = InPar.Results;
-
-    if Obj.Verbose
-        fprintf('Connect to mount Node=%d, Mount=%d\n',InPar.AddressMount);
-    end
-
-    M = obs.mount(InPar.MountType);
-    M.connect(InPar.AddressMount);
+    Unit.Mount.connect(Unit.Mount.PhysicalPort);
 
     % connect to focusers and cameras
-    C = obs.camera(InPar.CameraType,InPar.Ncam);
-    C.connect('all');
-    Ncam = numel(C);
+    for i=1:Unit.NumberLocalTelescopes
+        Unit.Camera{i}.connect(Unit.Camera{i}.PhysicalId)
+        Unit.Focuser{i}.connect(Unit.Focuser{i}.PhysicalPort)
+    end
+    
 
     pause(3);
 
@@ -35,7 +21,7 @@ function Obj=connect(Obj,varargin)
     end
 
     if ~isempty(InPar.CameraRemoteName)
-        Obj.CameraRemoteName = InPar.CameraRemoteName;
+        Unit.CameraRemoteName = InPar.CameraRemoteName;
     end
 
     % connect remote cameras
@@ -43,12 +29,12 @@ function Obj=connect(Obj,varargin)
         RemoteC = [];
     else
         RemoteC      = InPar.CameraRemote; % This should be a connected object
-        RemoteC.Name = Obj.CameraRemoteName;
+        RemoteC.Name = Unit.CameraRemoteName;
 
     end
 
-    Obj.HandleMount   = M;
-    Obj.HandleCamera  = C;
-    Obj.HandleRemoteC = RemoteC;
+    Unit.HandleMount   = M;
+    Unit.HandleCamera  = C;
+    Unit.HandleRemoteC = RemoteC;
 
 end
