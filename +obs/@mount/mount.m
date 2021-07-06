@@ -112,9 +112,7 @@ classdef mount < obs.LAST_Handle
                 MountObj.Id=id;
             end
             % load configuration
-            MountObj.loadConfig(MountObj.configFileName('create'))
-            % eval because of
-            % https://github.com/EranOfek/AstroPack/issues/6#issuecomment-861471636
+            MountObj.loadConfig(MountObj.configFileName('createsuper'))
             % pass geographical coordinates to the driver
             MountObj.MountPos=[MountObj.ObsLat,MountObj.ObsLon,MountObj.ObsHeight];
             

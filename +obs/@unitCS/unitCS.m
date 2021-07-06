@@ -64,8 +64,8 @@ classdef unitCS < obs.LAST_Handle
             UnitObj.Focuser=cell(1,N);
             for i=1:N
                 telescope_label=sprintf('%d_%d_%d',UnitObj.NodeNumber,1,i);
-                UnitObj.Camera{i}=...
-                    obs.camera(telescope_label);
+                UnitObj.Camera{i}=eval([UnitObj.CameraDriver{i} ...
+                                        '(''' telescope_label ''')']);
                 UnitObj.Focuser{i}=eval([UnitObj.FocuserDriver{i} ...
                                         '(''' telescope_label ''')']);
             end

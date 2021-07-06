@@ -25,7 +25,6 @@ classdef camera < obs.LAST_Handle
         %  use driver CamStatus instead of Status
         % Status char            = 'unknown';   % The status of the camera: idle, exposing, reading, unknown
         LastImageName char     = '';          % The name of the last image 
-        LastImageSaved logical = false;       % a flag indicating if the last image was saved.
     end
     
     properties(Hidden)
@@ -93,7 +92,7 @@ classdef camera < obs.LAST_Handle
                 CameraObj.Id=id;
             end
             % load configuration
-            CameraObj.loadConfig(CameraObj.configFileName('create'))
+            CameraObj.loadConfig(CameraObj.configFileName('createsuper'))
         end
        
         function delete(CameraObj)

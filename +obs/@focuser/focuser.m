@@ -47,7 +47,7 @@ classdef focuser < obs.LAST_Handle
                 Focuser.Id=id;
             end
             % load configuration
-            Focuser.loadConfig(Focuser.configFileName('create'))
+            Focuser.loadConfig(Focuser.configFileName('createsuper'))
             
             if Focuser.PromptMirrorLock
                 fprintf('Release the mirror of the telescope using the two black knobs at the bottom!!!\n');
