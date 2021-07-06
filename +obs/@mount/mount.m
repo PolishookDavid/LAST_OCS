@@ -63,7 +63,7 @@ classdef mount < obs.LAST_Handle
     
     % safety 
     properties(Hidden)
-        AzAltLimit cell      = {0, 15; 90, 15; 180, 15; 270, 15; 360, 15}; % deg (cell because of yml conversion)
+        AzAltLimit double      = [0, 15; 90, 15; 180, 15; 270, 15; 360, 15]; % deg
         HALimit double         = 120;  % deg
     end
     
