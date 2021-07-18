@@ -106,7 +106,7 @@ function setCoordinate(MountObj,NewRA,NewDec,MountRA,MountDec,CooSys)
     switch lower(MountObj.MountType)
         % MountType is now the class name
         case 'ioptron'
-            % not supported (check - maybe it is, I just not implemented in
+            % not supported (check - maybe it is, I just did not implement it in
             %  the driver)
             error('setCoordinate is not supported for iOptron mount');
 

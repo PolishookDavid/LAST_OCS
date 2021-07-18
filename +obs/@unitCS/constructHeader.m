@@ -4,8 +4,6 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % Output  : - A 3 column cell array with header for image
     %           - A structure with all the header key and vals.
 
-    
-    
     CameraObj=UnitObj.Camera{itel};
     
     RAD = 180./pi;
@@ -84,9 +82,9 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
         Info.ObsHeight = NaN;
     end
 
-    %Info.JD       = juliandate(CameraObj.Handle.LastImageTime);
+    %Info.JD       = juliandate(CameraObj.LastImageTime);
     Info.JD       = 1721058.5 + CameraObj.TimeStartLastImage;
-    %Info.ExpTime  = CameraObj.Handle.LastImageExpTime;
+    %Info.ExpTime  = CameraObj.LastImageExpTime;
     Info.ExpTime  = CameraObj.ExpTime;
     Info.LST      = celestial.time.lst(Info.JD,Info.ObsLon./RAD,'a').*360;  % deg
     DateObs       = convert.time(Info.JD,'JD','StrDate');
