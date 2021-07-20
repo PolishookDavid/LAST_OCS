@@ -1,7 +1,7 @@
 function UnitObj=disconnect(UnitObj)
     % disconnect all objects of the Unit
 
-    for I=1:UnitObj.NumberLocalTelescopes
+    for I=UnitObj.LocalTelescopes
         UnitObj.Camera{I}.disconnect;
         UnitObj.Focuser{I}.disconnect;
     end

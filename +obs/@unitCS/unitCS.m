@@ -33,8 +33,8 @@ classdef unitCS < obs.LAST_Handle
  
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
         %these are set only when reading the configuration
-        NumberLocalTelescopes
-        NumberRemoteTelescopes
+        LocalTelescopes % indices of the local telescopes
+        RemoteTelescopes % cell, indices of the telescopes assigned to each slave
         MountDriver = 'inst.XerxesSimulated';
         FocuserDriver
         CameraDriver
@@ -58,14 +58,15 @@ classdef unitCS < obs.LAST_Handle
             % for now always one mount (could be 0 for slave?)
             UnitObj.Mount=eval([UnitObj.MountDriver ...
                             '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);...
-            N=UnitObj.NumberLocalTelescopes;
+            N=numel(UnitObj.LocalTelescopes);
             UnitObj.Camera=cell(1,N);
             UnitObj.Focuser=cell(1,N);
             for i=1:N
-                telescope_label=sprintf('%s_%d_%d',UnitObj.Id,1,i);
-                UnitObj.Camera{i}=eval([UnitObj.CameraDriver{i} ...
+                j=UnitObj.LocalTelescopes(i);
+                telescope_label=sprintf('%s_%d_%d',UnitObj.Id,1,j);
+                UnitObj.Camera{j}=eval([UnitObj.CameraDriver{i} ...
                                         '(''' telescope_label ''')']);
-                UnitObj.Focuser{i}=eval([UnitObj.FocuserDriver{i} ...
+                UnitObj.Focuser{j}=eval([UnitObj.FocuserDriver{i} ...
                                         '(''' telescope_label ''')']);
             end
         end
