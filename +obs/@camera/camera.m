@@ -63,7 +63,7 @@ classdef camera < obs.LAST_Handle
         Display              = 'ds9';   % 'ds9' | 'matlab' | ''
         Frame double         = [];
         DisplayZoom double   = 0.08;    % ds9 zoom
-        DivideByFlat logical = false;    % subtract dark and divide by flat before dispaly
+        DivideByFlat logical = false;    % subtract dark and divide by flat before display
     end
     
         %DisplayMatlabFig = 0; % Will be updated after first image  % When presenting image in matlab, on what figure number to present
