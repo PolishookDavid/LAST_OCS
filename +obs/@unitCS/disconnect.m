@@ -6,4 +6,10 @@ function UnitObj=disconnect(UnitObj)
         UnitObj.Focuser{I}.disconnect;
     end
     UnitObj.Mount.disconnect;
+    
+    % quit slaves
+    for i=1:numel(UnitObj.Slave)
+       UnitObj.Slave{i}.delete;
+    end
+
 end

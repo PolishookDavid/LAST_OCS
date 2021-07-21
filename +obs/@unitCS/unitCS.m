@@ -27,21 +27,21 @@ classdef unitCS < obs.LAST_Handle
         Mount  obs.LAST_Handle    % handle to the mount(s) abstraction object
         Camera cell    % cell, handles to the camera abstraction objects
         Focuser cell   % cell, handles to the focuser abstraction objects
-        HandleRemoteC    %
         CameraRemoteName char        = 'C';        
     end
  
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
         %these are set only when reading the configuration
         LocalTelescopes % indices of the local telescopes
-        RemoteTelescopes % cell, indices of the telescopes assigned to each slave
+        RemoteTelescopes='{}'; % evaluates to a cell, indices of the telescopes assigned to each slave
+        Slave cell; % handles to SpawnedMatlad sessions
         MountDriver = 'inst.XerxesSimulated';
         FocuserDriver
         CameraDriver
     end
 
     methods
-        % constructor, destructor and connect
+        % constructor, destructor
         function UnitObj=unitCS(id)
             % unit class constructor
             % Package: +obs/@unitCS
@@ -53,15 +53,21 @@ classdef unitCS < obs.LAST_Handle
             end
             % load configuration
             UnitObj.loadConfig(UnitObj.configFileName('create'))
-            
+            % this one is read in as string and converted, because of limitations of
+            %  Astropack's yml reader
+            UnitObj.RemoteTelescopes=eval(UnitObj.RemoteTelescopes);
+                        
             % populate mount, camera, focuser and power switches handles
             % for now always one mount (could be 0 for slave?)
             UnitObj.Mount=eval([UnitObj.MountDriver ...
                             '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);...
-            N=numel(UnitObj.LocalTelescopes);
-            UnitObj.Camera=cell(1,N);
-            UnitObj.Focuser=cell(1,N);
-            for i=1:N
+            Nlocal=numel(UnitObj.LocalTelescopes);
+            Nremote=numel(horzcat(UnitObj.RemoteTelescopes{:}));
+            UnitObj.Camera=cell(1,Nlocal+Nremote);
+            UnitObj.Focuser=cell(1,Nlocal+Nremote);
+            
+            % create objects for local telescopes
+            for i=1:Nlocal
                 j=UnitObj.LocalTelescopes(i);
                 telescope_label=sprintf('%s_%d_%d',UnitObj.Id,1,j);
                 UnitObj.Camera{j}=eval([UnitObj.CameraDriver{i} ...
@@ -69,14 +75,33 @@ classdef unitCS < obs.LAST_Handle
                 UnitObj.Focuser{j}=eval([UnitObj.FocuserDriver{i} ...
                                         '(''' telescope_label ''')']);
             end
+            
+            % create remoteClass objects for remote telescopes
+            UnitName=inputname(1);
+            for i=horzcat(UnitObj.RemoteTelescopes{:})
+               UnitObj.Camera{i}=obs.remoteClass;
+               UnitObj.Camera{i}.RemoteName=sprintf('%s.Camera{%d}',UnitName,i);
+               UnitObj.Focuser{i}=obs.remoteClass;
+               UnitObj.Focuser{i}.RemoteName=sprintf('%s.Focuser{%d}',UnitName,i);
+            end
+            
+            % create slaves for spawned sessions running remote telescopes
+            UnitObj.Slave=cell(1,numel(UnitObj.RemoteTelescopes));
+            for i=1:numel(UnitObj.RemoteTelescopes)
+                UnitObj.Slave{i}=obs.util.SpawnedMatlab(sprintf('%s_slave_%d',UnitObj.Id,i));
+            end
         end
         
 
         function delete(UnitObj)
-            % delete mount object and related sub objects (??)
-%             delete(UnitObj.Mount);
-%             delete(UnitObj.Camera);    
-%             delete(UnitObj.Focuser);    
+            % delete unit object and related sub objects
+            delete(UnitObj.Mount);
+            for i=1:numel(UnitObj.Camera)
+                delete(UnitObj.Camera{i});
+            end
+            for i=1:numel(UnitObj.Focuser)
+                delete(UnitObj.Focuser{i});
+            end
         end
                         
     end
