@@ -1,13 +1,17 @@
 function Unit=connect(Unit)
-    % To be redone completely once the relation between abstraction
-    %  connect and driver connect is clarified
+    % Connect the unitCS to all its local and remote instruments
+    % Purposes:
+    % 1) connect all instruments assigned locally to this unit
+    % 2) spawn Matlab slaves for all remote instruments, create in them
+    %    appropriate unitCS objects, populate them with consistent
+    %    property values, and initiate the connections there
     
     if isfield(Unit.Mount,'PhysicalPort')
         % real mount
         Unit.Mount.connect(Unit.Mount.PhysicalPort);
     else
         % remote mount
-        Unit.Mount.connect
+        Unit.Mount.connect;
     end
     
     % connect to local focusers and cameras
@@ -30,7 +34,7 @@ function Unit=connect(Unit)
            SlaveUnitName=inputname(1);
            SlaveUnitId=[Unit.Id '_slave_' num2str(i)];
            M=Unit.Slave{i}.Messenger;
-           M.query(sprintf('%s=obs.unitCS(''%s'')',SlaveUnitName,SlaveUnitId));
+           M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
            % populate remote mount
            M.query(sprintf('%s.Mount=obs.remoteClass;',SlaveUnitName));
            M.query(sprintf('%s.Mount.RemoteName=''%s.Mount'';',SlaveUnitName,inputname(1)));
@@ -41,6 +45,8 @@ function Unit=connect(Unit)
            %  configurations of master and its slaves have to be
            %  consistent!
            ownedTelescopes=Unit.RemoteTelescopes{i};
+           M.query([sprintf('%s.LocalTelescopes=[',SlaveUnitName), ...
+                    sprintf('%d ',ownedTelescopes) '];' ] )
            % local cameras and focusers of this unit as remotes of the slave
            for j=Unit.LocalTelescopes
                M.query(sprintf('%s.Camera{%d}=obs.remoteClass;',SlaveUnitName,j));
@@ -52,10 +58,12 @@ function Unit=connect(Unit)
                                         ,SlaveUnitName,j,SlaveUnitName,j));
                M.query(sprintf('%s.Focuser{%d}.Messenger=MasterMessenger;',SlaveUnitName,j));
            end
-           % set the messenger of remote telescopes of this unit handled by
-           %  this slave
+           % set in the local unit the messenger and remote name of remote telescopes
+           %  handled by this slave
            for j=ownedTelescopes
+               Unit.Camera{j}.RemoteName=sprintf('%s.Camera{%d}',SlaveUnitName,j);
                Unit.Camera{j}.Messenger=M;
+               Unit.Focuser{j}.RemoteName=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
                Unit.Focuser{j}.Messenger=M;
            end
            % send the connect command to the slave unit object, to connect

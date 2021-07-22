@@ -12,6 +12,12 @@
 
 classdef unitCS < obs.LAST_Handle
 
+    properties
+        Mount  obs.LAST_Handle    % handle to the mount(s) abstraction object
+        Camera cell    % cell, handles to the camera abstraction objects
+        Focuser cell   % cell, handles to the focuser abstraction objects
+    end
+    
     properties(GetAccess=public, SetAccess=private)
         Status char % general readiness status of the unit, derived from the status of its components
     end
@@ -22,19 +28,18 @@ classdef unitCS < obs.LAST_Handle
         Object     = '';
     end
 
-    properties(Hidden)
-        %        
-        Mount  obs.LAST_Handle    % handle to the mount(s) abstraction object
-        Camera cell    % cell, handles to the camera abstraction objects
-        Focuser cell   % cell, handles to the focuser abstraction objects
-        CameraRemoteName char        = 'C';        
-    end
- 
-    properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
+    properties(GetAccess=public, SetAccess=?obs.LAST_Handle)
         %these are set only when reading the configuration
         LocalTelescopes % indices of the local telescopes
         RemoteTelescopes='{}'; % evaluates to a cell, indices of the telescopes assigned to each slave
         Slave cell; % handles to SpawnedMatlad sessions
+    end
+    
+    properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
+        %these are set only when reading the configuration. Due to the
+        % current yml configuration reader, the configuration can contain
+        % only a string significating class names, which are then used
+        % to construct the actual object handles by eval()'s
         MountDriver = 'inst.XerxesSimulated';
         FocuserDriver
         CameraDriver
@@ -77,12 +82,9 @@ classdef unitCS < obs.LAST_Handle
             end
             
             % create remoteClass objects for remote telescopes
-            UnitName=inputname(1);
             for i=horzcat(UnitObj.RemoteTelescopes{:})
-               UnitObj.Camera{i}=obs.remoteClass;
-               UnitObj.Camera{i}.RemoteName=sprintf('%s.Camera{%d}',UnitName,i);
+               UnitObj.Camera{i}=obs.remoteClass;              
                UnitObj.Focuser{i}=obs.remoteClass;
-               UnitObj.Focuser{i}.RemoteName=sprintf('%s.Focuser{%d}',UnitName,i);
             end
             
             % create slaves for spawned sessions running remote telescopes
@@ -95,6 +97,9 @@ classdef unitCS < obs.LAST_Handle
 
         function delete(UnitObj)
             % delete unit object and related sub objects
+            for i=1:numel(UnitObj.Slave)
+                delete(UnitObj.Slave{i})
+            end
             delete(UnitObj.Mount);
             for i=1:numel(UnitObj.Camera)
                 delete(UnitObj.Camera{i});
