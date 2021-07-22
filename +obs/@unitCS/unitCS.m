@@ -22,7 +22,7 @@ classdef unitCS < obs.LAST_Handle
         Status char % general readiness status of the unit, derived from the status of its components
     end
         
-    properties (Dependent)
+    properties %(Dependent)
         % Cameras
         ImType     = 'sci';
         Object     = '';
@@ -119,6 +119,7 @@ classdef unitCS < obs.LAST_Handle
             %   something like that. TODO
             % check separately the status of mount, cameras, focusers and
             %  report accordingly
+            Val='';
         end
         
     end

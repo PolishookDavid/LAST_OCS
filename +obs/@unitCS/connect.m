@@ -23,11 +23,14 @@ function Unit=connect(Unit)
     
     % and now remote:
     % - spawn slaves
-    Nlocal=numel(Unit.LocalTelescopes);
-    Nremote=numel(horzcat(Unit.RemoteTelescopes{:}));
     for i=1:numel(Unit.Slave)
-        Unit.Slave{i}.LocalPort= 8000+i;
+        Unit.Slave{i}.LocalPort = 8000+i;
         Unit.Slave{i}.RemotePort= 8000;
+        % TODO: to avoid doble spawning if connect is called twice by
+        %       mistake, check if a messenger with these ports already
+        %       exists. If it does, send an areYouThere, and only if there
+        %       is no reply, call connect. Or something the like, check
+        %       side effects
         Unit.Slave{i}.connect
         % create a slave unitCS object in each slave and populate it
         if isempty(Unit.Slave{i}.LastError)
