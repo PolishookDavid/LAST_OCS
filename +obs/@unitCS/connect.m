@@ -24,55 +24,54 @@ function Unit=connect(Unit)
     % and now remote:
     % - spawn slaves
     for i=1:numel(Unit.Slave)
-        Unit.Slave{i}.LocalPort = 8000+i;
-        Unit.Slave{i}.RemotePort= 8000;
-        % TODO: to avoid doble spawning if connect is called twice by
-        %       mistake, check if a messenger with these ports already
-        %       exists. If it does, send an areYouThere, and only if there
-        %       is no reply, call connect. Or something the like, check
-        %       side effects
-        Unit.Slave{i}.connect
-        % create a slave unitCS object in each slave and populate it
-        if isempty(Unit.Slave{i}.LastError)
+        % connect the slave
+        S=Unit.Slave{i};
+        S.LocalPort = 8000+i;
+        S.RemotePort= 8000;
+        S.connect
+        % create a slave unitCS object and populate it
+        if isempty(S.LastError)
            SlaveUnitName=inputname(1);
            SlaveUnitId=[Unit.Id '_slave_' num2str(i)];
-           M=Unit.Slave{i}.Messenger;
+           SMount=[SlaveUnitName '.Mount'];
+           M=S.Messenger;
            M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
-           % populate remote mount
-           M.query(sprintf('%s.Mount=obs.remoteClass;',SlaveUnitName));
-           M.query(sprintf('%s.Mount.RemoteName=''%s.Mount'';',SlaveUnitName,inputname(1)));
-           M.query(sprintf('%s.Mount.Messenger=MasterMessenger;',SlaveUnitName));
+           % populate the remote mount
+           M.query([SMount '=obs.remoteClass;']);
+           M.query([SMount '.RemoteName=''' SMount ''';']);
+           M.query([SMount '.Messenger=MasterMessenger;']);
            % populate cameras and focusers
            % Telescopes owned by this slave are configured by its own
            %  configuration file, when created/connected. Of course the
-           %  configurations of master and its slaves have to be
+           %  configurations of the master and of its slaves have to be
            %  consistent!
            ownedTelescopes=Unit.RemoteTelescopes{i};
            M.query([sprintf('%s.LocalTelescopes=[',SlaveUnitName), ...
                     sprintf('%d ',ownedTelescopes) '];' ] )
-           % local cameras and focusers of this unit as remotes of the slave
+           % local cameras and focusers of this unit are remotes of the slave
            for j=Unit.LocalTelescopes
-               M.query(sprintf('%s.Camera{%d}=obs.remoteClass;',SlaveUnitName,j));
-               M.query(sprintf('%s.Camera{%d}.RemoteName=''%s.Camera{%d}'';'...
-                                        ,SlaveUnitName,j,SlaveUnitName,j));
-               M.query(sprintf('%s.Camera{%d}.Messenger=MasterMessenger;',SlaveUnitName,j));
-               M.query(sprintf('%s.Focuser{%d}=obs.remoteClass;',SlaveUnitName,j));
-               M.query(sprintf('%s.Focuser{%d}.RemoteName=''%s.Focuser{%d}'';'...
-                                        ,SlaveUnitName,j,SlaveUnitName,j));
-               M.query(sprintf('%s.Focuser{%d}.Messenger=MasterMessenger;',SlaveUnitName,j));
+               SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
+               M.query([SCamera '=obs.remoteClass;']);
+               M.query([SCamera '.RemoteName=''' SCamera ''';']);
+               M.query([SCamera '.Messenger=MasterMessenger;']);
+               SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
+               M.query([SFocuser '=obs.remoteClass;']);
+               M.query([SFocuser '.RemoteName=''' SFocuser ''';']);
+               M.query([SFocuser '.Messenger=MasterMessenger;']);
            end
            % set in the local unit the messenger and remote name of remote telescopes
            %  handled by this slave
            for j=ownedTelescopes
-               Unit.Camera{j}.RemoteName=sprintf('%s.Camera{%d}',SlaveUnitName,j);
-               Unit.Camera{j}.Messenger=M;
-               Unit.Focuser{j}.RemoteName=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
-               Unit.Focuser{j}.Messenger=M;
+               SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
+               SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
+               Unit.Camera{j}.RemoteName = SCamera;
+               Unit.Camera{j}.Messenger = M;
+               Unit.Focuser{j}.RemoteName = SFocuser;
+               Unit.Focuser{j}.Messenger = M;
            end
            % send the connect command to the slave unit object, to connect
-           %  with slave hardware
-           % RECEIVED AS ILLEGAL, CHECK
-           M.query(sprintf('%s.connect',SlaveUnitName));
+           %  with its own hardware
+           M.query([SlaveUnitName '.connect']);
         end
     end
 
