@@ -6,6 +6,14 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
 
     CameraObj=UnitObj.Camera{itel};
     
+    if isempty(CameraObj.LastImage)
+        UnitObj.reportError(sprintf('no image taken by telescope %d, no header to create',...
+                            itel))
+        Info=struct();
+        HeaderCell=cell(0,3);
+        return
+    end
+    
     RAD = 180./pi;
 
     % Image related information
