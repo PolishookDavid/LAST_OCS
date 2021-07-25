@@ -54,7 +54,7 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % 
     Info.CamNum   = CameraObj.CameraNumber;
     Info.CamPos   = CameraObj.CameraPos;
-    Info.CamType  = CameraObj.CameraType;
+    Info.CamType  = class(CameraObj);
     Info.CamModel = CameraObj.CameraModel;
     Info.CamName  = CameraObj.CameraName;
     % Mount informtaion

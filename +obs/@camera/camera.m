@@ -38,8 +38,6 @@ classdef camera < obs.LAST_Handle
     
     % Camera ID
     properties(Hidden, GetAccess = public, SetAccess = public)
-        CameraType char        = 'QHY';
-        CameraModel char       = 'QHY600M-PH';
         CameraNumSDK double                         % Camera number in the SDK
         CameraNumber double    = NaN                %  1       2      3      4
         CameraPos char         = '';                % 'NE' | 'SE' | 'SW' | 'NW'

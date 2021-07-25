@@ -10,7 +10,6 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
     %           divide by flat propr to display.
     %           Default is to use the CameraObj.DivideByFlat property.
 
-
     if nargin<4
         DivideByFlat = CameraObj.DivideByFlat;
         if nargin<3
@@ -46,7 +45,7 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
 
 
                 case {'mat','matlab'}
-                    % find resnoable range
+                    % find reasonable range
                     Range = quantile(Image(:),[0.2, 0.95]);
                     imtool(Image,Range);
 
@@ -59,10 +58,8 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
         end
 
     else
-        if CameraObj.Verbose
-            fprintf('No Image to display\n');
-        end
-        CameraObj.LogFile.writeLog('No Image to display');
+        CameraObj.reportError('No Image to display');
+%        CameraObj.LogFile.writeLog('No Image to display');
     end
 
 end
