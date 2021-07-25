@@ -1,18 +1,29 @@
-function saveCurImage(CameraObj)
+function saveCurImage(UnitObj,itel)
     % Save last image to disk according the user's settings
-    % Also set LastImageSaved to true, until a new image is arrive
+    % Also set LastImageSaved to true, until a new image is taken
+    % Intended only for local cameras in the UnitObj
 
+    CameraObj=UnitObj.Camera{itel};
+
+    if ~isa(CameraObj,'obs.camera')
+        Unit.reportError('images can be saved only for local cameras, aborting.')
+        return
+    end
 
     % Construct directory name to save image in
-    ProjName = sprintf('%s.%d.%02d.%d',CameraObj.ConfigStruct.ProjectName,...
-                                       CameraObj.ConfigStruct.NodeNumber,...
-                                       CameraObj.ConfigStruct.MountNumber,...
-                                       CameraObj.ConfigStruct.CameraNumber);
-    JD        = CameraObj.Handle.TimeStartLastImage + 1721058.5;   
+    ProjName = sprintf('%s.%d.%02d.%d',UnitObj.Config.ProjName,...
+                                       UnitObj.Config.NodeNumber,...
+                                       1,...
+                                       itel);
+    JD        = CameraObj.TimeStartLastImage + 1721058.5;   
+    
+    % default values for fields which may be a bit too fragile to store
+    %  only in config files: Filter, DataDir, BaseDir
+    
 
     [FileName,Path]=imUtil.util.file.construct_filename('ProjName',ProjName,...
                                                         'Date',JD,...
-                                                        'Filter',CameraObj.ConfigStruct.Filter,...
+                                                        'Filter',CameraObj.Config.Filter,...
                                                         'FieldID',CameraObj.Object,...
                                                         'Type',CameraObj.ImType,...
                                                         'Level','raw',...
@@ -20,8 +31,8 @@ function saveCurImage(CameraObj)
                                                         'Product','im',...
                                                         'Version',1,...
                                                         'FileType','fits',...
-                                                        'DataDir',CameraObj.ConfigStruct.DataDir,...
-                                                        'Base',CameraObj.ConfigStruct.BaseDir);
+                                                        'DataDir',CameraObj.Config.DataDir,...
+                                                        'Base',CameraObj.Config.BaseDir);
     CameraObj.LastImageName = FileName;
 
     %DirName = obs.util.config.constructDirName('raw');
@@ -29,7 +40,7 @@ function saveCurImage(CameraObj)
 
     %cd(DirName);
 
-    [HeaderCell,Info]=constructHeader(CameraObj);  % get header
+    [HeaderCell,Info]=constructHeader(UnitObj,itel);  % get header
 
     % This part need to be cleaned
     %ConfigNode  = obs.util.config.read_config_file('/home/last/config/config.node.txt');
@@ -68,9 +79,9 @@ function saveCurImage(CameraObj)
 %             % Image name legend:    LAST.Node.mount.camera_YYYYMMDD.HHMMSS.FFF_Filter_CCDnum_ImType.fits
 %             % Image name example:   LAST.1.1.e_20200603.063549.030_clear_0_science.fits
 %             %CameraObj.LastImageName = obs.util.config.constructImageName(ProjectName, ObservatoryNode, MountNumber, CameraObj.CameraNumber, ImageDate, CameraObj.Filter, FieldID, CameraObj.ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, CameraObj.ImageFormat);
-%             CameraObj.LastImageName = obs.util.config.constructImageName(CameraObj.ConfigStruct.ProjectName,...
-%                                                                          CameraObj.ConfigStruct.NodeNumber,...
-%                                                                          CameraObj.ConfigStruct.MountNumber,...
+%             CameraObj.LastImageName = obs.util.config.constructImageName(CameraObj.Config.ProjectName,...
+%                                                                          CameraObj.Config.NodeNumber,...
+%                                                                          CameraObj.Config.MountNumber,...
 %                                                                          CameraObj.CameraNumber,...
 %                                                                          ImageDate, CameraObj.Filter, FieldID, CameraObj.ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, CameraObj.ImageFormat);
 %             
@@ -84,12 +95,13 @@ function saveCurImage(CameraObj)
 
     % Write fits
     PWD = pwd;
-    Util.OS.cdmkdir(Path);  % cd and on the fly mkdir
-    FITS.write(single(CameraObj.Handle.LastImage), CameraObj.LastImageName,'Header',HeaderCell,'DataType','single');
+    tools.os.cdmkdir(Path);  % cd and on the fly mkdir
+    FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
+                'Header',HeaderCell,'DataType','single');
     cd(PWD);
 
 
-    CameraObj.LogFile.writeLog(sprintf('Image: %s is written', CameraObj.LastImageName))
+    % CameraObj.LogFile.writeLog(sprintf('Image: %s is written', CameraObj.LastImageName))
 
 
     CameraObj.LastImageSaved = true;

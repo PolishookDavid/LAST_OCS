@@ -21,9 +21,7 @@ classdef camera < obs.LAST_Handle
         Object char            = '';          % The name of the observed object/field
     end
     
-    properties(GetAccess = public, SetAccess = private)
-        %  use driver CamStatus instead of Status
-        % Status char            = 'unknown';   % The status of the camera: idle, exposing, reading, unknown
+    properties(GetAccess = public, SetAccess = ?obs.unitCS)
         LastImageName char     = '';          % The name of the last image 
     end
     
