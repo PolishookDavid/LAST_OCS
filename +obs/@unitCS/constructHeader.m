@@ -1,11 +1,20 @@
 function [HeaderCell,Info]=constructHeader(UnitObj,itel)
-    % Construct image header for takes of the nth telescope
+    % Construct image header for takes of the nth telescope. Intended to
+    %   work only for local telescopes in this unit, because it needs
+    %   intensive camera data access, not really intended for Messengers
     % Input   : the telescope number 
     % Output  : - A 3 column cell array with header for image
     %           - A structure with all the header key and vals.
 
     CameraObj=UnitObj.Camera{itel};
     
+    if ~isa(CameraObj,'obs.camera')
+        Unit.reportError('image headers are typically produced only for local cameras, aborting.')
+        Info=struct();
+        HeaderCell=cell(0,3);
+        return
+    end
+
     if isempty(CameraObj.LastImage)
         UnitObj.reportError(sprintf('no image taken by telescope %d, no header to create',...
                             itel))
@@ -103,13 +112,13 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % get RA/Dec - Mount equinox of date
     % This was conceived to query eventually a remote mount from a slave
     % unit. Rethink
-    Info.M_RA     = obs.classCommand(UnitObj.Mount,'RA');
+    Info.M_RA     = classCommand(UnitObj.Mount,'RA');
 
-    Info.M_DEC    = obs.classCommand(UnitObj.Mount,'Dec');
+    Info.M_DEC    = classCommand(UnitObj.Mount,'Dec');
     Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_RA);
     % RA/Dec - mount J2000
-    Info.M_JRA    = obs.classCommand(UnitObj.Mount,'j2000_RA');
-    Info.M_JDEC   = obs.classCommand(UnitObj.Mount,'j2000_Dec');
+    Info.M_JRA    = classCommand(UnitObj.Mount,'j2000_RA');
+    Info.M_JDEC   = classCommand(UnitObj.Mount,'j2000_Dec');
     Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_JRA);
     % RA/Dec - J2000 camera center
     if ~isempty(CameraObj.Config)
@@ -131,17 +140,17 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
 
 
 
-    Info.AZ       = obs.classCommand(UnitObj.Mount,'Az');
-    Info.ALT      = obs.classCommand(UnitObj.Mount,'Alt');
+    Info.AZ       = classCommand(UnitObj.Mount,'Az');
+    Info.ALT      = classCommand(UnitObj.Mount,'Alt');
     Info.EQUINOX  = 2000.0;
     Info.AIRMASS  = celestial.coo.hardie(pi./2-Info.ALT./RAD);
-    TRK=obs.classCommand(UnitObj.Mount,'TrackingSpeed');
+    TRK=classCommand(UnitObj.Mount,'TrackingSpeed');
     Info.TRK_RA   = TRK(1)/3600;  % [arcsec/s]
     Info.TRK_DEC  = TRK(2)/3600;  % [arcsec/s]
 
     % focuser information
-    Info.FOCUS    = obs.classCommand(UnitObj.Focuser{itel},'Pos');
-    Info.PRVFOCUS = obs.classCommand(UnitObj.Focuser{itel},'LastPos');
+    Info.FOCUS    = classCommand(UnitObj.Focuser{itel},'Pos');
+    Info.PRVFOCUS = classCommand(UnitObj.Focuser{itel},'LastPos');
 
 
 

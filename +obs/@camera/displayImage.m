@@ -37,7 +37,7 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
                     else
                         Frame = CameraObj.Frame;
                     end
-                    ds9(Image, 'frame', Frame);
+                    ds9(Image, Frame);
 
                     if ~isempty(DisplayZoom)
                         ds9.zoom(DisplayZoom, DisplayZoom);
