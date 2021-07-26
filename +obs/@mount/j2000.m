@@ -19,9 +19,9 @@ function [RAJ,DecJ,HAJ,JD,Aux]=j2000(MountObj,varargin)
     LST = celestial.time.lst(JD,MountObj.ObsLon./RAD,'a').*360;  % [deg]
    
     try
-        InCooType=MountObj.Handle.CoordType;
+        InCooType=MountObj.CoordType;
     catch
-        warning('coordinate system not given - assuming Equinox of date');
+        MountObj.report('coordinate system not given - assuming Equinox of date');
         InCooType = 'tdate';
     end
     
