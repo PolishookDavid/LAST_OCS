@@ -1,21 +1,26 @@
 function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % Construct image header for takes of the nth telescope. Intended to
-    %   work only for local telescopes in this unit, because it needs
-    %   intensive camera data access, not really intended for Messengers
+    %   work only both for local and remote telescopes as well as mount in this unit
     % Input   : the telescope number 
     % Output  : - A 3 column cell array with header for image
     %           - A structure with all the header key and vals.
 
     CameraObj=UnitObj.Camera{itel};
     
-    if ~isa(CameraObj,'obs.camera')
-        Unit.reportError('image headers are typically produced only for local cameras, aborting.')
-        Info=struct();
-        HeaderCell=cell(0,3);
-        return
+    if isa(CameraObj,'obs.remoteClass')
+        % find the slave which is responsible for the camera, and evaluate
+        % there the camera commands which are not fit for a messenger
+        for k=1:numel(UnitObj.RemoteTelescopes)
+            if any(UnitObj.RemoteTelescopes{k}==itel)
+                SizeImIJ = UnitObj.Slave{k}.Messenger.query(...
+                    sprintf('size(%s.LastImage)',UnitObj.Camera{itel}.RemoteName));
+            end
+        end
+    else
+       SizeImIJ = size(CameraObj.LastImage);
     end
 
-    if isempty(CameraObj.LastImage)
+    if prod(SizeImIJ)==0
         UnitObj.reportError(sprintf('no image taken by telescope %d, no header to create',...
                             itel))
         Info=struct();
@@ -27,55 +32,40 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
 
     % Image related information
     %    12345678
-    Info.NAXIS    = ndims(CameraObj.LastImage);
-    SizeImIJ      = size(CameraObj.LastImage);
+    Info.NAXIS    = numel(SizeImIJ);
     Info.NAXIS1   = SizeImIJ(2);
     Info.NAXIS2   = SizeImIJ(1);
     Info.BITPIX   = -32;
     Info.BZERO    = 0.0;
     Info.BSCALE   = 1.0;
-    Info.IMTYPE   = CameraObj.ImType;
-    Info.OBJECT   = CameraObj.Object;            
-    % Gain
-    Key   = 'GAIN';
-    Field = Key;
-    if isfield(CameraObj.Config,Field)
-        Info.(Key)     = CameraObj.Config.(Field);
-    else
-        Info.(Key)     = NaN;
-    end
+    Info.IMTYPE   = CameraObj.classCommand('ImType');
+    Info.OBJECT   = CameraObj.classCommand('Object');
 
     % internal gain
-    Info.INTGAIN  = CameraObj.Gain;
+    Info.INTGAIN  = CameraObj.classCommand('Gain');
 
-    % Read noise
-    Key   = 'READNOI';
-    Field = Key;
-    if isfield(CameraObj.Config,Field)
-        Info.(Key)     = CameraObj.Config.(Field);
-    else
-        Info.(Key)     = NaN;
-    end
-
-    % Dark current
-    Key   = 'DARKCUR';
-    Field = Key;
-    if isfield(CameraObj.Config,Field)
-        Info.(Key)     = CameraObj.Config.(Field);
-    else
-        Info.(Key)     = NaN;
+    % keys which may be or be not in Config:
+    % Gain, Read noise, Dark current
+    Keys={'GAIN','DARKCUR','READNOI'};
+    for i=1:numel(Keys)
+        Field = Keys{i};
+        if isfield(CameraObj.classCommand('Config'),Field)
+            Info.(Field)     = CameraObj.classCommand('Config').(Field);
+        else
+            Info.(Field)     = NaN;
+        end
     end
     %
-    Info.BINX     = CameraObj.Binning(1);
-    Info.BINY     = CameraObj.Binning(2);
+    Info.BINX     = CameraObj.classCommand('Binning(1)');
+    Info.BINY     = CameraObj.classCommand('Binning(2)');
     % 
-    Info.CamNum   = CameraObj.CameraNumber;
-    Info.CamPos   = CameraObj.CameraPos;
+    Info.CamNum   = CameraObj.classCommand('CameraNumber');
+    Info.CamPos   = CameraObj.classCommand('CameraPos');
     Info.CamType  = class(CameraObj);
-    Info.CamModel = CameraObj.CameraModel;
-    Info.CamName  = CameraObj.CameraName;
+    Info.CamModel = CameraObj.classCommand('CameraModel');
+    Info.CamName  = CameraObj.classCommand('CameraName');
     % Mount informtaion
-    Info.MountNum = UnitObj.Mount.Id;
+    Info.MountNum = UnitObj.Mount.classCommand('Id');
 
     % OBSERVER
     %ORIGIN
@@ -83,26 +73,26 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     %OBSPLACE
 
 
-    if tools.struct.isfield_notempty(UnitObj.Mount.Config,'ObsLon')
-        Info.ObsLon = UnitObj.Mount.Config.ObsLon;
+    if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLon')
+        Info.ObsLon = UnitObj.Mount.classCommand('Config.ObsLon');
     else
         Info.ObsLon = NaN;
     end
-    if tools.struct.isfield_notempty(UnitObj.Mount.Config,'ObsLat')
-        Info.ObsLat = UnitObj.Mount.Config.ObsLat;
+    if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLat')
+        Info.ObsLat = UnitObj.Mount.classCommand('Config.ObsLat');
     else
         Info.ObsLat = NaN;
     end
-    if tools.struct.isfield_notempty(UnitObj.Mount.Config,'ObsHeight')
-        Info.ObsHeight = UnitObj.Mount.Config.ObsHeight;
+    if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsHeight')
+        Info.ObsHeight = UnitObj.Mount.classCommand('Config.ObsHeight');
     else
         Info.ObsHeight = NaN;
     end
 
-    %Info.JD       = juliandate(CameraObj.LastImageTime);
-    Info.JD       = 1721058.5 + CameraObj.TimeStartLastImage;
-    %Info.ExpTime  = CameraObj.LastImageExpTime;
-    Info.ExpTime  = CameraObj.ExpTime;
+    %Info.JD       = juliandate(CameraObj.classCommand('LastImageTime'));
+    Info.JD       = 1721058.5 + CameraObj.classCommand('TimeStartLastImage');
+    %Info.ExpTime  = CameraObj.classCommand('LastImageExpTime');
+    Info.ExpTime  = CameraObj.classCommand('ExpTime');
     Info.LST      = celestial.time.lst(Info.JD,Info.ObsLon./RAD,'a').*360;  % deg
     DateObs       = convert.time(Info.JD,'JD','StrDate');
     Info.DATE_OBS = DateObs{1};
@@ -112,22 +102,22 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % get RA/Dec - Mount equinox of date
     % This was conceived to query eventually a remote mount from a slave
     % unit. Rethink
-    Info.M_RA     = classCommand(UnitObj.Mount,'RA');
+    Info.M_RA     = UnitObj.Mount.classCommand('RA');
 
-    Info.M_DEC    = classCommand(UnitObj.Mount,'Dec');
+    Info.M_DEC    = UnitObj.Mount.classCommand('Dec');
     Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_RA);
     % RA/Dec - mount J2000
-    Info.M_JRA    = classCommand(UnitObj.Mount,'j2000_RA');
-    Info.M_JDEC   = classCommand(UnitObj.Mount,'j2000_Dec');
+    Info.M_JRA    = UnitObj.Mount.classCommand('j2000_RA');
+    Info.M_JDEC   = UnitObj.Mount.classCommand('j2000_Dec');
     Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_JRA);
     % RA/Dec - J2000 camera center
-    if ~isempty(CameraObj.Config)
-        if tools.struct.isfield_notempty(CameraObj.Config,'MountCameraDist') && ...
-                tools.struct.isfield_notempty(CameraObj.Config,'MountCameraPA')
+    if ~isempty(CameraObj.classCommand('Config'))
+        if tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraDist') && ...
+                tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraPA')
             [Info.DEC, Info.RA] = reckon(Info.M_JDEC,...
                                      Info.M_JRA,...
-                                     CameraObj.Config.MountCameraDist,...
-                                     CameraObj.Config.MountCameraPA,'degrees');
+                                     CameraObj.classCommand('Config.MountCameraDist'),...
+                                     CameraObj.classCommand('Config.MountCameraPA'),'degrees');
         else
             Info.RA  = Info.M_JDEC;
             Info.DEC = Info.M_JRA;
@@ -140,23 +130,23 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
 
 
 
-    Info.AZ       = classCommand(UnitObj.Mount,'Az');
-    Info.ALT      = classCommand(UnitObj.Mount,'Alt');
+    Info.AZ       = UnitObj.Mount.classCommand('Az');
+    Info.ALT      = UnitObj.Mount.classCommand('Alt');
     Info.EQUINOX  = 2000.0;
     Info.AIRMASS  = celestial.coo.hardie(pi./2-Info.ALT./RAD);
-    TRK=classCommand(UnitObj.Mount,'TrackingSpeed');
+    TRK=UnitObj.Mount.classCommand('TrackingSpeed');
     Info.TRK_RA   = TRK(1)/3600;  % [arcsec/s]
     Info.TRK_DEC  = TRK(2)/3600;  % [arcsec/s]
 
     % focuser information
-    Info.FOCUS    = classCommand(UnitObj.Focuser{itel},'Pos');
-    Info.PRVFOCUS = classCommand(UnitObj.Focuser{itel},'LastPos');
+    Info.FOCUS    = UnitObj.Focuser{itel}.classCommand('Pos');
+    Info.PRVFOCUS = UnitObj.Focuser{itel}.classCommand('LastPos');
 
 
 
     % struct to HeaderCell + comments
     % Input : Info, CommentsDB
-    CommentsDB = CameraObj.ConfigHeader;
+    CommentsDB = CameraObj.classCommand('ConfigHeader');
 
     FN  = fieldnames(Info);
     Nfn = numel(FN);

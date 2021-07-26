@@ -47,7 +47,7 @@ function Unit=connect(Unit)
            %  consistent!
            ownedTelescopes=Unit.RemoteTelescopes{i};
            M.query([sprintf('%s.LocalTelescopes=[',SlaveUnitName), ...
-                    sprintf('%d ',ownedTelescopes) '];' ] )
+                    sprintf('%d ',ownedTelescopes) '];' ] );
            % local cameras and focusers of this unit are remotes of the slave
            for j=Unit.LocalTelescopes
                SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);

@@ -43,7 +43,7 @@ function saveCurImage(UnitObj,itel)
         
         %cd(DirName);
         
-        [HeaderCell,Info]=constructHeader(UnitObj,itel);  % get header
+        HeaderCell=constructHeader(UnitObj,itel);  % get header
         
         % This part need to be cleaned
         %ConfigNode  = obs.util.config.read_config_file('/home/last/config/config.node.txt');
@@ -100,7 +100,7 @@ function saveCurImage(UnitObj,itel)
         PWD = pwd;
         tools.os.cdmkdir(Path);  % cd and on the fly mkdir
         FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
-            'Header',HeaderCell,'DataType','single','Overwrite',true);
+                  'Header',HeaderCell,'DataType','single','Overwrite',true);
         cd(PWD);
         
         
