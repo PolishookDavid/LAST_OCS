@@ -1,7 +1,7 @@
 function saveCurImage(UnitObj,itel)
     % Save last image to disk according the user's settings
     % Also set LastImageSaved to true, until a new image is taken
-    % Intended only for local cameras in the UnitObj
+    % Intended for local as well as remote cameras in the UnitObj
 
     CameraObj=UnitObj.Camera{itel};
     
@@ -18,9 +18,8 @@ function saveCurImage(UnitObj,itel)
         return
     end
     % Construct directory name to save image in
-    ProjName = sprintf('%s.%d.%02d.%d',...
-                       UnitObj.Config.ProjName,...
-                       UnitObj.Config.NodeNumber, 1, itel);
+    ProjName = sprintf('%s.%d.%02d.%d', UnitObj.Config.ProjName,...
+                                        UnitObj.Config.NodeNumber, 1, itel);
     JD = CameraObj.classCommand('TimeStartLastImage') + 1721058.5;
 
     % default values for fields which may be a bit too fragile to store
@@ -47,7 +46,7 @@ function saveCurImage(UnitObj,itel)
     UnitObj.report(sprintf('Writing image %s to disk\n',...
                            CameraObj.classCommand('LastImageName')));
 
-    % Write fits, in the session where the camera object lives
+    % Write the fits file, in the session where the camera object lives
     if isa(CameraObj,'obs.remoteClass')
         CameraObj.Messenger.query(['PWD = pwd; tools.os.cdmkdir(''' Path ''');'])
         % tour de force to transmit the header
@@ -68,9 +67,8 @@ function saveCurImage(UnitObj,itel)
         cd(PWD);
     end
 
-    % CameraObj.classCommand(['LogFile.writeLog(' ...
+    % CameraObj.classCommand(['LogFile.write(' ...
     %    sprintf('Image: %s is written', CameraObj.classCommand('LastImageName') ')'])
-
 
     CameraObj.classCommand('LastImageSaved = true;');
 

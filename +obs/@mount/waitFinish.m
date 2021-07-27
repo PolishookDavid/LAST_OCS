@@ -27,7 +27,7 @@ function Flag = waitFinish(MountObj)
                     fprintf('.');
                 end
             otherwise
-                MountObj.LogFile.writeLog(sprintf('Unknown mount status %s',Status));
+                MountObj.LogFile.write(sprintf('Unknown mount status %s',Status));
                 MountObj.LastError = sprintf('Unknown mount status %s',Status);
                 Continue = false;
         end

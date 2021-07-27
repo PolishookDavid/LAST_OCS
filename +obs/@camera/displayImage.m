@@ -59,7 +59,7 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
 
     else
         CameraObj.reportError('No Image to display');
-%        CameraObj.LogFile.writeLog('No Image to display');
+%        CameraObj.LogFile.write('No Image to display');
     end
 
 end

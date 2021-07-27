@@ -25,7 +25,7 @@ function Flag = waitFinish(CameraObj)
                     if CameraObj(I).Verbose
                         warning('waitFinish encounter an illegal camera status: %s',Status);
                     end
-                    CameraObj(I).LogFile.writeLog(sprintf('waitFinish encounter an illegal camera status: %s',Status));
+                    CameraObj(I).LogFile.write(sprintf('waitFinish encounter an illegal camera status: %s',Status));
             end
         end
         if all(StopWaiting)

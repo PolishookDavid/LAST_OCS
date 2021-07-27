@@ -66,7 +66,6 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     %OBSNAME
     %OBSPLACE
 
-
     if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLon')
         Info.ObsLon = UnitObj.Mount.classCommand('Config.ObsLon');
     else
@@ -91,13 +90,8 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     DateObs       = convert.time(Info.JD,'JD','StrDate');
     Info.DATE_OBS = DateObs{1};
 
-    
-
     % get RA/Dec - Mount equinox of date
-    % This was conceived to query eventually a remote mount from a slave
-    % unit. Rethink
     Info.M_RA     = UnitObj.Mount.classCommand('RA');
-
     Info.M_DEC    = UnitObj.Mount.classCommand('Dec');
     Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_RA);
     % RA/Dec - mount J2000
@@ -109,8 +103,7 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     if ~isempty(CameraObj.classCommand('Config'))
         if tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraDist') && ...
                 tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraPA')
-            [Info.DEC, Info.RA] = reckon(Info.M_JDEC,...
-                                     Info.M_JRA,...
+            [Info.DEC, Info.RA] = reckon(Info.M_JDEC, Info.M_JRA,...
                                      CameraObj.classCommand('Config.MountCameraDist'),...
                                      CameraObj.classCommand('Config.MountCameraPA'),'degrees');
         else
@@ -123,8 +116,6 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
         Info.DEC = Info.M_JRA;
     end
 
-
-
     Info.AZ       = UnitObj.Mount.classCommand('Az');
     Info.ALT      = UnitObj.Mount.classCommand('Alt');
     Info.EQUINOX  = 2000.0;
@@ -136,8 +127,6 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % focuser information
     Info.FOCUS    = UnitObj.Focuser{itel}.classCommand('Pos');
     Info.PRVFOCUS = UnitObj.Focuser{itel}.classCommand('LastPos');
-
-
 
     % struct to HeaderCell + comments
     % Input : Info, CommentsDB

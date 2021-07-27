@@ -5,11 +5,11 @@ function callback_timer(Focuser, ~, ~)
 if (strcmp(Focuser.Status, 'idle'))
    stop(Focuser.FocusMotionTimer);
    beep
-   Focuser.LogFile.writeLog('Focuser reached destination')
+   Focuser.LogFile.write('Focuser reached destination')
 %   if Focuser.Verbose, fprintf('Focuser reached destination\n'); end
 elseif (strcmp(Focuser.Status, 'unknown'))
    stop(Focuser.FocusMotionTimer);
    beep; beep;
-   Focuser.LogFile.writeLog('Focuser status is unknown')
+   Focuser.LogFile.write('Focuser status is unknown')
    if Focuser.Verbose, fprintf('Focuser status is unknown\n'); end
 end

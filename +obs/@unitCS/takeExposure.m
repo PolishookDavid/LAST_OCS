@@ -86,7 +86,7 @@ function Flag=takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
                     if CameraObj(Icam).Verbose
                         fprintf('Start Exposure %d of %d: ExpTime=%.3f s\n',Iimage,Nimages,ExpTime);
                     end
-                    CameraObj(Icam).LogFile.writeLog(sprintf('Start Exposure %d of %d: ExpTime=%.3f s',Iimage,Nimages,ExpTime));
+                    CameraObj(Icam).LogFile.write(sprintf('Start Exposure %d of %d: ExpTime=%.3f s',Iimage,Nimages,ExpTime));
                 end  % end of Icam loop
 
                 switch InPar.SaveMode
@@ -129,7 +129,7 @@ function Flag=takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
                 if all([CameraObj.Verbose])
                     fprintf('Can not take Exposure because at least one camera is not idle\n');
                 end
-                CameraObj.LogFile.writeLog(sprintf('Can not take Exposure because at least one camera is not idle'));
+                CameraObj.LogFile.write(sprintf('Can not take Exposure because at least one camera is not idle'));
             end
 
         end  % end for loop

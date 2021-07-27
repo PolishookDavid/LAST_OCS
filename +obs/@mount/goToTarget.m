@@ -66,7 +66,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
         switch lower(MountObj.Status)
             case 'park'
 
-                MountObj.LogFile.writeLog('Error: Attempt to slew telescope while parking');
+                MountObj.LogFile.write('Error: Attempt to slew telescope while parking');
                 error('Can not slew telescope while parking');
             otherwise
                 % Convert input into RA/Dec [input deg, output deg]
@@ -84,7 +84,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                 [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType);
 
                 if isnan(RA) || isnan(Dec)
-                    MountObj.LogFile.writeLog('Error: RA or Dec are NaN');
+                    MountObj.LogFile.write('Error: RA or Dec are NaN');
                     error('RA or Dec are NaN');
                 end
 
@@ -94,7 +94,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                 if isnan(MountObj.ObsLon) || isnan(MountObj.ObsLat)
                     % attempting to move mount when ObsLon/ObsLat
                     % are unknown
-                    MountObj.LogFile.writeLog('Attempting to move mount when ObsLon/ObsLat are unknown');
+                    MountObj.LogFile.write('Attempting to move mount when ObsLon/ObsLat are unknown');
                     error('Attempting to move mount when ObsLon/ObsLat are unknown');
                 end
 
@@ -123,19 +123,19 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
 %                     end
                 else
                     % coordinates are not ok
-                    MountObj.LogFile.writeLog('Coordinates are not valid - not slewing to requested target');
+                    MountObj.LogFile.write('Coordinates are not valid - not slewing to requested target');
 
                     if ~FlagRes.Alt
                         MountObj.LastError = 'Target Alt too low';
-                        MountObj.LogFile.writeLog('Target Alt too low');
+                        MountObj.LogFile.write('Target Alt too low');
                     end
                     if ~FlagRes.AzAlt
                         MountObj.LastError = 'Target Alt too low for local Az';
-                        MountObj.LogFile.writeLog('Target Alt too low for local Az');
+                        MountObj.LogFile.write('Target Alt too low for local Az');
                     end
                     if ~FlagRes.HA
                         MountObj.LastError = 'Target HA is out of range';
-                        MountObj.LogFile.writeLog('Target HA is out of range');
+                        MountObj.LogFile.write('Target HA is out of range');
                     end
                 end
         end
