@@ -4,110 +4,74 @@ function saveCurImage(UnitObj,itel)
     % Intended only for local cameras in the UnitObj
 
     CameraObj=UnitObj.Camera{itel};
-
+    
     if isa(CameraObj,'obs.remoteClass')
-        % find the slave which is responsible for the camera, and transmit the
-        %  command to it
-        for k=1:numel(UnitObj.RemoteTelescopes)
-            if any(UnitObj.RemoteTelescopes{k}==itel)
-                remoteUnit=strtok(UnitObj.Camera{itel}.RemoteName,'.');
-                UnitObj.Slave{k}.Messenger.query(sprintf('%s.saveCurImage(%d)',...
-                                                 remoteUnit,itel))
-            end
-        end
+        SizeImIJ = CameraObj.Messenger.query(...
+            sprintf('size(%s.LastImage)',CameraObj.RemoteName));
     else
-        % Construct directory name to save image in
-        ProjName = sprintf('%s.%d.%02d.%d',...
-            UnitObj.Config.ProjName, UnitObj.Config.NodeNumber, 1, itel);
-        JD = CameraObj.TimeStartLastImage + 1721058.5;
-        
-        % default values for fields which may be a bit too fragile to store
-        %  only in config files: Filter, DataDir, BaseDir
-        
-        [FileName,Path]=imUtil.util.file.construct_filename('ProjName',ProjName,...
-            'Date',JD,...
-            'Filter',CameraObj.Config.Filter,...
-            'FieldID',CameraObj.Object,...
-            'Type',CameraObj.ImType,...
-            'Level','raw',...
-            'SubLevel','',...
-            'Product','im',...
-            'Version',1,...
-            'FileType','fits',...
-            'DataDir',CameraObj.Config.DataDir,...
-            'Base',CameraObj.Config.BaseDir);
-        CameraObj.LastImageName = FileName;
-        
-        %DirName = obs.util.config.constructDirName('raw');
-        %PWD = pwd;
-        
-        %cd(DirName);
-        
-        HeaderCell=constructHeader(UnitObj,itel);  % get header
-        
-        % This part need to be cleaned
-        %ConfigNode  = obs.util.config.read_config_file('/home/last/config/config.node.txt');
-        %ConfigMount = obs.util.config.read_config_file('/home/last/config/config.mount.txt');
-        
-        % Construct image name
-        %             if isempty(CameraObj.ConfigMount)
-        %                 NodeNumber  = 0;
-        %                 MountNumber = 0;
-        %                 CameraObj.LogFile.writeLog('ConfigMount is empty while saveCurImage');
-        %             else
-        %                 if Util.struct.isfield_notempty(CameraObj.ConfigMount,'NodeNumber')
-        %                     NodeNumber  = CameraObj.ConfigMount.NodeNumber;
-        %                 else
-        %                     NodeNumber  = 0;
-        %                 end
-        %                 if Util.struct.isfield_notempty(CameraObj.ConfigMount,'MountNumber')
-        %                     MountNumber = CameraObj.ConfigMount.MountNumber;
-        %                 else
-        %                     MountNumber = 0;
-        %                 end
-        %             end
-        
-        
-        %ProjectName      = sprintf('LAST.%d.%02d.%d',NodeNumber,MountNumber,CameraObj.CameraNumber);
-        %ImageDate        = datestr(CameraObj.Handle.TimeStartLastImage,'yyyymmdd.HHMMSS.FFF');
-        %ObservatoryNode  = num2str(ConfigNode.ObservatoryNode);
-        %MountGeoName     = num2str(ConfigMount.MountGeoName);
-        
-        %             FieldID          = CameraObj.Object;
-        %             ImLevel          = 'raw';
-        %             ImSubLevel       = 'n';
-        %             ImProduct        = 'im';
-        %             ImVersion        = '1';
-        %
-        %             % Image name legend:    LAST.Node.mount.camera_YYYYMMDD.HHMMSS.FFF_Filter_CCDnum_ImType.fits
-        %             % Image name example:   LAST.1.1.e_20200603.063549.030_clear_0_science.fits
-        %             %CameraObj.LastImageName = obs.util.config.constructImageName(ProjectName, ObservatoryNode, MountNumber, CameraObj.CameraNumber, ImageDate, CameraObj.Filter, FieldID, CameraObj.ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, CameraObj.ImageFormat);
-        %             CameraObj.LastImageName = obs.util.config.constructImageName(CameraObj.Config.ProjectName,...
-        %                                                                          CameraObj.Config.NodeNumber,...
-        %                                                                          CameraObj.Config.MountNumber,...
-        %                                                                          CameraObj.CameraNumber,...
-        %                                                                          ImageDate, CameraObj.Filter, FieldID, CameraObj.ImType, ImLevel, ImSubLevel, ImProduct, ImVersion, CameraObj.ImageFormat);
-        %
-        
-        % Construct header
-        % OLD: Header = CameraObj.updateHeader;
-        
-        if CameraObj.Verbose
-            fprintf('Writing image name %s to disk\n',CameraObj.LastImageName);
-        end
-        
-        % Write fits
+        SizeImIJ = size(CameraObj.LastImage);
+    end
+
+    if prod(SizeImIJ)==0
+        UnitObj.reportError(sprintf('no image taken by telescope %d to be saved',...
+                            itel))
+        return
+    end
+    % Construct directory name to save image in
+    ProjName = sprintf('%s.%d.%02d.%d',...
+                       UnitObj.Config.ProjName,...
+                       UnitObj.Config.NodeNumber, 1, itel);
+    JD = CameraObj.classCommand('TimeStartLastImage') + 1721058.5;
+
+    % default values for fields which may be a bit too fragile to store
+    %  only in config files: Filter, DataDir, BaseDir
+
+    [FileName,Path]=imUtil.util.file.construct_filename('ProjName',ProjName,...
+        'Date',JD,...
+        'Filter',CameraObj.classCommand('Config.Filter'),...
+        'FieldID',CameraObj.classCommand('Object'),...
+        'Type',CameraObj.classCommand('ImType'),...
+        'Level','raw',...
+        'SubLevel','',...
+        'Product','im',...
+        'Version',1,...
+        'FileType','fits',...
+        'DataDir',CameraObj.classCommand('Config.DataDir'),...
+        'Base',CameraObj.classCommand('Config.BaseDir'));
+    
+    CameraObj.classCommand(['LastImageName = ''' FileName ''';']);
+
+    % create the header locally, even from remote objects, because
+    %  round-trip queries fail
+    HeaderCell=constructHeader(UnitObj,itel);
+    UnitObj.report(sprintf('Writing image %s to disk\n',...
+                           CameraObj.classCommand('LastImageName')));
+
+    % Write fits, in the session where the camera object lives
+    if isa(CameraObj,'obs.remoteClass')
+        CameraObj.Messenger.query(['PWD = pwd; tools.os.cdmkdir(''' Path ''');'])
+        % tour de force to transmit the header
+        CameraObj.Messenger.query([ 'HeaderCell=reshape(jsondecode(''',...
+                                    jsonencode(HeaderCell,'ConvertInfAndNaN',false),...
+                                    '''),[],3);' ]);
+        CameraObj.Messenger.query([ 'FITS.write(single(CameraObj.LastImage),',...
+                                    'CameraObj.LastImageName,',...
+                                    '''Header'',HeaderCell,',...
+                                    '''DataType'',''single'',',...
+                                    '''Overwrite'',true);' ]);                    
+        CameraObj.Messenger.query('cd(PWD); clear PWD HeaderCell');
+    else
         PWD = pwd;
         tools.os.cdmkdir(Path);  % cd and on the fly mkdir
         FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
-                  'Header',HeaderCell,'DataType','single','Overwrite',true);
+                   'Header',HeaderCell,'DataType','single','Overwrite',true);
         cd(PWD);
-        
-        
-        % CameraObj.LogFile.writeLog(sprintf('Image: %s is written', CameraObj.LastImageName))
-        
-        
-        CameraObj.LastImageSaved = true;
-        
     end
+
+    % CameraObj.classCommand(['LogFile.writeLog(' ...
+    %    sprintf('Image: %s is written', CameraObj.classCommand('LastImageName') ')'])
+
+
+    CameraObj.classCommand('LastImageSaved = true;');
+
 end

@@ -21,7 +21,7 @@ classdef camera < obs.LAST_Handle
         Object char            = '';          % The name of the observed object/field
     end
     
-    properties(GetAccess = public, SetAccess = ?obs.unitCS)
+    properties % (GetAccess = public, SetAccess = ?obs.unitCS) % no, also via classCommand
         LastImageName char     = '';          % The name of the last image 
     end
     

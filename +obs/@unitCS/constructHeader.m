@@ -8,16 +8,10 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     CameraObj=UnitObj.Camera{itel};
     
     if isa(CameraObj,'obs.remoteClass')
-        % find the slave which is responsible for the camera, and evaluate
-        % there the camera commands which are not fit for a messenger
-        for k=1:numel(UnitObj.RemoteTelescopes)
-            if any(UnitObj.RemoteTelescopes{k}==itel)
-                SizeImIJ = UnitObj.Slave{k}.Messenger.query(...
-                    sprintf('size(%s.LastImage)',UnitObj.Camera{itel}.RemoteName));
-            end
-        end
+        SizeImIJ = CameraObj.Messenger.query(...
+            sprintf('size(%s.LastImage)',CameraObj.RemoteName));
     else
-       SizeImIJ = size(CameraObj.LastImage);
+        SizeImIJ = size(CameraObj.LastImage);
     end
 
     if prod(SizeImIJ)==0
