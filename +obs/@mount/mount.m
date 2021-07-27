@@ -41,8 +41,8 @@
 
 classdef mount < obs.LAST_Handle
 
-    properties (Transient)
-        % TrackingSpeed(1,2) double = [NaN NaN]  % Deg/s %% support 'sidereal', 'lunar'?
+    properties (GetAccess=public, SetAccess=private)
+        LST double % Local Sidereal Time (LST) in [deg] (fraction of day)
     end
     
     properties(Hidden)
@@ -150,46 +150,15 @@ classdef mount < obs.LAST_Handle
         
     % setters and getters
     methods
-%         function set.TrackingSpeed(MountObj,TrackingSpeed)
-%             % setter for Tracking speed - THIS DOES NOT ACTIVATE TRACKING
-%             % Use M.track to activate tracking
-%             % Input  : - Mount object.
-%             %          - [HA, Dec] speed, if scalar, than Dec speed is set
-%             %            to zero.
-%             %            String: 'sidereal' | 'sid' | 'lunar'
-%             
-%             MaxSpeed = 1;
-%             
-%             if ischar(TrackingSpeed)
-%                 switch lower(TrackingSpeed)
-%                     case {'sidereal','sid'}
-%                         TrackingSpeed = [MountObj.SiderealRate, 0];
-%                     case 'lunar'
-%                         TrackingSpeed = [MountObj.SiderealRate - 360./27.3./86400, 0];
-%                     otherwise
-%                         MountObj.reportError('Unknown TrackingSpeed string option');
-%                 end
-%             else
-%                 if numel(TrackingSpeed)==1
-%                     TrackingSpeed = [TrackingSpeed, 0];
-%                 elseif numel(TrackingSpeed)==2
-%                     % ok.
-%                 else
-%                     MountObj.reportError('TrackingSpeed must be a scalar, two element vector or string');
-%                 end
-%             end            
-%             if max(abs(TrackingSpeed))>MaxSpeed
-%                 MountObj.reportError('TrackingSpeed is above limit of %f deg/s',MaxSpeed);
-%             end
-% 
-%             try
-%                 MountObj.Handle.TrackingSpeed = TrackingSpeed;
-%                 %MountObj.Handle.track(TrackingSpeed);  % activate tracking
-%             catch
-%                 MountObj.reportError('Mount object cannot set TrackingSpeed')
-%             end
-%                 
-%         end
+        function LST=get.LST(M)
+            % Get the Local Sidereal Time (LST) in [deg] (fraction of day)
+
+            RAD = 180./pi;
+            % Get JD from the computer
+            JD = celestial.time.julday;
+            LST = celestial.time.lst(JD,M.ObsLon./RAD);  % fraction of day
+            LST = LST.*360;
+        end
 
     % these are merely name translations from properties of the child class
         function lon=get.ObsLon(M)
