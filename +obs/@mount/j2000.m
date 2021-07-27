@@ -1,12 +1,13 @@
-function [RAJ,DecJ,HAJ,JD,Aux]=j2000(MountObj,varargin)
+function [outcoord,Aux]=j2000(MountObj,varargin)
     % get J2000.0 distortion corrected coordinates of the mount
     % Input   : - Mount object
     %           - Additional pairs of parameters to pass to celestial.coo.convert2equatorial
     %             Default is no parameters.
-    % Output  : - J2000.0 RA [deg]
-    %           - J2000.0 Dec [deg]
-    %           - J2000.0 HA [deg]
-    %           - JD at which the HA was calculated
+    % Output  : - outcoord: array of:
+    %                - J2000.0 RA [deg]
+    %                - J2000.0 Dec [deg]
+    %                - J2000.0 HA [deg]
+    %                - JD at which the HA was calculated
     %           - Auxilary parameters - see celestial.coo.convert2equatorial
 
     RAD = 180./pi;
@@ -32,5 +33,6 @@ function [RAJ,DecJ,HAJ,JD,Aux]=j2000(MountObj,varargin)
     HAJ        = mod(HAJ,360);
     HAJ(HAJ>180) = HAJ(HAJ>180) -360;
 
+    outcoord=[RAJ,DecJ,HAJ,JD];
 
 end

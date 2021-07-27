@@ -101,9 +101,10 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     Info.M_DEC    = UnitObj.Mount.classCommand('Dec');
     Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_RA);
     % RA/Dec - mount J2000
-    Info.M_JRA    = UnitObj.Mount.classCommand('j2000_RA');
-    Info.M_JDEC   = UnitObj.Mount.classCommand('j2000_Dec');
-    Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_JRA);
+    j2000coord=UnitObj.Mount.classCommand('j2000');
+    Info.M_JRA    = j2000coord(1);
+    Info.M_JDEC   = j2000coord(2);
+    Info.M_HA     = convert.minusPi2Pi(j2000coord(3));
     % RA/Dec - J2000 camera center
     if ~isempty(CameraObj.classCommand('Config'))
         if tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraDist') && ...
