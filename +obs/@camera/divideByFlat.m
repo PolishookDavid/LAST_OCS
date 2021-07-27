@@ -9,22 +9,38 @@ function ImageToDisplay=divideByFlat(CameraObj,Image)
         Image = CameraObj.LastImage;
     end
 
+    if isfield(CameraObj.Config,'CCDSEC')
+        x1=CameraObj.Config.CCDSEC(3);
+        x2=CameraObj.Config.CCDSEC(4);
+        y1=CameraObj.Config.CCDSEC(1);
+        y2=CameraObj.Config.CCDSEC(2);
+    else
+        x1=1;
+        x2=size(Image,2);
+        y1=1;
+        y2=size(Image,1);
+    end
     % convert to single
     ImageToDisplay = single(Image);
 
-    OrigDir = pwd;
-
-    % need to clean this part:
-%             cd /media/last/data2/ServiceImages
-%             cd /last02/data/serviceImages
-    Dark = FITS.read2sim(fullfile(CameraObj.ConfigStruct.DarkDBDir, 'Dark.fits'));
-%            S = load(fullfile(CameraObj.ConfigStruct.FlatDBDir,'Flat.mat'));  % need to update the image
-%             cd(OrigDir);
-%             Flat = S.Flat;
-%             Flat.Im = Flat.Im./nanmedian(Flat.Im,'all');
-    Flat = FITS.read2sim(fullfile(CameraObj.ConfigStruct.FlatDBDir,'Flat.fits'));  % need to update the image
-    ImageToDisplay = ImageToDisplay(:,1:6387);
-    Flat.Im        = Flat.Im(:,1:6387);
+    try
+        Dark = FITS.read2sim(fullfile(CameraObj.Config.DarkDBDir, ...
+                                     [CameraObj.PhysicalId '_Dark.fits'] ));
+    catch
+        CameraObj.reportError(sprintf('cannot read Dark reference image for camera %s',...
+                                       CameraObj.PhysicalId))
+    end
+    
+    try
+        Flat = FITS.read2sim(fullfile(CameraObj.Config.FlatDBDir, ...
+                                     [CameraObj.PhysicalId '_Flat.fits'));
+    catch
+        CameraObj.reportError(sprintf('cannot read Flat reference image for camera %s',...
+                                       CameraObj.PhysicalId))
+    end
+    
+    ImageToDisplay = ImageToDisplay(x1:x2,y1:y2);
+    Flat.Im        = Flat.Im(x1:x2,y1:y2);
 
     ImageToDisplay = (ImageToDisplay - Dark.Im)./Flat.Im;
 
