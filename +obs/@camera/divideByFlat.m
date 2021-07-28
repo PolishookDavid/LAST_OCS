@@ -5,6 +5,10 @@ function ImageToDisplay=divideByFlat(CameraObj,Image)
     %            CameraObj.LastImage.
     % Output : - Dark subtracted and flat divided image
 
+    % TODO: with the simplest FITS.read1 the resulting images are just
+    %       matrices. In future we should probably use a canonically
+    %       structured image object
+
     if nargin<2
         Image = CameraObj.LastImage;
     end
@@ -24,7 +28,7 @@ function ImageToDisplay=divideByFlat(CameraObj,Image)
     ImageToDisplay = single(Image);
 
     try
-        Dark = FITS.read2sim(fullfile(CameraObj.Config.DarkDBDir, ...
+        Dark = FITS.read1(fullfile(CameraObj.Config.DarkDBDir, ...
                                      [CameraObj.PhysicalId '_Dark.fits'] ));
     catch
         CameraObj.reportError(sprintf('cannot read Dark reference image for camera %s',...
@@ -32,16 +36,17 @@ function ImageToDisplay=divideByFlat(CameraObj,Image)
     end
     
     try
-        Flat = FITS.read2sim(fullfile(CameraObj.Config.FlatDBDir, ...
-                                     [CameraObj.PhysicalId '_Flat.fits'));
+        Flat = FITS.read1(fullfile(CameraObj.Config.FlatDBDir, ...
+                                     [CameraObj.PhysicalId '_Flat.fits'] ));
     catch
         CameraObj.reportError(sprintf('cannot read Flat reference image for camera %s',...
                                        CameraObj.PhysicalId))
     end
     
     ImageToDisplay = ImageToDisplay(x1:x2,y1:y2);
-    Flat.Im        = Flat.Im(x1:x2,y1:y2);
+    Flat        =    Flat(x1:x2,y1:y2);
+    Dark        =    Dark(x1:x2,y1:y2);
 
-    ImageToDisplay = (ImageToDisplay - Dark.Im)./Flat.Im;
+    ImageToDisplay = (ImageToDisplay - Dark)./Flat;
 
 end
