@@ -23,8 +23,6 @@ function treatNewImage(UnitObj,Source,EventData)
             % this shouldn't happen
             UnitObj.reportError('new image available, but not from a camera of this unit!')
             return
-        else
-            UnitObj.report(sprintf('new image available from camera %s\n',SourceCamera.Id))
         end
         
         % Save the image according to setting.

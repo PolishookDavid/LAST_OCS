@@ -8,6 +8,6 @@ function treatNewImage(CameraObj,Source,EventData)
         CameraObj.reportError('image treating callback called, but not for a change of LastImage')
         return
     end
-
-    % Display the image according to setting.
+    
+    CameraObj.report(sprintf('New image available from camera %s\n',CameraObj.Id))
     CameraObj.displayImage;

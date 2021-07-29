@@ -1,9 +1,9 @@
 % Abstraction class for a single camera
 % Package: +obs.camera
-% Description: This abstraction class support and opperate the driver
+% Description: This superclass extends camera driver
 %              classes for either the QHY or ZWO detectors.
 % Some basic examples:
-%   C = obs.camera('QHY');  % create an empty camera object for a QHY device
+%   C = instr.QHYCCD ;      % create an empty camera object for a QHY device
 %   C.connect               % connect the camera
 %
 %   C.ExpTime = 1;          % set the Exposure time to 1s
@@ -42,16 +42,15 @@ classdef camera < obs.LAST_Handle
     end
         
     properties(Hidden)
-        LogFile             = '';          % FileName. If not provided, then if LogFileDir is not available than do not write LogFile.
+        LogFile             = '';          % FileName. If not provided, then if LogFileDir is not available then do not write LogFile.
         LogFileDir;
         ConfigHeader struct = struct;     % structure containing additional header keywords with constants
     end
     
     % save
     properties(Hidden)
-        SaveOnDisk logical   = true; %false;   % A flag marking if the images should be wriiten to the disk after exposure
+        SaveOnDisk logical   = true;   % A flag marking if the images should be wriiten to the disk after exposure
         ImageFormat char     = 'fits';    % The format of the written image
-        SaveWhenIdle logical = true;      % will save LastImage even if camera is not idle
     end
     
     % display
@@ -72,7 +71,6 @@ classdef camera < obs.LAST_Handle
     properties (Hidden,Transient)        
         Handle;           % Handle to camera driver class        
         ReadoutTimer;     % A timer object to operate after exposure start, to wait until the image is ready.
-        %ImageFormat = 'fits';    % The format of the written image
         % The serial number of the last image - not implemented anymore
         %LastImageSerialNum = 0;
         % A flag marking if to print software printouts or not        
