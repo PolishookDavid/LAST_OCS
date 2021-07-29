@@ -1,155 +1,111 @@
-function Flag=takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
-    % Take a single or multiple number of exposures
+function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
+    % Take one or many exposures from one or many local or remote cameras
+    %  if a camera is busy, wait
     % Package: +obs.@unitCS
-    % Input  : - a vector of camera indices
+    % Input  : - a vector of camera indices [all cameras if omitted]
     %          - Exposure time [s]. If provided this will override
-    %            the CameraObj.ExpTime, and the CameraObj.ExpTime
+    %            the Camera.ExpTime, and the Camera.ExpTime
     %            will be set to this value.
     %          - Number of images to obtain. Default is 1.
     %          * ...,key,val,...
     %            'WaitFinish' - default is true.
-    %            'SaveMode' - default is 2.
-    %            'ImType' - default is [].
-    %            'Object' - default is [].
+    %            'ImType' - default is ''.
+    %            'Object' - default is ''.
     % Output : - Sucess flag.
 
-
+    % TAKE CARE: Unit.Camera{1}.classCommand('takeExposure') fails for a
+    %   remote camera if Unit.Camera{1}.SaveOnDisk=true, because of non
+    %   nestable callbacks. Find a way of dispatching
+    %     Unit.takeExposure(remotecameras,parameters)
+    %
+    % Also, Unit.Camera{1}.classCommand('waitFinish') may timeout
+    %  because of no reply, if the messenger timeout is shorter than
+    %  ExpTime
+    
+    % argument parsing
+    if ~exist('Cameras','var') || isempty(Cameras)
+        Cameras=1:numel(Unit.Camera);
+    end
+    
+    if ~exist('Nimages','var') || isempty(Nimages)
+        Nimages = 1;
+    end
+    
+    if ~exist('ExpTime','var') || isempty(ExpTime)
+        ExpTime=zeros(size(Cameras));
+        for i=1:numel(Cameras)
+            ExpTime(i) = Unit.Camera{Cameras(i)}.classCommand('ExpTime');
+        end
+    end
+    
     InPar = inputParser;
-%            addOptional(InPar,'WaitFinish',true);
     addOptional(InPar,'WaitFinish',false);
-    addOptional(InPar,'ImType',[]);
-    addOptional(InPar,'Object',[]);
-    addOptional(InPar,'SaveMode',2);
+    addOptional(InPar,'ImType','');
+    addOptional(InPar,'Object','');
     parse(InPar,varargin{:});
     InPar = InPar.Results;
 
-    Ncam = numel(Cameras);
-
-    if InPar.SaveMode==1 && Ncam>1
-        error('SaveMode=1 is allowed only for a single camera');
-    end
-
-
     if ~isempty(InPar.ImType)
         % update ImType
-        Unit.CameraObj{Cameras}.ImType = InPar.ImType;
+        Unit.Camera{Cameras}.classCommand(['ImType=' InPar.ImType ';']);
     end
     if ~isempty(InPar.Object)
         % update ImType
-        Unit.CameraObj{Cameras}.Object = InPar.Object;
+        Unit.Camera{Cameras}.classCommand(['Object=' InPar.Object ';']);
     end
 
     MinExpTimeForSave = 5;  % [s] Minimum ExpTime below SaveDuringNextExp is disabled
 
-
-    if nargin<3
-        Nimages = 1;
-        if nargin<2
-            ExpTime = Unit.CameraObj{Cameras}.ExpTime;
-        end
-    end
-    %ExpTime = CameraObj.ExpTime;
-
-    if numel(unique(ExpTime))>1
-        error('When multiple cameras all ExpTime need to be the same');
-    end
-    ExpTime = ExpTime(1);
-
-    if Nimages>1 && ExpTime<MinExpTimeForSave && InPar.SaveMode==2
-        error('If SaveMode=2 and Nimages>1 then ExpTime must be above %f s',MinExpTimeForSave);
+    if Nimages>1 && ExpTime<MinExpTimeForSave
+        error('If Nimages>1 then ExpTime must be above %f s',MinExpTimeForSave);
     end
 
-
-    Flag = false;
-    if all([Unit.CameraObj{Cameras}.IsConnected])
-        %Status = CameraObj.Status;
-        %SaveDuringNextExp = CameraObj.SaveDuringNextExp;
-
-        % take Nimages Exposures
-        for Iimage=1:1:Nimages
-
-            %if isIdle(CameraObj(1))
-            if all(isIdle(CameraObj))
-                % all cameras are idle
-
-                for Icam=1:1:Ncam
-%                             if Icam>1
-%                                 if isIdle(CameraObj(Icam))
-%                                     % continue
-%                                 else
-%                                     CameraObj(Icam).waitFinish;
-%                                 end
-%                             end
-
-                    % Execute exposure command
-                    CameraObj(Icam).Handle.takeExposure(ExpTime);
-                    if CameraObj(Icam).Verbose
-                        fprintf('Start Exposure %d of %d: ExpTime=%.3f s\n',Iimage,Nimages,ExpTime);
-                    end
-                    CameraObj(Icam).LogFile.write(sprintf('Start Exposure %d of %d: ExpTime=%.3f s',Iimage,Nimages,ExpTime));
-                end  % end of Icam loop
-
-                switch InPar.SaveMode
-                    case 1
-                        % start a callback timer that will save
-                        % the image immidetly after it is taken
-
-                        % start timer
-                        CameraObj(Icam).SaveWhenIdle = false;
-                        CameraObj(Icam).ReadoutTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate',...
-                                                       'Name', 'camera-timer',...
-                                                       'Period', 0.2, 'StartDelay', max(0,ExpTime-1),...
-                                                       'TimerFcn', @CameraObj.callbackSaveAndDisplay,...
-                                                       'ErrorFcn', 'beep');
-                        start(CameraObj(Icam).ReadoutTimer);
-                    case 2
-                        % save and display while the next image
-                        % is taken
-                        if Iimage>1
-                            for Icam=1:1:Ncam
-                                if CameraObj(Icam).Verbose
-                                    fprintf('Save Image %d of camera %d\n',Iimage-1,Icam);
-                                end
-                                CameraObj(Icam).SaveWhenIdle = true;
-                                %size(CameraObj(Icam).LastImage)
-                                callbackSaveAndDisplay(CameraObj(Icam));
-
-                            end
-                        end
-                end
-
-                if InPar.WaitFinish
-                    % blocking
-                    CameraObj.waitFinish;
-                    %size(CameraObj(Icam).LastImage)
-                end
-
-            else
-                % not idle
-                if all([CameraObj.Verbose])
-                    fprintf('Can not take Exposure because at least one camera is not idle\n');
-                end
-                CameraObj.LogFile.write(sprintf('Can not take Exposure because at least one camera is not idle'));
+    % end argument parsing
+    
+    % remote cameras, WaitFinish=true or Nimages>1: temporarily increase
+    % the messenger timeout
+    timeout=zeros(Cameras);
+    if InPar.WaitFinish
+        for i=Cameras
+            if isa(Unit.Camera{i},'obs.remoteClass')
+                % perhaps increase temporarily the messenger timeout
+                timeout(i) = Unit.Camera{1}.Messenger.StreamResource.Timeout;
+                Unit.Camera{1}.Messenger.StreamResource.Timeout=...
+                    max(timeout(i),Unit.Camera{1}.classCommand('ExpTime'));
             end
-
-        end  % end for loop
-
-        switch InPar.SaveMode
-            case 2
-                for Icam=1:1:Ncam
-                    if CameraObj(Icam).Verbose
-                        fprintf('Save Image %d of camera %d\n',Nimages,Icam);
-                    end
-                    CameraObj(Icam).SaveWhenIdle = true;
-                    callbackSaveAndDisplay(CameraObj(Icam));
-
-                end
-            otherwise
-                % do nothing
         end
+    end
 
-        Flag = true;
+    % wait before starting    
+    if InPar.WaitFinish
+        % wait sequentially for each camera, because camera.waitFinish
+        %  has been implemented scalarly. No big deal however, because
+        %  at the end we'll proceed only when the last of the busy cameras
+        %  is free, no matter the order of checking
+        for i=Cameras
+            Unit.Camera{i}.classCommand('waitFinish');
+        end
+    end
 
+    % start acquisition on each of the local cameras, using nonblocking
+    %  methods
+    for i=Cameras
+        if ~isa(Unit.Camera{i},'obs.remoteClass')
+            if Nimages>1
+                Unit.Camera{i}.takeLive(Nimages)
+            else
+                Unit.Camera{i}.takeExposure
+            end
+        end
+    end
+    
+    % restore original timeouts of remote cameras
+    if InPar.WaitFinish
+        for i=Cameras
+            if isa(Unit.Camera{i},'obs.remoteClass')
+                Unit.Camera{1}.Messenger.StreamResource.Timeout=timeout(i);
+            end
+        end
     end
 
 end
