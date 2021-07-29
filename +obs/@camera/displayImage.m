@@ -24,11 +24,11 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
     if ~isempty(CameraObj.LastImage)
         if ~isempty(Display)
             if DivideByFlat
-                Image = CameraObj.divideByFlat(CameraObj.LastImage);
+                Image = CameraObj.divideByFlat;
             else
                 Image = CameraObj.LastImage;
             end
-            % dispaly
+            % display
             switch lower(Display)
                 case 'ds9'
                     % Display in ds9 each camera in a different frame
@@ -42,21 +42,16 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
                     if ~isempty(DisplayZoom)
                         ds9.zoom(DisplayZoom, DisplayZoom);
                     end
-
-
                 case {'mat','matlab'}
                     % find reasonable range
                     Range = quantile(Image(:),[0.2, 0.95]);
                     imtool(Image,Range);
-
                 case ''
                     % no display
-
                 otherwise
                     error('Unknown Display option');
             end
         end
-
     else
         CameraObj.reportError('No Image to display');
 %        CameraObj.LogFile.write('No Image to display');

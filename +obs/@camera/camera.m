@@ -89,6 +89,8 @@ classdef camera < obs.LAST_Handle
             end
             % load configuration
             CameraObj.loadConfig(CameraObj.configFileName('createsuper'))
+            % add a listener for new images
+            addlistener(CameraObj,'LastImage','PostSet',@CameraObj.treatNewImage);
         end
        
         function delete(CameraObj)

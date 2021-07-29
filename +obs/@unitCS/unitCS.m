@@ -71,7 +71,8 @@ classdef unitCS < obs.LAST_Handle
             UnitObj.Camera=cell(1,Nlocal+Nremote);
             UnitObj.Focuser=cell(1,Nlocal+Nremote);
             
-            % create objects for local telescopes
+            % create camera and focuser objects for local telescopes,
+            %  as well as listeners for new images
             for i=1:Nlocal
                 j=UnitObj.LocalTelescopes(i);
                 telescope_label=sprintf('%s_%d_%d',UnitObj.Id,1,j);
@@ -79,6 +80,8 @@ classdef unitCS < obs.LAST_Handle
                                         '(''' telescope_label ''')']);
                 UnitObj.Focuser{j}=eval([UnitObj.FocuserDriver{i} ...
                                         '(''' telescope_label ''')']);
+                % better listener or addlistener?
+                addlistener(UnitObj.Camera{j},'LastImage','PostSet',@UnitObj.treatNewImage);
             end
             
             % create remoteClass objects for remote telescopes
