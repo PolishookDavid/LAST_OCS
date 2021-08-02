@@ -90,12 +90,10 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     % start acquisition on each of the local cameras, using nonblocking
     %  methods
     for i=Cameras
-        if ~isa(Unit.Camera{i},'obs.remoteClass')
-            if Nimages>1
-                Unit.Camera{i}.takeLive(Nimages)
-            else
-                Unit.Camera{i}.takeExposure
-            end
+        if Nimages>1
+            Unit.Camera{i}.classCommand(sprintf('takeLive(%d)',Nimages));
+        else
+            Unit.Camera{i}.classCommand('takeExposure');
         end
     end
     
