@@ -8,17 +8,12 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     %            will be set to this value.
     %          - Number of images to obtain. Default is 1.
     %          * ...,key,val,...
-    %            'WaitFinish' - default is true.
+    %            'WaitFinish' - default is false (to reduce delays)
     %            'ImType' - default is ''.
     %            'Object' - default is ''.
     % Output : - Sucess flag.
 
-    % TAKE CARE: Unit.Camera{1}.classCommand('takeExposure') fails for a
-    %   remote camera if Unit.Camera{1}.SaveOnDisk=true, because of non
-    %   nestable callbacks. Find a way of dispatching
-    %     Unit.takeExposure(remotecameras,parameters)
-    %
-    % Also, Unit.Camera{1}.classCommand('waitFinish') may timeout
+    % Take care, Unit.Camera{i}.classCommand('waitFinish') may timeout
     %  because of no reply, if the messenger timeout is shorter than
     %  ExpTime
     
@@ -42,6 +37,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     addOptional(InPar,'WaitFinish',false);
     addOptional(InPar,'ImType','');
     addOptional(InPar,'Object','');
+    addOptional(InPar,'MinExpTimeForSave',5); % [s] Minimum ExpTime below which SaveOnDisk is disabled
     parse(InPar,varargin{:});
     InPar = InPar.Results;
 
@@ -53,11 +49,14 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
         % update ImType
         Unit.Camera{Cameras}.classCommand(['Object=' InPar.Object ';']);
     end
-
-    MinExpTimeForSave = 5;  % [s] Minimum ExpTime below SaveDuringNextExp is disabled
-
-    if Nimages>1 && ExpTime<MinExpTimeForSave
-        error('If Nimages>1 then ExpTime must be above %f s',MinExpTimeForSave);
+    
+    if Nimages>1 && ExpTime<InPar.MinExpTimeForSave
+        Unit.reportError([sprintf('If Nimages>1 then ExpTime must be above %f s',...
+                          MinExpTimeForSave),...
+                        '; camera.SaveOnDisk will be turned off for all cameras involved']);
+        for i=Cameras
+            Unit.Camera{i}.classCommand('SaveOnDisk=false;');
+        end
     end
 
     % end argument parsing
@@ -69,9 +68,9 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
         for i=Cameras
             if isa(Unit.Camera{i},'obs.remoteClass')
                 % perhaps increase temporarily the messenger timeout
-                timeout(i) = Unit.Camera{1}.Messenger.StreamResource.Timeout;
-                Unit.Camera{1}.Messenger.StreamResource.Timeout=...
-                    max(timeout(i),Unit.Camera{1}.classCommand('ExpTime'));
+                timeout(i) = Unit.Camera{i}.Messenger.StreamResource.Timeout;
+                Unit.Camera{i}.Messenger.StreamResource.Timeout=...
+                    max(timeout(i),Unit.Camera{i}.classCommand('ExpTime'));
             end
         end
     end
@@ -101,7 +100,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     if InPar.WaitFinish
         for i=Cameras
             if isa(Unit.Camera{i},'obs.remoteClass')
-                Unit.Camera{1}.Messenger.StreamResource.Timeout=timeout(i);
+                Unit.Camera{i}.Messenger.StreamResource.Timeout=timeout(i);
             end
         end
     end
