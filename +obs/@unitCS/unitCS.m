@@ -19,7 +19,6 @@ classdef unitCS < obs.LAST_Handle
     end
     
     properties(GetAccess=public, SetAccess=private)
-        Status char % general readiness status of the unit, derived from the status of its components
     end
         
     properties %(Dependent)
@@ -114,18 +113,9 @@ classdef unitCS < obs.LAST_Handle
                         
     end
     
-    % setters/getters for children of the unit
+    % setters/getters
     methods
-        % general
-        function Val=get.Status(UnitObj)
-            % general status: idle | tracking | busy | exposing or
-            %   something like that. TODO
-            % check separately the status of mount, cameras, focusers and
-            %  report accordingly
-            Val='';
-        end
         
     end
-           
-    
+             
 end
