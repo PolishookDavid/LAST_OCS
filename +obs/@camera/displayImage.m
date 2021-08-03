@@ -33,7 +33,7 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
                 case 'ds9'
                     % Display in ds9 each camera in a different frame
                     if isempty(CameraObj.Frame)
-                        Frame = CameraObj.CameraNumSDK;
+                        Frame = CameraObj.CameraNumber;
                     else
                         Frame = CameraObj.Frame;
                     end

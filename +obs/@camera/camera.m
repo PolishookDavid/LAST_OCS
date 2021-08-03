@@ -34,11 +34,10 @@ classdef camera < obs.LAST_Handle
         MaxExpTime    = 300;        % Maximum exposure time in seconds       
     end
     
-    % Camera ID
+    % Camera ID, for labels. Typically set in config file
     properties(Hidden, GetAccess = public, SetAccess = public)
-        CameraNumSDK double                         % Camera number in the SDK
-        CameraNumber double    = NaN                %  1       2      3      4
-        CameraPos char         = '';                % 'NE' | 'SE' | 'SW' | 'NW'
+        CameraNumber double    = 1         %  1       2      3      4
+        CameraPos char         = '';       % 'NE' | 'SE' | 'SW' | 'NW'
     end
         
     properties(Hidden)
@@ -56,7 +55,7 @@ classdef camera < obs.LAST_Handle
     % display
     properties(Hidden)
         Display              = 'ds9';   % 'ds9' | 'matlab' | ''
-        Frame double         = [];
+        Frame double         = [];      % frame number to be passed to ds9
         DisplayZoom double   = 0.08;    % ds9 zoom
         DivideByFlat logical = false;    % subtract dark and divide by flat before display
     end

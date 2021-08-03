@@ -33,7 +33,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
         end
     else
         if numel(ExpTime)==1
-            ExpTime=repmat(ExpTime,numel(Cameras));
+            ExpTime=repmat(ExpTime,size(Cameras));
         end 
         for i=1:numel(Cameras)
             Unit.Camera{Cameras(i)}.classCommand(sprintf('ExpTime=%f;',ExpTime(i)));
@@ -57,9 +57,9 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
         Unit.Camera{Cameras}.classCommand(['Object=' InPar.Object ';']);
     end
     
-    if Nimages>1 && min(ExpTime)<InPar.MinExpTimeForSave
-        Unit.reportError([sprintf('If Nimages>1 then ExpTime must be above %f s',...
-                          MinExpTimeForSave),...
+    if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave
+        Unit.reportError([sprintf('If Nimages>1 then ExpTime must be above %g s',...
+                          InPar.MinExpTimeForSave),...
                         '; camera.SaveOnDisk will be turned off for all cameras involved']);
         for i=Cameras
             Unit.Camera{i}.classCommand('SaveOnDisk=false;');
