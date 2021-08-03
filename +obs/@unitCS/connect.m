@@ -25,7 +25,11 @@ function Unit=connect(Unit)
     % - spawn slaves
     for i=1:numel(Unit.Slave)
         % connect the slave
-        Unit.connectSlave(i);
+        SlaveUnitName=inputname(1);
+        % this is a bit tricky but ensures that the remote unitCS object
+        %  gets the right name
+        eval([SlaveUnitName '=Unit;']);
+        eval(sprintf('%s.connectSlave(%d)',SlaveUnitName,i));
     end
 
 end
