@@ -1,24 +1,7 @@
-% Focuser control handle class (for Celestron's focusers) 
+% Focuser superclass
 % Package: +obs
 % Description: operate focuser drivers.
 %              Currently can work with Celestron's focusers
-% Input  : Focuser text, e.g. 'Robot'.
-% Output : A focuser class
-%     By :
-% Example: F = obs.focuser;
-%          F = obs.focuser('Robot');    % Will skip lock-question
-%
-% Settings properties and methods:
-%       F.Pos = 20000;        % Move the absolute value to 20000;
-%       F.relPos(-100);       % Move 100 steps inword from current location.
-%       F.Handle;             % Direct excess to the driver object
-%
-% More values to get:
-%       F.Status              % Presents working status of focuser
-%       F.Limits              % Presents defined limits of the focuser movement
-%       F.waitFinish;         % Wait for fociser status to be Idle
-%
-% Author: David Polishook, Mar 2020
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef focuser < obs.LAST_Handle
             
