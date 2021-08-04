@@ -22,11 +22,11 @@ function Flag=waitFinish(MountObj)
 
         switch lower(Status)
             case {'idle','tracking','home','park','aborted','disabled'}
-                MountObj.report('\nSlewing is complete\n');
+                MountObj.report('Slewing is complete\n');
                 Flag=true;
                 break
             case 'slewing'
-                MountObj.report('.');
+                % MountObj.report('.');
             otherwise
                 MountObj.reportError(sprintf('Mount status: %s',Status));
                 break
