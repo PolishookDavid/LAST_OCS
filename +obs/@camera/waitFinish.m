@@ -1,8 +1,9 @@
-function waitFinish(CameraObj)
+function Flag=waitFinish(CameraObj)
     % Wait for the camera to return to idle mode, but not longer than one
     %  exposure time. After that, if the camera is still exposing, send an
     %  abort command. That should interupt also acquisition in Live mode.
     % Decisions are based on  .ExpTime and .CamStatus
+    % Result: true if the camera is finally idle
     
     % Note: the camera drivers have each an attempt of a WaitForIdle method.
     %  It might be better to handle each camera's quirk in there, i.e. specific
@@ -17,6 +18,7 @@ function waitFinish(CameraObj)
         return
     end
     
+    Flag=false;
     t0=now;
     while (now-t0)*3600*24 < ExpTime
         CamStatus=lower(CameraObj.CamStatus);
@@ -24,6 +26,7 @@ function waitFinish(CameraObj)
             case {'exposing','reading'}
                 % do nothing - continue waiting
             case 'idle'
+                Flag=true;
                 break
             otherwise
                 CameraObj.reportError(sprintf('camera %s is in a suspicious "%s" status, exiting',...

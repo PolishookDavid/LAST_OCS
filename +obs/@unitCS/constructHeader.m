@@ -1,10 +1,13 @@
 function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % Construct image header for takes of the nth telescope. Intended to
     %   work only both for local and remote telescopes as well as mount in this unit
+    % This could well be demoted to private method, it is temporarily left
+    %  public for visibility
+    %
     % Input   : the telescope number 
     % Output  : - A 3 column cell array with header for image
     %           - A structure with all the header key and vals.
-
+    
     CameraObj=UnitObj.Camera{itel};
     
     if isa(CameraObj,'obs.remoteClass')

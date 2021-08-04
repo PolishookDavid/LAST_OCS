@@ -56,6 +56,6 @@ function connectSlave(Unit,islaves)
             end
             % send the connect command to the slave unit object, to connect
             %  with its own hardware
-            M.query([SlaveUnitName '.connect']);
+            M.query([SlaveUnitName '.connect;']);
         end
     end

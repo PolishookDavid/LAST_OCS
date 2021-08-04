@@ -1,6 +1,9 @@
 function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
-    % Take one or many exposures from one or many local or remote cameras
-    %  if a camera is busy, wait
+    % Take one or many exposures from one or many local or remote cameras,
+    %  using nonblocking calls to start exposing.
+    % If requested, wait till the mount has finished slewing, the focusers
+    %  moving and the camera shooting
+    %
     % Package: +obs.@unitCS
     % Input  : - a vector of camera indices [all cameras if omitted]
     %          - Exposure time [s]. If provided this will override
@@ -11,7 +14,6 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     %            'WaitFinish' - default is false (to reduce delays)
     %            'ImType' - default is ''.
     %            'Object' - default is ''.
-    % Output : - Sucess flag.
 
     % Take care, Unit.Camera{i}.classCommand('waitFinish') may timeout
     %  because of no reply, if the messenger timeout is shorter than
@@ -61,55 +63,62 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
         Unit.reportError([sprintf('If Nimages>1 then ExpTime must be above %g s',...
                           InPar.MinExpTimeForSave),...
                         '; camera.SaveOnDisk will be turned off for all cameras involved']);
-        for i=Cameras
-            Unit.Camera{i}.classCommand('SaveOnDisk=false;');
+        % keep the previous SaveOnDisk status
+        saving=false(size(Cameras));
+        for i=numel(Cameras)
+            saving(i)=Unit.Camera.classCommand('SaveOnDisk;');
+            Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk=false;');
         end
     end
 
     % end argument parsing
     
-    % remote cameras, WaitFinish=true or Nimages>1: temporarily increase
-    % the messenger timeout
-    timeout=zeros(Cameras);
+    % wait before starting, if asked to
     if InPar.WaitFinish
-        for i=Cameras
-            if isa(Unit.Camera{i},'obs.remoteClass')
-                % perhaps increase temporarily the messenger timeout
-                timeout(i) = Unit.Camera{i}.Messenger.StreamResource.Timeout;
-                Unit.Camera{i}.Messenger.StreamResource.Timeout=...
-                    max(timeout(i),Unit.Camera{i}.classCommand('ExpTime'));
-            end
-        end
-    end
-
-    % wait before starting    
-    if InPar.WaitFinish
+        Unit.Mount.classCommand('waitFinish;');
         % wait sequentially for each camera, because camera.waitFinish
         %  has been implemented scalarly. No big deal however, because
         %  at the end we'll proceed only when the last of the busy cameras
         %  is free, no matter the order of checking
+        % NOTE: THIS IS PROBLEMATIC WITH REMOTE OBJECTS
         for i=Cameras
-            Unit.Camera{i}.classCommand('waitFinish');
+            Unit.Focuser{i}.classCommand('waitFinish;');
+            Unit.Camera{i}.classCommand('waitFinish;');
         end
     end
 
     % start acquisition on each of the local cameras, using nonblocking
-    %  methods
+    %  methods,and of the remote ones, using blind sends for maximum speed.
+    %  This difference prevents the use of .classCommand() for both
     for i=Cameras
-        if Nimages>1
-            Unit.Camera{i}.classCommand(sprintf('takeLive(%d)',Nimages));
+        if isa(Unit.Camera{i},'obs.remoteClass')
+            remotename=Unit.Camera{i}.RemoteName;
+            if Nimages>1
+                Unit.Camera{i}.Messenger.send(sprintf('%s.takeLive(%d)',remotename,Nimages));
+            else
+                Unit.Camera{i}.Messenger.send(sprintf('%s.takeExposure',remotename));
+            end
         else
-            Unit.Camera{i}.classCommand('takeExposure');
-        end
-    end
-    
-    % restore original timeouts of remote cameras
-    if InPar.WaitFinish
-        for i=Cameras
-            if isa(Unit.Camera{i},'obs.remoteClass')
-                Unit.Camera{i}.Messenger.StreamResource.Timeout=timeout(i);
+            if Nimages>1
+                Unit.Camera{i}.takeLive(Nimages);
+            else
+                Unit.Camera{i}.takeExposure;
             end
         end
+        % otherwise it would be just:
+%         if Nimages>1
+%             Unit.Camera{i}.classCommand(sprintf('takeLive(%d)',Nimages));
+%         else
+%             Unit.Camera{i}.classCommand('takeExposure');
+%         end
     end
+    
+    % restore the previous SaveOnDisk status if needed
+     if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave
+        for i=numel(Cameras)
+            Unit.Camera{Cameras(i)}.classCommand(sprintf('SaveOnDisk=%d;',saving(i)));
+        end
+    end
+   
 
 end
