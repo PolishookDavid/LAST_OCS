@@ -1,4 +1,12 @@
-function take_twilight_flat(M,C,varargin)
+function take_twilight_flat(C,M,varargin)
+% *** Might still work with mastrolindo classes
+% *** First two arguments are the handles to a camera and a mount object
+% *** Designed to be run in the matlab session where the objects are
+%     locally defined
+%
+% **** Does not save images, relying on the old Camera.SaveOnDisk behavior.
+% **** TODO, convert to (unit,telescopes) call
+%
 % Obtain a series of twiligh flat images using a LAST pier system.
 % Package: +obs.util.tools
 % Description: Obtain a series of Twiligh flat images automatically. The
@@ -6,7 +14,7 @@ function take_twilight_flat(M,C,varargin)
 % Input  : -
 % Output : -
 %     By :
-% Example: obs.util.tools.take_twilight_flat(M,C);
+% Example: obs.util.tools.take_twilight_flat(C,M);
 
 
 RAD = 180./pi;

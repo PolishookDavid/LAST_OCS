@@ -1,7 +1,12 @@
 function [ResP,Res]=auto_polar_align_pole(C,M,varargin)
+% *** Might still work with mastrolindo classes
+% *** First two arguments are the handles to a camera and a mount object
+% *** Designed to be run in the matlab session where the objects are
+%     locally defined
+%
 % Perform polar alignment using the pole rotation method
 % Package: +obs.util.tools
-% Descripption: Use the 'rotate around polar axis method' to polar align
+% Description: Use the 'rotate around polar axis method' to polar align
 %               the mount. The mount is directed to the pole and rotated in
 %               HA. In each HA an image is taken. The stars will circle the
 %               mount pole, while the pole position will be solved

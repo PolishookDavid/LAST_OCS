@@ -1,7 +1,10 @@
-function [TargetVec,Res]=MeasurePointingOffset(CamObj,MountObj,varargin)
-% assume camera and mount object are provided
-M = MountObj; % mount object;
-C = CamObj; % camera object;
+function [TargetVec,Res]=MeasurePointingOffset(C,M,varargin)
+% *** Might still work with mastrolindo classes
+% *** First two arguments are the handles to a camera and a mount object
+% *** Designed to be run in the matlab session where the objects are
+%     locally defined
+%
+
 C.ExpTime = 5;
 
 

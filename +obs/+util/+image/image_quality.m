@@ -1,5 +1,5 @@
 function Result=image_quality(Image,varargin)
-% Mesaure the image quality using variery of methods
+% Mesaure the image quality using variety of methods
 % Input  : - An image in matrix format
 %          * ...,key,val,...
 %            

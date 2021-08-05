@@ -1,5 +1,7 @@
 function test_motion(M)
-% telescpope pointing stress test on grid of coordinates
+% telescope pointing stress test on grid of coordinates
+%
+% Input: a local mount object
 %
 % Example: obs.util.tools.test_motion(M)
 
@@ -19,8 +21,8 @@ for I=1:1:N
     % HA = LST - RA
     RA  = LST.*360 - HA;
     
-    M.Handle.goTo(RA,Dec);
-    %M.Handle.goTo(0,Dec);
+    M.goTo(RA,Dec);
+    %M.goTo(0,Dec);
     %M.goto(RA,Dec,'InCooType','t2021.1');
    
    
@@ -31,12 +33,12 @@ for I=1:1:N
     (M.Dec - Dec).*3600
     
     
-    if any(cell2mat(struct2cell(M.Handle.FullStatus.Dec)))
-        M.Handle.FullStatus.Dec
+    if any(cell2mat(struct2cell(M.FullStatus.Dec)))
+        M.FullStatus.Dec
         %error('Dec Problem')
     end
-%     if any(cell2mat(struct2cell(M.Handle.FullStatus.HA)))
-%         M.Handle.FullStatus.HA
+%     if any(cell2mat(struct2cell(M.FullStatus.HA)))
+%         M.FullStatus.HA
 %         %error('HA Problem')
 %     end
     

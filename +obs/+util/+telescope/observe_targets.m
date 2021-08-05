@@ -1,4 +1,8 @@
-function observe_targets(M,C,varargin)
+function observe_targets(C,M,varargin)
+% *** Might still work with mastrolindo classes
+% *** First two arguments are the handles to a camera and a mount object
+% *** Designed to be run in the matlab session where the objects are
+%     locally defined
 %
 % Example: obs.util.tools.observe_targets(M,C);
 

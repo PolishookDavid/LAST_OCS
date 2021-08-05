@@ -1,4 +1,9 @@
 function Info=gather_alignment_images(X,C)
+% *** Might still work with mastrolindo classes
+% *** First two arguments are the handles to a mount and a camera objects
+% *** Designed to be run in the matlab session where the objects are
+%     locally defined
+%
 % Example: Info=obs.util.tools.gather_alignment_images(X,C);
 
 Coo = [30  88;...

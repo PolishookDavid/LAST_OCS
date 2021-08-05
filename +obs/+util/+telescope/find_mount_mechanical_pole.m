@@ -1,6 +1,8 @@
-function find_mount_mechanical_pole(X,C,varargin)
-%
-
+function find_mount_mechanical_pole(C,X,varargin)
+% *** Might still work with mastrolindo classes
+% *** First two arguments are the handles to a camera and a mount object
+% *** Designed to be run in the matlab session where the objects are
+%     locally defined
 
 RAD = 180./pi;
 SEC_IN_DAY = 86400;

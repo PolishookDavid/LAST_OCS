@@ -1,4 +1,9 @@
 function Res=prep_pointing_distortion_map(C,M,varargin)
+% *** Might still work with mastrolindo classes
+% *** First two arguments are the handles to a camera and a mount object
+% *** Designed to be run in the matlab session where the objects are
+%     locally defined
+%
 % Prepare distortion maps by solving astrometry over a grid of coordinates
 % Package: +obs.util.tools
 % Description :
