@@ -9,6 +9,7 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     %           - A structure with all the header key and vals.
     
     CameraObj=UnitObj.Camera{itel};
+    FocuserObj=UnitObj.Focuser{itel};
     
     if isa(CameraObj,'obs.remoteClass')
         SizeImIJ = CameraObj.Messenger.query(...
@@ -61,75 +62,75 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     Info.CamType  = class(CameraObj);
     Info.CamModel = CameraObj.classCommand('CameraModel');
     Info.CamName  = CameraObj.classCommand('CameraName');
-    % Mount informtaion
-    Info.MountNum = UnitObj.Mount.classCommand('Id');
 
-    % OBSERVER
-    %ORIGIN
-    %OBSNAME
-    %OBSPLACE
-
-    if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLon')
-        Info.ObsLon = UnitObj.Mount.classCommand('Config.ObsLon');
-    else
-        Info.ObsLon = NaN;
-    end
-    if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLat')
-        Info.ObsLat = UnitObj.Mount.classCommand('Config.ObsLat');
-    else
-        Info.ObsLat = NaN;
-    end
-    if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsHeight')
-        Info.ObsHeight = UnitObj.Mount.classCommand('Config.ObsHeight');
-    else
-        Info.ObsHeight = NaN;
-    end
-
-    %Info.JD       = juliandate(CameraObj.classCommand('LastImageTime'));
     Info.JD       = 1721058.5 + CameraObj.classCommand('TimeStartLastImage');
     %Info.ExpTime  = CameraObj.classCommand('LastImageExpTime');
     Info.ExpTime  = CameraObj.classCommand('ExpTime');
-    Info.LST      = celestial.time.lst(Info.JD,Info.ObsLon./RAD,'a').*360;  % deg
-    DateObs       = convert.time(Info.JD,'JD','StrDate');
-    Info.DATE_OBS = DateObs{1};
 
-    % get RA/Dec - Mount equinox of date
-    Info.M_RA     = UnitObj.Mount.classCommand('RA');
-    Info.M_DEC    = UnitObj.Mount.classCommand('Dec');
-    Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_RA);
-    % RA/Dec - mount J2000
-    j2000coord=UnitObj.Mount.classCommand('j2000');
-    Info.M_JRA    = j2000coord(1);
-    Info.M_JDEC   = j2000coord(2);
-    Info.M_HA     = convert.minusPi2Pi(j2000coord(3));
-    % RA/Dec - J2000 camera center
-    if ~isempty(CameraObj.classCommand('Config'))
-        if tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraDist') && ...
-                tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraPA')
-            [Info.DEC, Info.RA] = reckon(Info.M_JDEC, Info.M_JRA,...
-                                     CameraObj.classCommand('Config.MountCameraDist'),...
-                                     CameraObj.classCommand('Config.MountCameraPA'),'degrees');
+    if isa(UnitObj.Mount,'obs.mount') || isa(UnitObj.Mount,'obs.remoteClass')
+        % Mount information
+        Info.MountNum = UnitObj.Mount.classCommand('Id');
+        % OBSERVER
+        %ORIGIN
+        %OBSNAME
+        %OBSPLACE
+        if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLon')
+            Info.ObsLon = UnitObj.Mount.classCommand('Config.ObsLon');
+        else
+            Info.ObsLon = NaN;
+        end
+        if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLat')
+            Info.ObsLat = UnitObj.Mount.classCommand('Config.ObsLat');
+        else
+            Info.ObsLat = NaN;
+        end
+        if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsHeight')
+            Info.ObsHeight = UnitObj.Mount.classCommand('Config.ObsHeight');
+        else
+            Info.ObsHeight = NaN;
+        end
+        Info.LST      = celestial.time.lst(Info.JD,Info.ObsLon./RAD,'a').*360;  % deg
+        DateObs       = convert.time(Info.JD,'JD','StrDate');
+        Info.DATE_OBS = DateObs{1};
+        % get RA/Dec - Mount equinox of date
+        Info.M_RA     = UnitObj.Mount.classCommand('RA');
+        Info.M_DEC    = UnitObj.Mount.classCommand('Dec');
+        Info.M_HA     = convert.minusPi2Pi(Info.LST - Info.M_RA);
+        % RA/Dec - mount J2000
+        j2000coord=UnitObj.Mount.classCommand('j2000');
+        Info.M_JRA    = j2000coord(1);
+        Info.M_JDEC   = j2000coord(2);
+        Info.M_HA     = convert.minusPi2Pi(j2000coord(3));
+        % RA/Dec - J2000 camera center
+        if ~isempty(CameraObj.classCommand('Config'))
+            if tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraDist') && ...
+                    tools.struct.isfield_notempty(CameraObj.classCommand('Config'),'MountCameraPA')
+                [Info.DEC, Info.RA] = reckon(Info.M_JDEC, Info.M_JRA,...
+                    CameraObj.classCommand('Config.MountCameraDist'),...
+                    CameraObj.classCommand('Config.MountCameraPA'),'degrees');
+            else
+                Info.RA  = Info.M_JDEC;
+                Info.DEC = Info.M_JRA;
+            end
+            Info.RA = mod(Info.RA,360);
         else
             Info.RA  = Info.M_JDEC;
             Info.DEC = Info.M_JRA;
-        end
-        Info.RA = mod(Info.RA,360);
-    else
-        Info.RA  = Info.M_JDEC;
-        Info.DEC = Info.M_JRA;
+        end    
+        Info.AZ       = UnitObj.Mount.classCommand('Az');
+        Info.ALT      = UnitObj.Mount.classCommand('Alt');
+        Info.EQUINOX  = 2000.0;
+        Info.AIRMASS  = celestial.coo.hardie(pi./2-Info.ALT./RAD);
+        TRK=UnitObj.Mount.classCommand('TrackingSpeed');
+        Info.TRK_RA   = TRK(1)/3600;  % [arcsec/s]
+        Info.TRK_DEC  = TRK(2)/3600;  % [arcsec/s]
     end
 
-    Info.AZ       = UnitObj.Mount.classCommand('Az');
-    Info.ALT      = UnitObj.Mount.classCommand('Alt');
-    Info.EQUINOX  = 2000.0;
-    Info.AIRMASS  = celestial.coo.hardie(pi./2-Info.ALT./RAD);
-    TRK=UnitObj.Mount.classCommand('TrackingSpeed');
-    Info.TRK_RA   = TRK(1)/3600;  % [arcsec/s]
-    Info.TRK_DEC  = TRK(2)/3600;  % [arcsec/s]
-
     % focuser information
-    Info.FOCUS    = UnitObj.Focuser{itel}.classCommand('Pos');
-    Info.PRVFOCUS = UnitObj.Focuser{itel}.classCommand('LastPos');
+    if isa(FocuserObj,'obs.focuser') || isa(FocuserObj,'obs.remoteClass')        
+        Info.FOCUS    = FocuserObj.classCommand('Pos');
+        Info.PRVFOCUS = FocuserObj.classCommand('LastPos');
+    end
 
     % struct to HeaderCell + comments
     % Input : Info, CommentsDB

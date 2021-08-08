@@ -39,7 +39,7 @@ classdef unitCS < obs.LAST_Handle
         % current yml configuration reader, the configuration can contain
         % only a string significating class names, which are then used
         % to construct the actual object handles by eval()'s
-        MountDriver = 'inst.XerxesSimulated';
+        MountDriver = 'obs.LAST_Handle';
         FocuserDriver
         CameraDriver
     end

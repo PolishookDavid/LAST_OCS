@@ -9,9 +9,12 @@ function Unit=connect(Unit)
     if isfield(Unit.Mount,'PhysicalPort')
         % real mount
         Unit.Mount.connect(Unit.Mount.PhysicalPort);
-    else
+    elseif isa(Unit.Mount,'obs.remoteClass')
         % remote mount
         Unit.Mount.connect;
+    else
+        % no mount at all (usually, mount=LastHandle)
+        Unit.report(['no mount defined for unit ',Unit.Id '\n'])
     end
     
     % connect to local focusers and cameras
