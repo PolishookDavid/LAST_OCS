@@ -13,8 +13,11 @@
 classdef unitCS < obs.LAST_Handle
 
     properties
+        Power  cell   % handles to IP power switches units
         Mount  obs.LAST_Handle    % handle to the mount(s) abstraction object
         Camera cell    % cell, handles to the camera abstraction objects
+        CameraPowerUnit double =[]; % switch unit controlling each camera
+        CameraPowerOutput double =[]; % switch output controlling each camera
         Focuser cell   % cell, handles to the focuser abstraction objects
     end
     
@@ -39,6 +42,7 @@ classdef unitCS < obs.LAST_Handle
         % current yml configuration reader, the configuration can contain
         % only a string significating class names, which are then used
         % to construct the actual object handles by eval()'s
+        PowerDriver
         MountDriver = 'obs.LAST_Handle';
         FocuserDriver
         CameraDriver
@@ -63,8 +67,12 @@ classdef unitCS < obs.LAST_Handle
                         
             % populate mount, camera, focuser and power switches handles
             % for now always one mount (could be 0 for slave?)
+            for i=1:numel(UnitObj.PowerDriver)
+                UnitObj.Power{i}=eval([UnitObj.PowerDriver{i} ...
+                           '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);
+            end
             UnitObj.Mount=eval([UnitObj.MountDriver ...
-                            '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);...
+                            '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);
             Nlocal=numel(UnitObj.LocalTelescopes);
             Nremote=numel(horzcat(UnitObj.RemoteTelescopes{:}));
             UnitObj.Camera=cell(1,Nlocal+Nremote);
@@ -108,6 +116,9 @@ classdef unitCS < obs.LAST_Handle
             end
             for i=1:numel(UnitObj.Focuser)
                 delete(UnitObj.Focuser{i});
+            end
+            for i=1:numel(UnitObj.Power)
+                delete(UnitObj.Power{i});
             end
         end
                         

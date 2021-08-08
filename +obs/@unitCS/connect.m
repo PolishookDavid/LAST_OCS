@@ -6,14 +6,18 @@ function Unit=connect(Unit)
     %    appropriate unitCS objects, populate them with consistent
     %    property values, and initiate the connections there
     
-    if isfield(Unit.Mount,'PhysicalPort')
+    for i=1:numel(Unit.Power)
+        Unit.Power{i}.classCommand('connect');
+    end
+    
+    if isfield(Unit.Mount,'PhysicalPort') % FIXME: isfield is not for properties!!
         % real mount
         Unit.Mount.connect(Unit.Mount.PhysicalPort);
     elseif isa(Unit.Mount,'obs.remoteClass')
         % remote mount
         Unit.Mount.connect;
     else
-        % no mount at all (usually, mount=LastHandle)
+        % no mount at all (usually, mount=obs.LastHandle)
         Unit.report(['no mount defined for unit ',Unit.Id '\n'])
     end
     
