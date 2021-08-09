@@ -121,7 +121,7 @@ classdef unitCS < obs.LAST_Handle
                 delete(UnitObj.Focuser{i});
             end
             for i=1:numel(UnitObj.PowerSwitch)
-                delete(UnitObj.Power{i});
+                delete(UnitObj.PowerSwitch{i});
             end
         end
                         
