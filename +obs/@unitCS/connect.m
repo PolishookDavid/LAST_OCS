@@ -6,11 +6,13 @@ function Unit=connect(Unit)
     %    appropriate unitCS objects, populate them with consistent
     %    property values, and initiate the connections there
     
-    for i=1:numel(Unit.Power)
-        Unit.Power{i}.classCommand('connect');
+    for i=1:numel(Unit.PowerSwitch)
+        if ~isa(Unit.PowerSwitch{i},'obs.remoteClass')
+            Unit.PowerSwitch{i}.classCommand('connect');
+        end
     end
     
-    if isfield(Unit.Mount,'PhysicalPort') % FIXME: isfield is not for properties!!
+    if isa(Unit.Mount,'obs.mount')
         % real mount
         Unit.Mount.connect(Unit.Mount.PhysicalPort);
     elseif isa(Unit.Mount,'obs.remoteClass')

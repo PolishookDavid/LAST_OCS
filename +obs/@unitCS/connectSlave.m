@@ -11,20 +11,37 @@ function connectSlave(Unit,islaves)
     
     for i=islaves
         S=Unit.Slave{i};
-        S.LocalPort = 8000+i;
+        S.LocalPort = 8000+i; % arbitrary port numbers, but for definiteness
         S.RemotePort= 9000+i;
         S.connect
         % create a slave unitCS object and populate it
         if isempty(S.LastError)
             SlaveUnitName=inputname(1);
             SlaveUnitId=[Unit.Id '_slave_' num2str(i)];
-            SMount=[SlaveUnitName '.Mount'];
             M=S.Messenger;
             M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
+
+            % populate remote power switches
+            M.query([SlaveUnitName '.PowerSwitch=cell(1,' ...
+                     num2str(numel(Unit.PowerSwitch)) ');']);
+            for j=1:numel(Unit.PowerSwitch)
+                Sswitch=[SlaveUnitName '.PowerSwitch{' num2str(j) '}'];
+                M.query([Sswitch '=obs.remoteClass;']);
+                M.query([Sswitch '.RemoteName=''' Sswitch ''';']);
+                M.query([Sswitch '.Messenger=MasterMessenger;']);
+            end
+            % copy camera power definitions
+            M.query([ SlaveUnitName '.CameraPowerUnit=[' ...
+                       sprintf('%d ',Unit.CameraPowerUnit) '];' ]);
+            M.query([ SlaveUnitName '.CameraPowerOutput=[' ...
+                       sprintf('%d ',Unit.CameraPowerOutput) '];' ]);
+
             % populate the remote mount
+            SMount=[SlaveUnitName '.Mount'];
             M.query([SMount '=obs.remoteClass;']);
             M.query([SMount '.RemoteName=''' SMount ''';']);
             M.query([SMount '.Messenger=MasterMessenger;']);
+
             % populate cameras and focusers
             % Telescopes owned by this slave are configured by its own
             %  configuration file, when created/connected. Of course the
@@ -44,6 +61,7 @@ function connectSlave(Unit,islaves)
                 M.query([SFocuser '.RemoteName=''' SFocuser ''';']);
                 M.query([SFocuser '.Messenger=MasterMessenger;']);
             end
+
             % set in the local unit the messenger and remote name of remote telescopes
             %  handled by this slave
             for j=ownedTelescopes
@@ -54,6 +72,7 @@ function connectSlave(Unit,islaves)
                 Unit.Focuser{j}.RemoteName = SFocuser;
                 Unit.Focuser{j}.Messenger = M;
             end
+
             % send the connect command to the slave unit object, to connect
             %  with its own hardware
             M.query([SlaveUnitName '.connect;']);

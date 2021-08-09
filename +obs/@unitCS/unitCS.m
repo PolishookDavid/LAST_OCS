@@ -13,15 +13,17 @@
 classdef unitCS < obs.LAST_Handle
 
     properties
-        Power  cell   % handles to IP power switches units
-        Mount  obs.LAST_Handle    % handle to the mount(s) abstraction object
+        PowerSwitch  cell   % handles to IP power switches units
+        Mount               % handle to the mount(s) abstraction object
         Camera cell    % cell, handles to the camera abstraction objects
-        CameraPowerUnit double =[]; % switch unit controlling each camera
-        CameraPowerOutput double =[]; % switch output controlling each camera
+        CameraPower logical % power of the cameras off/on
         Focuser cell   % cell, handles to the focuser abstraction objects
     end
-    
-    properties(GetAccess=public, SetAccess=private)
+
+    properties(Hidden)
+        % non-structured notation because of limitations of the yml configuration
+        CameraPowerUnit double =[]; % switch unit controlling each camera
+        CameraPowerOutput double =[]; % switch output controlling each camera
     end
         
     properties %(Dependent)
@@ -43,7 +45,7 @@ classdef unitCS < obs.LAST_Handle
         % only a string significating class names, which are then used
         % to construct the actual object handles by eval()'s
         PowerDriver
-        MountDriver = 'obs.LAST_Handle';
+        MountDriver
         FocuserDriver
         CameraDriver
     end
@@ -66,11 +68,12 @@ classdef unitCS < obs.LAST_Handle
             UnitObj.RemoteTelescopes=eval(UnitObj.RemoteTelescopes);
                         
             % populate mount, camera, focuser and power switches handles
-            % for now always one mount (could be 0 for slave?)
             for i=1:numel(UnitObj.PowerDriver)
-                UnitObj.Power{i}=eval([UnitObj.PowerDriver{i} ...
+                UnitObj.PowerSwitch{i}=eval([UnitObj.PowerDriver{i} ...
                            '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);
             end
+            
+            % for now always one mount per unit (or, empty mount when absent)
             UnitObj.Mount=eval([UnitObj.MountDriver ...
                             '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);
             Nlocal=numel(UnitObj.LocalTelescopes);
@@ -117,7 +120,7 @@ classdef unitCS < obs.LAST_Handle
             for i=1:numel(UnitObj.Focuser)
                 delete(UnitObj.Focuser{i});
             end
-            for i=1:numel(UnitObj.Power)
+            for i=1:numel(UnitObj.PowerSwitch)
                 delete(UnitObj.Power{i});
             end
         end
@@ -126,7 +129,28 @@ classdef unitCS < obs.LAST_Handle
     
     % setters/getters
     methods
+        function power=get.CameraPower(UnitObj)
+            numcam=numel(UnitObj.Camera);
+            power=false(1,numcam);
+            for i=1:numcam
+                IPswitch=UnitObj.PowerSwitch{UnitObj.CameraPowerUnit(i)};
+                IPoutput=UnitObj.CameraPowerOutput(i);
+                try
+                    power(i)=IPswitch.classCommand(sprintf('OutputN(%d);',IPoutput));
+                catch
+                    power(i)=false;
+                end
+            end
+        end
         
+        function set.CameraPower(UnitObj,power)
+            numcam=numel(UnitObj.Camera);
+            for i=1:min(numcam,numel(power))
+                IPswitch=UnitObj.PowerSwitch{UnitObj.CameraPowerUnit(i)};
+                IPoutput=UnitObj.CameraPowerOutput(i);
+                IPswitch.classCommand(sprintf('OutputN(%d,%d);',IPoutput,power(i)));
+            end
+        end
     end
-             
+
 end
