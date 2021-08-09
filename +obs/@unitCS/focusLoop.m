@@ -1,4 +1,4 @@
-function [Res] = focus_loop(CamObj,MountObj,FocObj,SensObj,varargin)
+function [Res] = focusLoop(UnitObj,itel,varargin)
 % Execute focus loop on LAST telescope
 % Package: +obs.util.tools
 % Description: Obtain an image with each focus value, and measure the FWHM
@@ -63,15 +63,21 @@ function [Res] = focus_loop(CamObj,MountObj,FocObj,SensObj,varargin)
 %            .Az          - Mount Az [deg]
 %            .Alt         - Mount Alt [deg]
 %            .AM          - Mount airmass []
-% By: Eran Ofek          April 2020
-% Example: [FocRes] = obs.util.tools.focus_loop(C,M,F,S) 
+% By: Eran Ofek          April 2020 : rev Enrico Segre August 2021
+% Example: [FocRes] = Unit.focusLoop(1) 
+
+MountObj=UnitObj.Mount;
+CamObj=UnitObj.Camera(itel);
+FocObj=UnitObj.Focuser(itel);
+SensObj=[]; % to be decided once we include sensors
 
 RAD = 180./pi;
 
 PlotMarker    = 'o';
 PlotMinMarker = 'p';
 
-CenterPos = [3195 4788];
+effA=CamObj{1}.classCommand('effective_area'); % this is maybe only for QHYccd?
+CenterPos=floor([effA.syEff,effA.sxEff]/2);
 Theta     = (0:60:300).';
 DefSeveralPositions = [CenterPos; CenterPos + 2000.*[cosd(Theta), sind(Theta)]];
 
@@ -101,8 +107,7 @@ end
 warning('Add here treatment of OCS class / multiple cameras per process');
 
 % number of cameras and focusers
-Ncam = numel(CamObj);
-Nfoc = numel(FocObj);
+Ncam = numel(itel);
 
 if InPar.Plot
     Colors = plot.generate_colors(Ncam);
@@ -113,14 +118,8 @@ Nstep = floor(InPar.HalfRange./InPar.Step).*2 + 1;
 % adapt HalfRange accoring to number of steps
 InPar.HalfRange = InPar.Step.*(Nstep-1).*0.5;
 
-
-if Ncam~=Nfoc
-    error('Number of cameras mus be equal to the number of focusers');
-end
-
 % make sure FocusGuess is a column vector of length Ncam
 InPar.FocusGuess = InPar.FocusGuess(:).*ones(Ncam,1);
-
 
 % Estimate focus based on temperature
 if InPar.FocusTempGrad==0 || isempty(SensObj)
@@ -135,15 +134,15 @@ FocusGuess  = InPar.FocusGuess + (AmbTemp - InPar.FocusGuessTemp).*InPar.FocusTe
 
 % backlash direction: + means the start value is above the best guess value
 BacklashDir = sign(InPar.BacklashPos);
-% Start pos is a vector of length Ncam
+% Start pos is a vector of length Ncam % TODO: now it is a scalar...
 StartPos    = InPar.FocusGuess + InPar.BacklashPos;
-
 
 % prepare a table of focus values to test for each camera
 % Each column is the focus values for each camera.
 FocusValCam = nan(Nstep,Ncam);
 for Icam=1:1:Ncam
-    FocusValCam(:,Icam) = ((FocusGuess(Icam) - InPar.HalfRange):InPar.Step:(FocusGuess(Icam) + InPar.HalfRange)).';
+    FocusValCam(:,Icam) = ((FocusGuess(Icam)-InPar.HalfRange): InPar.Step :...
+                           (FocusGuess(Icam)+InPar.HalfRange)).';
 end
     
 %Limits = [FocusGuess - InPar.HalfRange, FocusGuess + InPar.HalfRange];
@@ -155,20 +154,22 @@ else
     % no need to reverse PosVec
 end
 
-
-switch lower(FocObj.Status)
-    case 'unknown'
-        error('Focus status unknown');
+% go to focus start position (abort if any focuser is not idle)
+for Icam=itel
+    focstatus=FocObj{Icam}.classCommand('Status');
+    if ~strcmp(focstatus,'idle')
+        UnitObj.reportError(sprintf('Focuser %s is in status %s, aborting focus loop',...
+                            FocObj{Icam}.classCommand('Id'), ...
+                            FocObj{Icam}.classCommand('Status') ));
+        return
+    end
+    % maybe do Messenger.send here to call and forget?
+    FocObj(Icam).classCommand(sprintf('Pos=%d;', StartPos)); % TODO vector StartPos
 end
 
-% go to focus start position 
 for Icam=1:1:Ncam
-    FocObj(Icam).Pos = StartPos(Icam);
+    FocObj(Icam).waitFinish; % TODO NO, poll status with classCommand
 end
-for Icam=1:1:Ncam
-    FocObj(Icam).waitFinish;
-end
-
 
 % set exposure time
 CamObj.ExpTime = InPar.ExpTime;
@@ -267,8 +268,6 @@ for Ipos=1:1:Nstep
     end
     
 end
-    
-
 
 Res.PosVec      = FocusValCam;
 Res.FocVal      = FocVal;
