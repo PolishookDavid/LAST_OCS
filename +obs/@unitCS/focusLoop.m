@@ -67,11 +67,9 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 % Example: [FocRes] = Unit.focusLoop(1) 
 
 MountObj=UnitObj.Mount;
-CamObj=UnitObj.Camera(itel);
-FocObj=UnitObj.Focuser(itel);
+CamObj=UnitObj.Camera{itel};
+FocObj=UnitObj.Focuser{itel};
 SensObj=[]; % to be decided once we include sensors
-
-RAD = 180./pi;
 
 PlotMarker    = 'o';
 PlotMinMarker = 'p';
@@ -154,57 +152,45 @@ else
     % no need to reverse PosVec
 end
 
-% go to focus start position (abort if any focuser is not idle)
+% End argument parsing and preliminaries, operate
+
+% set exposure time
 for Icam=itel
-    focstatus=FocObj{Icam}.classCommand('Status');
-    if ~strcmp(focstatus,'idle')
-        UnitObj.reportError(sprintf('Focuser %s is in status %s, aborting focus loop',...
-                            FocObj{Icam}.classCommand('Id'), ...
-                            FocObj{Icam}.classCommand('Status') ));
-        return
-    end
+    UnitObj.Camera{Icam}.classCommand(sprintf('ExpTime=%f;',InPar.ExpTime));
+end
+
+% go to focus start position (checking that we are ok to start)
+UnitObj.readyToExpose(itel,true);
+for Icam=itel
     % maybe do Messenger.send here to call and forget?
     FocObj(Icam).classCommand(sprintf('Pos=%d;', StartPos)); % TODO vector StartPos
 end
 
-for Icam=1:1:Ncam
-    FocObj(Icam).waitFinish; % TODO NO, poll status with classCommand
-end
-
-% set exposure time
-CamObj.ExpTime = InPar.ExpTime;
-
 FocVal = nan(Nstep,2);
-for Ipos=1:1:Nstep
-    if InPar.Verbose
-        for Icam=1:1:Ncam
-            fprintf('Camera %d -- Testing focus position: %f (number %d out of %d)',Icam,FocusValCam(Ipos,Icam), Ipos, Nstep);
-        end
+for Ipos=1:Nstep
+    for Icam=1:Ncam
+        UnitObj.report('Focuser %d -- at position: %f (#%d out of %d)',Icam,FocusValCam(Ipos,Icam), Ipos, Nstep);
     end
     
     % set all focusers
     for Icam=1:1:Ncam
-        FocObj(Icam).Pos = FocusValCam(Ipos,Icam);
+        FocObj(Icam).classCommand(sprintf('Pos=%d;',FocusValCam(Ipos,Icam)));
     end
     % wait for all focusers
-    for Icam=1:1:Ncam
-        FocObj(Icam).waitFinish;
-    end
+    UnitObj.readyToExpose(itel,true);
     
     % take exposures in all cameras
     for Icam=1:1:Ncam
-        CamObj(Icam).takeExposure;
+        CamObj(Icam).classCommand('takeExposure;');
     end
     % wait for all cameras
-    for Icam=1:1:Ncam
-        CamObj(Icam).waitFinish;
-    end
-     
+    UnitObj.readyToExpose(itel,true);
+    
     % measure FWHM for each camera
     for Icam=1:1:Ncam
         
         if isempty(InPar.ImageHalfSize)
-            Image = single(CamObj(Icam).LastImage);
+            Image = single(CamObj(Icam).LastImage); % NO WE can't do that on a remote camera
         else
             Image = single(imUtil.image.trim(CamObj(Icam).LastImage,InPar.ImageHalfSize.*ones(1,2),'center'));
         end
@@ -241,8 +227,6 @@ for Ipos=1:1:Nstep
         end
     end
     
-    
-    
     if InPar.Plot
         % clear all matlab plots
         %close all    
@@ -260,11 +244,10 @@ for Ipos=1:1:Nstep
                 H = ylabel('FWHM [arcsec]');
                 H.FontSize = 18;
                 H.Interpreter = 'latex';
-
                 hold on;
             end
         end
-        %CamObj.LastImage = [];
+        
     end
     
 end
@@ -300,23 +283,15 @@ end
 for Icam=1:1:Ncam
     FocObj(Icam).Pos = StartPos(Icam);
 end
-for Icam=1:1:Ncam
-    FocObj(Icam).waitFinish;
-end
+UnitObj.readyToExpose(itel,true);
 
 % go to best focus
 fprintf('Set focus to best value\n');
 for Icam=1:1:Ncam
     FocObj(Icam).Pos = Res.BestFocVal(Icam);
 end
-for Icam=1:1:Ncam
-    FocObj(Icam).waitFinish;
-end
+UnitObj.readyToExpose(itel,true);
 
 Res.Az  = MountObj.Az;
 Res.Alt = MountObj.Alt;
-Res.AM  = celestial.coo.hardie(pi./2 - Res.Alt./RAD);
-    
-
-
-
+Res.AM  = celestial.coo.hardie(pi./2 - Res.Alt.*pi/180);
