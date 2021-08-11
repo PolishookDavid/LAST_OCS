@@ -91,7 +91,7 @@ addOptional(InPar,'NimExp',1);
 addOptional(InPar,'ImageHalfSize',1000);  % If [] use full image
 addOptional(InPar,'SeveralPositions',DefSeveralPositions);  % If [] use full image
 addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');
-addOptional(InPar,'PixScale',1.25);  % "/pix
+addOptional(InPar,'PixScale',1.25);  % "1/pix
 addOptional(InPar,'Plot',true);
 parse(InPar,varargin{:});
 InPar = InPar.Results;
@@ -151,6 +151,8 @@ else
     % no need to reverse PosVec
 end
 
+actualFocuserPos = FocusValCam; %will be corrected later by actual reading
+
 % End argument parsing and preliminaries, operate
 
 % go to focus start position (but why? not to FocusValCam(1)?)
@@ -160,11 +162,11 @@ for Icam=itel
 end
 UnitObj.readyToExpose(itel,true); %(checking that we are ok to start)
 
-FocVal = nan(Nfocus,Nsp,2);
+FocVal = nan(Nfocus,Nsp,Ncam);
 for Ifocus=1:Nfocus
     for Icam=1:Ncam
         UnitObj.report('Focuser %d -- at position: %f (#%d out of %d)',...
-                        Icam,FocusValCam(Ifocus,Icam), Ifocus, Nfocus);
+                        Icam, FocusValCam(Ifocus,Icam), Ifocus, Nfocus);
     end
     
     % set all focusers
@@ -183,7 +185,7 @@ for Ifocus=1:Nfocus
     for Icam=1:1:Ncam
         % check real focuser position (commanded position might have been
         %  beyond limits)
-        actualFocuserPos=FocObj(Icam).classCommand(sprintf('Pos'));
+        actualFocuserPos(Ifocus,Icam)=FocObj(Icam).classCommand(sprintf('Pos'));
         % measure FWHM for each image taken
         if isa(CamObj(Icam),'obs.camera')
             FocVal(Ifocus,:,Icam)=imageFocus(CamObj(Icam).LastImage,...
@@ -192,10 +194,10 @@ for Ifocus=1:Nfocus
                                              InPar.SeveralPositions);
         elseif isa(CamObj(Icam),'obs.remoteClass')
             % do this in slave for remote cameras: construct command...
-            focuscommand=['imageFocus(' CamObj(Icam).RemoteName '.LastImage,'...
-                          sprintf('%g,%s,%g,%s);', InPar.ImageHalfSize, ...
+            focuscommand= sprintf('imageFocus(%s.LastImage,%g,%s,%g,%s);',...
+                          CamObj(Icam).RemoteName, InPar.ImageHalfSize, ...
                           mat2str(InPar.SigmaVec), InPar.PixScale, ...
-                          mat2str(InPar.SeveralPositions) ) ];
+                          mat2str(InPar.SeveralPositions) );
             FocVal(Ifocus,:,Icam)=CamObj(Icam).Messenger.query(focuscommand);
         else
             % do nothing, safeguard
@@ -206,7 +208,7 @@ for Ifocus=1:Nfocus
         % clear all matlab plots
         %close all    
         for Icam=1:1:Ncam           
-            plot(FocusValCam(:,Icam),FocVal(:,Icam),'ko',...
+            plot(actualFocuserPos(:,Icam),FocVal(:,:,Icam),'ko',...
                  'Color',Colors(Icam,:),...
                  'Marker',PlotMarker','MarkerFaceColor',Colors(Icam,:));
             hold on
