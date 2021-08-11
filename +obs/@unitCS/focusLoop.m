@@ -174,13 +174,17 @@ for Ifocus=1:Nfocus
         FocObj(Icam).classCommand(sprintf('Pos=%d;',FocusValCam(Ifocus,Icam)));
     end
     % wait for all focusers
-    UnitObj.readyToExpose(itel,true);
+    if ~UnitObj.readyToExpose(itel,true)
+        break
+    end
     
     
     % take one exposure with all cameras
     UnitObj.takeExposure(itel,InPar.ExpTime);
     % wait for all cameras
-    UnitObj.readyToExpose(itel,true,InPar.ExpTime+10); % TODO: abort if failed
+    if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+10)
+        break
+    end
     
     for Icam=1:1:Ncam
         % check real focuser position (commanded position might have been
@@ -259,7 +263,6 @@ fprintf('Set focus to best value\n');
 for Icam=1:1:Ncam
     FocObj(Icam).classCommand(sprintf('Pos = %d;',BestFocVal(Icam)));
 end
-UnitObj.readyToExpose(itel,true); % here we could check only focusers
 
 Res.Az  = MountObj.Az;
 Res.Alt = MountObj.Alt;
