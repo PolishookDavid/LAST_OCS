@@ -4,8 +4,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 % Description: Obtain an image with each focus value, and measure the FWHM
 %              as a function of focus. Interpolate the best focus value.
 %              The focus loop assumes that there is a backlash in the
-%              system. In the begining, the focus is set to StartPos
-%              (In LAST StartPos is higher than the guess focus value).
+%              system. In the begining, the focus is set to StartFocus
+%              (In LAST StartFocus is higher than the guess focus value).
 %              Next the system is going over some user defined focus values
 %              and take image with each focus.
 %              The program can adapt the focus based on temperature. This
@@ -22,7 +22,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            'FocusGuess' - Best focus guess value.
 %                   If vector then this is the best focus value for each
 %                   camera.
-%                   Default is 23650.
+%                   Default is 23650. %% TODO: maybe the current focus?
 %            'HalfRange' - Half range of focus loop (i.e., +/- distance of
 %                   focus loop from FocusGuess).
 %                   If Half range is not consistent with step size, it will
@@ -34,9 +34,9 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %                   FocusGuess value. If NaN ignore temperature.
 %                   Default is 25.
 %            'FocusTempGrad' - The gradient of the focus with
-%                   temperature [focus value/1 C].
+%                   temperature [focus value/1°C].
 %                   Default is 0.
-%            'BacklashPos' - A focus value relative to the estimated best
+%            'BacklashFocus' - A focus value relative to the estimated best
 %                   focus value (- below / + above)
 %                   from which to start moving, in order to deal with
 %                   backlash. 
@@ -46,13 +46,13 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            'NimExp'   - Number of images per exposure. Default is 1.
 %            'ImageHalfSize' - Half size of sub image in which to measure
 %                   the focus. If empty use full image. Default is 1000.
+%            'SeveralPositions' - FIXME add description
 %            'SigmaVec' - Vector of gaussian kernel sigma-width (template
 %                   bank) with wich to cross-correlate the image.
 %                   This will define the range and resolution of the
 %                   measured seeing.
 %                   Default is [0.1, logspace(0,1,25)].'.
-%            'PixScale' - ["/pix]. Default is 1.25 "/pix.
-%            'Verbose' - Default is true.
+%            'PixScale' - ["/pix]. Default is 1.25"/pix.
 %            'Plot' - Default is true. Will add to existing plot.
 % Output : - A structure with the focus measurments and best value.
 %            The following fields are available:
@@ -85,24 +85,23 @@ addOptional(InPar,'HalfRange',200);
 addOptional(InPar,'Step',40);  
 addOptional(InPar,'FocusGuessTemp',25);  
 addOptional(InPar,'FocusTempGrad',0);  
-addOptional(InPar,'BacklashPos',200);  
+addOptional(InPar,'BacklashFocus',200);  
 addOptional(InPar,'ExpTime',5);  
 addOptional(InPar,'NimExp',1);  
 addOptional(InPar,'ImageHalfSize',1000);  % If [] use full image
 addOptional(InPar,'SeveralPositions',DefSeveralPositions);  % If [] use full image
 addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');
 addOptional(InPar,'PixScale',1.25);  % "/pix
-addOptional(InPar,'Verbose',true);
 addOptional(InPar,'Plot',true);
 parse(InPar,varargin{:});
 InPar = InPar.Results;
 
-if ~isempty(SeveralPositions)
-    ImageHalfSize = [];
+if ~isempty(InPar.SeveralPositions)
+    InPar.ImageHalfSize = [];
+    Nsp=numel(SeveralPositions);
+else
+    Nsp=1;
 end
-
-% deal with hardward objects
-warning('Add here treatment of OCS class / multiple cameras per process');
 
 % number of cameras and focusers
 Ncam = numel(itel);
@@ -112,9 +111,9 @@ if InPar.Plot
 end
 
 % number of focus steps
-Nstep = floor(InPar.HalfRange./InPar.Step).*2 + 1;
+Nfocus = floor(InPar.HalfRange./InPar.Step).*2 + 1;
 % adapt HalfRange accoring to number of steps
-InPar.HalfRange = InPar.Step.*(Nstep-1).*0.5;
+InPar.HalfRange = InPar.Step.*(Nfocus-1).*0.5;
 
 % make sure FocusGuess is a column vector of length Ncam
 InPar.FocusGuess = InPar.FocusGuess(:).*ones(Ncam,1);
@@ -131,13 +130,13 @@ end
 FocusGuess  = InPar.FocusGuess + (AmbTemp - InPar.FocusGuessTemp).*InPar.FocusTempGrad;
 
 % backlash direction: + means the start value is above the best guess value
-BacklashDir = sign(InPar.BacklashPos);
+BacklashDir = sign(InPar.BacklashFocus);
 % Start pos is a vector of length Ncam % TODO: now it is a scalar...
-StartPos    = InPar.FocusGuess + InPar.BacklashPos;
+StartFocus    = InPar.FocusGuess + InPar.BacklashFocus;
 
 % prepare a table of focus values to test for each camera
 % Each column is the focus values for each camera.
-FocusValCam = nan(Nstep,Ncam);
+FocusValCam = nan(Nfocus,Ncam);
 for Icam=1:1:Ncam
     FocusValCam(:,Icam) = ((FocusGuess(Icam)-InPar.HalfRange): InPar.Step :...
                            (FocusGuess(Icam)+InPar.HalfRange)).';
@@ -154,90 +153,61 @@ end
 
 % End argument parsing and preliminaries, operate
 
-% set exposure time
-for Icam=itel
-    UnitObj.Camera{Icam}.classCommand(sprintf('ExpTime=%f;',InPar.ExpTime));
-end
-
 % go to focus start position (checking that we are ok to start)
 UnitObj.readyToExpose(itel,true);
 for Icam=itel
-    % maybe do Messenger.send here to call and forget?
-    FocObj(Icam).classCommand(sprintf('Pos=%d;', StartPos)); % TODO vector StartPos
+    FocObj(Icam).classCommand(sprintf('Pos=%d;', StartFocus)); % TODO vector StartFocus
 end
+UnitObj.readyToExpose(itel,true);
 
-FocVal = nan(Nstep,2);
-for Ipos=1:Nstep
+FocVal = nan(Nfocus,Nsp,2);
+for Ifocus=1:Nfocus
     for Icam=1:Ncam
-        UnitObj.report('Focuser %d -- at position: %f (#%d out of %d)',Icam,FocusValCam(Ipos,Icam), Ipos, Nstep);
+        UnitObj.report('Focuser %d -- at position: %f (#%d out of %d)',...
+                        Icam,FocusValCam(Ifocus,Icam), Ifocus, Nfocus);
     end
     
     % set all focusers
     for Icam=1:1:Ncam
-        FocObj(Icam).classCommand(sprintf('Pos=%d;',FocusValCam(Ipos,Icam)));
+        FocObj(Icam).classCommand(sprintf('Pos=%d;',FocusValCam(Ifocus,Icam)));
     end
     % wait for all focusers
     UnitObj.readyToExpose(itel,true);
     
-    % take exposures in all cameras
-    for Icam=1:1:Ncam
-        CamObj(Icam).classCommand('takeExposure;');
-    end
+    % take one exposure with all cameras
+    UnitObj.takeExposure(itel,InPar.ExpTime);
     % wait for all cameras
-    UnitObj.readyToExpose(itel,true);
+    UnitObj.readyToExpose(itel,true,InPar.ExpTime+10); % TODO: abort if failed
     
     % measure FWHM for each camera
     for Icam=1:1:Ncam
-        
-        if isempty(InPar.ImageHalfSize)
-            Image = single(CamObj(Icam).LastImage); % NO WE can't do that on a remote camera
+        if isa(CamObj(Icam),'obs.camera')
+            FocVal(Ifocus,:,Icam)=imageFocus(CamObj(Icam).LastImage,...
+                                             InPar.ImageHalfSize,...
+                                             InPar.SigmaVec, InPar.PixScale,...
+                                             InPar.SeveralPositions);
+        elseif isa(CamObj(Icam),'obs.remoteClass')
+            % do this in slave for remote cameras: construct command...
+            focuscommand=['imageFocus(' CamObj(Icam).RemoteName '.LastImage,'...
+                          sprintf('%g,%s,%g,%s);', InPar.ImageHalfSize, ...
+                          mat2str(InPar.SigmaVec), InPar.PixScale, ...
+                          mat2str(InPar.SeveralPositions) ) ];
+            FocVal(Ifocus,:,Icam)=CamObj(Icam).Messenger.query(focuscommand);
         else
-            Image = single(imUtil.image.trim(CamObj(Icam).LastImage,InPar.ImageHalfSize.*ones(1,2),'center'));
-        end
-        
-        if isempty(InPar.SeveralPositions)
-            % filter image with filter bandk of gaussians with variable width
-            SN = imUtil.filter.filter2_snBank(Image,[],[],@imUtil.kernel2.gauss,InPar.SigmaVec);
-            [BW,Pos,MaxIsn]=imUtil.image.local_maxima(SN,1,5);
-
-            % remove sharp objects
-            Pos = Pos(Pos(:,4)~=1,:);
-            if isempty(Pos)
-                FocVal(Ipos,1,Icam) = NaN;
-            else
-                % instead one can check if the SN improves...
-                FocVal(Ipos,1,Icam) = 2.35.*InPar.PixScale.*InPar.SigmaVec(mode(Pos(Pos(:,3)>50,4),'all'));
-            end
-        else
-            % measure focus at several positions
-            SN = imUtil.filter.filter2_snBank(Image,[],[],@imUtil.kernel2.gauss,InPar.SigmaVec);
-            [BW,Pos,MaxIsn]=imUtil.image.local_maxima(SN,1,5);
-            Pos = Pos(Pos(:,4)~=1,:);
-            Nsp = numel(InPar.SeveralPositions);
-            MaxRad = 1000;
-            for Isp=1:1:Nsp
-                DistPos = Util.Geom.plane_dist(InPar.SeveralPositions(Isp,1),InPar.SeveralPositions(Isp,2),Pos(:,1),Pos(:,2));
-                Flag = DistPos<MaxRad;
-                if isempty(Pos(Flag,:))
-                    FocVal(Ipos,1,Icam) = NaN;
-                else
-                    FocVal(Ipos,Isp,Icam) = 2.35.*InPar.PixScale.*InPar.SigmaVec(mode(Pos(Pos(Flag,3)>50,4),'all'));
-                end
-            end
+            % do nothing, safeguard
         end
     end
     
     if InPar.Plot
         % clear all matlab plots
         %close all    
-        for Icam=1:1:Ncam
-            
-            H=plot(FocusValCam(Ipos,Icam),FocVal(Ipos,Icam),'ko','MarkerFaceColor','r');
+        for Icam=1:1:Ncam           
+            H=plot(FocusValCam(Ifocus,Icam),FocVal(Ifocus,Icam),'ko',...
+                   'MarkerFaceColor','r');
             H.Marker          = PlotMarker;
             H.Color           = Colors(Icam,:);
             H.MarkerFaceColor = Colors(Icam,:);
-
-            if Ipos==1
+            if Ifocus==1
                 H = xlabel('Focus position');
                 H.FontSize = 18;
                 H.Interpreter = 'latex';
@@ -247,7 +217,7 @@ for Ipos=1:Nstep
                 hold on;
             end
         end
-        
+        drawnow
     end
     
 end
@@ -256,6 +226,7 @@ Res.PosVec      = FocusValCam;
 Res.FocVal      = FocVal;
 
 %Extram = Util.find.find_local_extramum(flipud(PosVec),flipud(FocVal));
+FullFocVal=nan(Nsp,Ncam);
 for Isp=1:1:Nsp
     for Icam=1:1:Ncam
         FullPosVec = (min(Res.PosVec(:,Icam)):1:max(Res.PosVec(:,Icam)))';
@@ -265,10 +236,9 @@ for Isp=1:1:Nsp
     end
 end
 
-if InPar.Verbose
-    fprintf('Best focus value  : %f\n',Res.BestFocVal);
-    fprintf('FWHM at best focus: %f\n',Res.BestFocFWHM);
-end
+UnitObj.report(sprintf('Best focus value  : %f\n',Res.BestFocVal));
+UnitObj.report(sprintf('FWHM at best focus: %f\n',Res.BestFocFWHM));
+
 
 if InPar.Plot
     for Icam=1:1:Ncam
@@ -277,20 +247,21 @@ if InPar.Plot
         H.Color           = Colors(Icam,:);
         H.MarkerFaceColor = Colors(Icam,:);
     end
+    drawnow
 end
 
-% move up (startp position to avoid backlash)
+% move up (start position to avoid backlash)
 for Icam=1:1:Ncam
-    FocObj(Icam).Pos = StartPos(Icam);
+    FocObj(Icam).Pos = StartFocus(Icam);
 end
-UnitObj.readyToExpose(itel,true);
+UnitObj.readyToExpose(itel,true); % here we could check only focusers
 
 % go to best focus
 fprintf('Set focus to best value\n');
 for Icam=1:1:Ncam
     FocObj(Icam).Pos = Res.BestFocVal(Icam);
 end
-UnitObj.readyToExpose(itel,true);
+UnitObj.readyToExpose(itel,true); % here we could check only focusers
 
 Res.Az  = MountObj.Az;
 Res.Alt = MountObj.Alt;
