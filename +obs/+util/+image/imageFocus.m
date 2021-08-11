@@ -3,7 +3,7 @@ function FocVal=imageFocus(Image,ImageHalfSize,SigmaVec,PixScale,SeveralPosition
 %   control parameters.
 % Code derived from what was in focus_loop_new()
 %
-% Output: FocVal, scalar or array of length SeveralPositions
+% Output: FocVal, scalar or array of same length of SeveralPositions
 %
 % Author: Enrico, based on Eran's code
     if ~exist('SigmaVec','var')

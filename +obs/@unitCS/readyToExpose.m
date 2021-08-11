@@ -65,7 +65,7 @@ while ~ready && (now-t0)*86400 < timeout
                                 Unit.Camera{i}.classCommand('Id'));
             break
         end
-        fault = fault || strcmp(status.focuser{i},{'stuck','unknown'}');     
+        fault = fault || any(strcmp(status.focuser{i},{'stuck','unknown'}));
         if fault
             faultcause=sprintf('Focuser %s status is: %s',...
                                 Unit.Focuser{i}.classCommand('Id'),status.focuser{i});
