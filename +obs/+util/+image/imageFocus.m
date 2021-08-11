@@ -6,13 +6,23 @@ function FocVal=imageFocus(Image,ImageHalfSize,SigmaVec,PixScale,SeveralPosition
 % Output: FocVal, scalar or array of length SeveralPositions
 %
 % Author: Enrico, based on Eran's code
-    if isempty(ImageHalfSize)
+    if ~exist('SigmaVec','var')
+        SigmaVec=[0.1, logspace(0,1,25)].';
+    end
+    if ~exist('PixScale','var')
+        PixScale=1.25;
+    end
+    if ~exist('SeveralPositions','var')
+        SeveralPositions=[];
+    end
+
+    if ~exist('ImageHalfSize','var') || isempty(ImageHalfSize)
         Image = single(Image);
     else
         Image = single(imUtil.image.trim(Image,ImageHalfSize.*ones(1,2),'center'));
     end
     
-    % filter image with filter bandk of gaussians with variable width
+    % filter image with filter bank of gaussians with variable width
     SN = imUtil.filter.filter2_snBank(Image,[],[],@imUtil.kernel2.gauss,SigmaVec);
     [BW,Pos,MaxIsn]=imUtil.image.local_maxima(SN,1,5);
     % remove sharp objects
