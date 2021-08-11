@@ -153,12 +153,12 @@ end
 
 % End argument parsing and preliminaries, operate
 
-% go to focus start position (checking that we are ok to start)
+% go to focus start position (but why? not to FocusValCam(1)?)
 UnitObj.readyToExpose(itel,true);
 for Icam=itel
     FocObj(Icam).classCommand(sprintf('Pos=%d;', StartFocus)); % TODO vector StartFocus
 end
-UnitObj.readyToExpose(itel,true);
+UnitObj.readyToExpose(itel,true); %(checking that we are ok to start)
 
 FocVal = nan(Nfocus,Nsp,2);
 for Ifocus=1:Nfocus
@@ -174,13 +174,17 @@ for Ifocus=1:Nfocus
     % wait for all focusers
     UnitObj.readyToExpose(itel,true);
     
+    
     % take one exposure with all cameras
     UnitObj.takeExposure(itel,InPar.ExpTime);
     % wait for all cameras
     UnitObj.readyToExpose(itel,true,InPar.ExpTime+10); % TODO: abort if failed
     
-    % measure FWHM for each camera
     for Icam=1:1:Ncam
+        % check real focuser position (commanded position might have been
+        %  beyond limits)
+        actualFocuserPos=FocObj(Icam).classCommand(sprintf('Pos'));
+        % measure FWHM for each image taken
         if isa(CamObj(Icam),'obs.camera')
             FocVal(Ifocus,:,Icam)=imageFocus(CamObj(Icam).LastImage,...
                                              InPar.ImageHalfSize,...
@@ -202,21 +206,13 @@ for Ifocus=1:Nfocus
         % clear all matlab plots
         %close all    
         for Icam=1:1:Ncam           
-            H=plot(FocusValCam(Ifocus,Icam),FocVal(Ifocus,Icam),'ko',...
-                   'MarkerFaceColor','r');
-            H.Marker          = PlotMarker;
-            H.Color           = Colors(Icam,:);
-            H.MarkerFaceColor = Colors(Icam,:);
-            if Ifocus==1
-                H = xlabel('Focus position');
-                H.FontSize = 18;
-                H.Interpreter = 'latex';
-                H = ylabel('FWHM [arcsec]');
-                H.FontSize = 18;
-                H.Interpreter = 'latex';
-                hold on;
-            end
+            plot(FocusValCam(:,Icam),FocVal(:,Icam),'ko',...
+                 'Color',Colors(Icam,:),...
+                 'Marker',PlotMarker','MarkerFaceColor',Colors(Icam,:));
+            hold on
         end
+        xlabel('Focus position','FontSize',18);
+        ylabel('FWHM [arcsec]','FontSize',18);
         drawnow
     end
     
@@ -242,24 +238,24 @@ UnitObj.report(sprintf('FWHM at best focus: %f\n',Res.BestFocFWHM));
 
 if InPar.Plot
     for Icam=1:1:Ncam
-        H=plot(Res.BestFocVal,Res.BestFocFWHM,'rp','MarkerFaceColor','r');
-        H.Marker          = PlotMinMarker;
-        H.Color           = Colors(Icam,:);
-        H.MarkerFaceColor = Colors(Icam,:);
+        plot(Res.BestFocVal,Res.BestFocFWHM,PlotMinMarker,...
+             'Color',Colors(Icam,:),'MarkerFaceColor',Colors(Icam,:));
     end
+    hold off
     drawnow
 end
 
-% move up (start position to avoid backlash)
+% move up (best+backlash, was - start position to avoid backlash)
 for Icam=1:1:Ncam
-    FocObj(Icam).Pos = StartFocus(Icam);
+    FocObj(Icam).classCommand(sprintf('Pos = %d;',...
+                              BestFocVal(Icam)+InPar.BacklashFocus));
 end
 UnitObj.readyToExpose(itel,true); % here we could check only focusers
 
 % go to best focus
 fprintf('Set focus to best value\n');
 for Icam=1:1:Ncam
-    FocObj(Icam).Pos = Res.BestFocVal(Icam);
+    FocObj(Icam).classCommand(sprintf('Pos = %d;',BestFocVal(Icam)));
 end
 UnitObj.readyToExpose(itel,true); % here we could check only focusers
 
