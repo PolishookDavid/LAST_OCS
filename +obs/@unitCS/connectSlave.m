@@ -48,8 +48,8 @@ function connectSlave(Unit,islaves)
             %  configurations of the master and of its slaves have to be
             %  consistent!
             ownedTelescopes=Unit.RemoteTelescopes{i};
-            M.query(sprintf('%s.LocalTelescopes=%s;',SlaveUnitName), ...
-                             mat2str(ownedTelescopes) );
+            M.query(sprintf('%s.LocalTelescopes=%s;',SlaveUnitName, ...
+                             mat2str(ownedTelescopes) ));
             % local cameras and focusers of this unit are remotes of the slave
             for j=Unit.LocalTelescopes
                 SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
