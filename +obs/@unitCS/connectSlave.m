@@ -31,10 +31,10 @@ function connectSlave(Unit,islaves)
                 M.query([Sswitch '.Messenger=MasterMessenger;']);
             end
             % copy camera power definitions
-            M.query([ SlaveUnitName '.CameraPowerUnit=[' ...
-                       sprintf('%d ',Unit.CameraPowerUnit) '];' ]);
-            M.query([ SlaveUnitName '.CameraPowerOutput=[' ...
-                       sprintf('%d ',Unit.CameraPowerOutput) '];' ]);
+            M.query(sprintf('%s.CameraPowerUnit=%s;', ...
+                       SlaveUnitName, mat2str(Unit.CameraPowerUnit) ));
+            M.query(sprintf('%s.CameraPowerOutput=%s;', ...
+                       SlaveUnitName, mat2str(Unit.CameraPowerOutput) ));
 
             % populate the remote mount
             SMount=[SlaveUnitName '.Mount'];
@@ -48,8 +48,8 @@ function connectSlave(Unit,islaves)
             %  configurations of the master and of its slaves have to be
             %  consistent!
             ownedTelescopes=Unit.RemoteTelescopes{i};
-            M.query([sprintf('%s.LocalTelescopes=[',SlaveUnitName), ...
-                sprintf('%d ',ownedTelescopes) '];' ] );
+            M.query(sprintf('%s.LocalTelescopes=%s;',SlaveUnitName), ...
+                             mat2str(ownedTelescopes) );
             % local cameras and focusers of this unit are remotes of the slave
             for j=Unit.LocalTelescopes
                 SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
