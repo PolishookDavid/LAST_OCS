@@ -96,9 +96,7 @@ end
 
 if fault
     Unit.reportError(faultcause);
-end
-
-if (now-t0)*86400 > timeout && ~ready
+elseif wait && ~ready
     Unit.report(sprintf('unit still not ready to shoot after %.1f seconds\n',...
                         (now-t0)*86400));
 end
