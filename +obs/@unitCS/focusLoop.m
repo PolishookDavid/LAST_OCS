@@ -67,15 +67,15 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 % Example: [FocRes] = Unit.focusLoop(1) 
 
 MountObj=UnitObj.Mount;
-CamObj=UnitObj.Camera{itel};
-FocObj=UnitObj.Focuser{itel};
+CamObj=UnitObj.Camera(itel);
+FocObj=UnitObj.Focuser(itel);
 SensObj=[]; % to be decided once we include sensors
 
 PlotMarker    = 'o';
 PlotMinMarker = 'p';
 
 effA=CamObj{1}.classCommand('effective_area'); % this is maybe only for QHYccd?
-CenterPos=floor([effA.syEff,effA.sxEff]/2);
+CenterPos=double([effA.syEff,effA.sxEff]/2);
 Theta     = (0:60:300).';
 DefSeveralPositions = [CenterPos; CenterPos + 2000.*[cosd(Theta), sind(Theta)]];
 
@@ -98,7 +98,7 @@ InPar = InPar.Results;
 
 if ~isempty(InPar.SeveralPositions)
     InPar.ImageHalfSize = [];
-    Nsp=numel(SeveralPositions);
+    Nsp=numel(InPar.SeveralPositions);
 else
     Nsp=1;
 end
@@ -136,9 +136,9 @@ StartFocus    = InPar.FocusGuess + InPar.BacklashFocus;
 
 % prepare a table of focus values to test for each camera
 % Each column is the focus values for each camera.
-FocusValCam = nan(Nfocus,Ncam);
+FocusPosCam = nan(Nfocus,Ncam);
 for Icam=1:1:Ncam
-    FocusValCam(:,Icam) = ((FocusGuess(Icam)-InPar.HalfRange): InPar.Step :...
+    FocusPosCam(:,Icam) = ((FocusGuess(Icam)-InPar.HalfRange): InPar.Step :...
                            (FocusGuess(Icam)+InPar.HalfRange)).';
 end
     
@@ -146,50 +146,49 @@ end
 
 %PosVec = (Limits(1):InPar.Step:Limits(2)).';
 if BacklashDir>0
-    FocusValCam = flipud(FocusValCam);    
+    FocusPosCam = flipud(FocusPosCam);
 else
     % no need to reverse PosVec
 end
 
-actualFocuserPos = FocusValCam; %will be corrected later by actual reading
+actualFocuserPos = FocusPosCam; %will be corrected later by actual reading
 
 % End argument parsing and preliminaries, operate
 
 % go to focus start position (but why? not to FocusValCam(1)?)
 UnitObj.readyToExpose(itel,true);
-for Icam=itel
-    FocObj(Icam).classCommand(sprintf('Pos=%d;', StartFocus)); % TODO vector StartFocus
+for Icam=1:1:Ncam
+    FocObj{Icam}.classCommand(sprintf('Pos=%d;', StartFocus)); % TODO vector StartFocus
 end
 UnitObj.readyToExpose(itel,true); %(checking that we are ok to start)
 
 FocVal = nan(Nfocus,Nsp,Ncam);
 for Ifocus=1:Nfocus
     for Icam=1:Ncam
-        UnitObj.report('Focuser %d -- at position: %f (#%d out of %d)',...
-                        Icam, FocusValCam(Ifocus,Icam), Ifocus, Nfocus);
+        UnitObj.report(sprintf('Focuser %d -- at position: %f (#%d out of %d)\n',...
+                               Icam, FocusPosCam(Ifocus,Icam), Ifocus, Nfocus));
     end
     
     % set all focusers
     for Icam=1:1:Ncam
-        FocObj(Icam).classCommand(sprintf('Pos=%d;',FocusValCam(Ifocus,Icam)));
+        FocObj{Icam}.classCommand(sprintf('Pos=%d;',FocusPosCam(Ifocus,Icam)));
     end
     % wait for all focusers
     if ~UnitObj.readyToExpose(itel,true)
         break
     end
-    
-    
+
     % take one exposure with all cameras
     UnitObj.takeExposure(itel,InPar.ExpTime);
     % wait for all cameras
     if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+10)
         break
     end
-    
+
     for Icam=1:1:Ncam
         % check real focuser position (commanded position might have been
         %  beyond limits)
-        actualFocuserPos(Ifocus,Icam)=FocObj(Icam).classCommand(sprintf('Pos'));
+        actualFocuserPos(Ifocus,Icam)=FocObj{Icam}.classCommand(sprintf('Pos'));
         % measure FWHM for each image taken
         if isa(CamObj(Icam),'obs.camera')
             FocVal(Ifocus,:,Icam)=imageFocus(CamObj(Icam).LastImage,...
@@ -224,23 +223,33 @@ for Ifocus=1:Nfocus
     
 end
 
-Res.PosVec      = FocusValCam;
+Res.PosVec      = actualFocuserPos;
 Res.FocVal      = FocVal;
 
 %Extram = Util.find.find_local_extramum(flipud(PosVec),flipud(FocVal));
 FullFocVal=nan(Nsp,Ncam);
+BestFocusPos=nan(1,Ncam);
 for Isp=1:1:Nsp
     for Icam=1:1:Ncam
+        % this makes no sense to me
         FullPosVec = (min(Res.PosVec(:,Icam)):1:max(Res.PosVec(:,Icam)))';
-        FullFocVal(Isp,Icam) = interp1(Res.PosVec(:,Icam),Res.FocVal(:,Isp,Icam),FullPosVec,'makima');
+        try
+            FullFocVal(Isp,Icam) = interp1(Res.PosVec(:,Icam),...
+                                            Res.FocVal(:,Isp,Icam),...
+                                            FullPosVec,'makima');
+        catch
+            UnitObj.reportError(['impossible to determine the best focus position'...
+                                 ' for camera ' CamObj{Icam}.Id])
+        end
         [Res.BestFocFWHM(Isp,Icam),MinInd] = min(FullFocVal(Isp,Icam));
         Res.BestFocVal(Isp,Icam) = FullPosVec(MinInd);
+        BestFocusPos(Icam) = FullPosVec(MinInd);
     end
 end
 
-UnitObj.report(sprintf('Best focus value  : %f\n',Res.BestFocVal));
-UnitObj.report(sprintf('FWHM at best focus: %f\n',Res.BestFocFWHM));
-
+% no sense all this report for many cameras and many focus points
+% UnitObj.report(sprintf('Best focus value  : %f\n',BestFocVal));
+% UnitObj.report(sprintf('FWHM at best focus: %f\n',Res.BestFocFWHM));
 
 if InPar.Plot
     for Icam=1:1:Ncam
@@ -251,17 +260,22 @@ if InPar.Plot
     drawnow
 end
 
+if Ncam==1
+    UnitObj.report('Moving the focuser at its best position\n');
+else
+    UnitObj.report('Moving the focusers at their best positions\n');
+end
+
 % move up (best+backlash, was - start position to avoid backlash)
 for Icam=1:1:Ncam
-    FocObj(Icam).classCommand(sprintf('Pos = %d;',...
-                              BestFocVal(Icam)+InPar.BacklashFocus));
+    FocObj{Icam}.classCommand(sprintf('Pos = %d;',...
+                              BestFocusPos(Icam)+InPar.BacklashFocus));
 end
 UnitObj.readyToExpose(itel,true); % here we could check only focusers
 
 % go to best focus
-fprintf('Set focus to best value\n');
 for Icam=1:1:Ncam
-    FocObj(Icam).classCommand(sprintf('Pos = %d;',BestFocVal(Icam)));
+    FocObj{Icam}.classCommand(sprintf('Pos = %d;',BestFocusPos(Icam)));
 end
 
 Res.Az  = MountObj.Az;

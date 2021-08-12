@@ -12,6 +12,8 @@ function Unit=connect(Unit)
         end
     end
     
+    pause(2) % a small delay to give timeto the cameras to come up
+    
     if isa(Unit.Mount,'obs.mount')
         % real mount
         Unit.Mount.connect(Unit.Mount.PhysicalPort);
@@ -26,8 +28,10 @@ function Unit=connect(Unit)
     % connect to local focusers and cameras
     for i=1:numel(Unit.LocalTelescopes)
         j=Unit.LocalTelescopes(i);
-        Unit.Camera{j}.connect(Unit.Camera{j}.PhysicalId);
         Unit.Focuser{j}.connect(Unit.Focuser{j}.PhysicalAddress);
+        % connect the camera as last, to add a further small delay
+        %  between power on of the first camera and attempt to connect
+        Unit.Camera{j}.connect(Unit.Camera{j}.PhysicalId);
     end
     
     % and now remote:

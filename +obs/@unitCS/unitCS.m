@@ -133,9 +133,9 @@ classdef unitCS < obs.LAST_Handle
             numcam=numel(UnitObj.Camera);
             power=false(1,numcam);
             for i=1:numcam
-                IPswitch=UnitObj.PowerSwitch{UnitObj.CameraPowerUnit(i)};
-                IPoutput=UnitObj.CameraPowerOutput(i);
                 try
+                    IPswitch=UnitObj.PowerSwitch{UnitObj.CameraPowerUnit(i)};
+                    IPoutput=UnitObj.CameraPowerOutput(i);
                     power(i)=IPswitch.classCommand(sprintf('OutputN(%d);',IPoutput));
                 catch
                     power(i)=false;
