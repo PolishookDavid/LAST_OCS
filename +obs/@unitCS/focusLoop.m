@@ -59,7 +59,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            .PosVec   - Vector of tested focus positions.
 %            .FocVal   - Vector of FWHM [arcsec] at each tested position.
 %            .BestFocFWHM - Best fit FWHM [arcsec]
-%            .BestFocVal  - Best fit focus value.
+%            .BestFocusPos  - Best fit focus value.
 %            .Az          - Mount Az [deg]
 %            .Alt         - Mount Alt [deg]
 %            .AM          - Mount airmass []
@@ -156,7 +156,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     % End argument parsing and preliminaries, operate
 
-    Res=struct('PosVec',[],'FocVal',[],'BestFocFWHM',[],'BestFocVal',[],...
+    Res=struct('PosVec',[],'FocVal',[],'BestFocFWHM',[],'BestFocusPos',[],...
                 'Az',[],'Alt',[],'AM',[]);
 
     % go to focus start position (but why? not to FocusValCam(1)?)
@@ -213,15 +213,20 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
             else
                 % do nothing, safeguard
             end
+            % FIXME temporary, to debug
+            FocVal(Ifocus,:,Icam)=5*rand;
         end
 
+        
         if InPar.Plot
             % clear all matlab plots
-            %close all    
+            %close all
+            clf
             for Icam=1:1:Ncam           
                 plot(actualFocuserPos(:,Icam),FocVal(:,:,Icam),'ko',...
                      'Color',Colors(Icam,:),...
                      'Marker',PlotMarker','MarkerFaceColor',Colors(Icam,:));
+                xlim([min(FocusPosCam,[],'all'),max(FocusPosCam,[],'all')]);
                 hold on
             end
             xlabel('Focus position','FontSize',18);
@@ -233,35 +238,55 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     Res.PosVec      = actualFocuserPos;
     Res.FocVal      = FocVal;
-
-    %Extram = Util.find.find_local_extramum(flipud(PosVec),flipud(FocVal));
-    FullFocVal=nan(Nsp,Ncam);
-    BestFocusPos=nan(1,Ncam);
-    for Isp=1:1:Nsp
-        for Icam=1:1:Ncam
-            % this makes no sense to me
-            FullPosVec = (min(Res.PosVec(:,Icam)):1:max(Res.PosVec(:,Icam)))';
-            try
-                FullFocVal(Isp,Icam) = interp1(Res.PosVec(:,Icam),...
-                                                Res.FocVal(:,Isp,Icam),...
-                                                FullPosVec,'makima');
-            catch
+    Res.BestFocusPos=nan(Nsp,Ncam);
+    Res.BestFocusFWHM=nan(Nsp,Ncam);
+    
+    for Isp=1:Nsp
+        for Icam=1:Ncam
+            usableFocusImages=find(~isnan(FocVal(:,Isp,Icam)));
+            switch numel(usableFocusImages)
+                case 0
                 UnitObj.reportError(['impossible to determine the best focus'...
                                      ' position for camera ' CamObj{Icam}.Id])
+                case 1
+                    % only one position with non NaN focus, use it
+                    Res.BestFocusPos(Isp,Icam)=actualFocuserPos(usableFocusImages,Icam);
+                    Res.BestFocFWHM(Isp,Icam)=FocVal(usableFocusImages,Isp,Icam);
+                case 2
+                    % two positions with non NaN focus, use the best
+                    [Res.BestFocFWHM(Isp,Icam),imin]=...
+                        min(FocVal(usableFocusImages,Isp,Icam));
+                    Res.BestFocusPos(Isp,Icam)=actualFocuserPos(imin,Icam);
+                otherwise
+                    [~,imin] = min(FocVal(usableFocusImages,Isp,Icam));
+                    % minimum if the minimum is at the extremum
+                    if usableFocusImages(1)==imin || usableFocusImages(end)==imin
+                        Res.BestFocusPos(Isp,Icam)=actualFocuserPos(imin,Icam);
+                        Res.BestFocFWHM(Isp,Icam)=FocVal(imin,Isp,Icam);
+                    else
+                        % otherwise, three point parabolic interpolation
+                        q=find(usableFocusImages==imin);
+                        p=usableFocusImages(q-1:q+1);
+                        f=actualFocuserPos(p,Icam);
+                        v=FocVal(p,Isp,Icam);
+                        [Res.BestFocusPos(Isp,Icam),Res.BestFocFWHM(Isp,Icam)]=...
+                            obs.util.tools.parabolicInterpolation(f,v);
+                    end
             end
-            [Res.BestFocFWHM(Isp,Icam),MinInd] = min(FullFocVal(Isp,Icam));
-            Res.BestFocVal(Isp,Icam) = FullPosVec(MinInd);
-            BestFocusPos(Icam) = FullPosVec(MinInd);
+                    
         end
     end
+    
+    % for many focus point, take as best global focus the mean
+    BestFocusPos=mean(Res.BestFocusPos,1);
 
     % no sense all this report for many cameras and many focus points
-    % UnitObj.report(sprintf('Best focus value  : %f\n',BestFocVal));
+    % UnitObj.report(sprintf('Best focus value  : %f\n',BestFocusPos));
     % UnitObj.report(sprintf('FWHM at best focus: %f\n',Res.BestFocFWHM));
 
     if InPar.Plot
         for Icam=1:1:Ncam
-            plot(Res.BestFocVal,Res.BestFocFWHM,PlotMinMarker,...
+            plot(Res.BestFocusPos,Res.BestFocFWHM,PlotMinMarker,...
                  'Color',Colors(Icam,:),'MarkerFaceColor',Colors(Icam,:));
         end
         hold off
