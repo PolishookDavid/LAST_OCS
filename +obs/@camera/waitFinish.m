@@ -1,7 +1,7 @@
 function Flag=waitFinish(CameraObj)
     % Wait for the camera to return to idle mode, but not longer than one
     %  exposure time. After that, if the camera is still exposing, send an
-    %  abort command. That should interupt also acquisition in Live mode.
+    %  abort command. That should interrupt also acquisition in Live mode.
     % Decisions are based on  .ExpTime and .CamStatus
     % Result: true if the camera is finally idle
     
