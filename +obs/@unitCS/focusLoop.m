@@ -11,18 +11,16 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %              The program can adapt the focus based on temperature. This
 %              is possible if the OCS object is provided with the sensors
 %              class.
-% Input  : - obs.util.tools.focus_loop(CameraObject,MountObject,FocusObject,SensorObj,varargin)
-%            or obs.util.tools.focus_loop(OCSObject,varargin)
+% Input  : - focusLoop(OCSObject,varargin)
 %            Here OCSObject is the single mount OCS object that contains
-%            the mount, camera, and focus objects.
-%            If sensor object is empty then do not use temperature.
-%            Omit SensorObj if absent
+%            the mount, camera, and focuser objects.
+%            [If sensor object is empty then do not use temperature.
+%             Omit SensorObj if absent] TODO
 %          * varargin is pairs of ...,key,val,... where the following keys
 %            are availble:
 %            'FocusGuess' - Best focus guess value.
 %                   If vector then this is the best focus value for each
-%                   camera.
-%                   Default is 23650. %% TODO: maybe the current focus?
+%                   camera. Default is the current focuser position.
 %            'HalfRange' - Half range of focus loop (i.e., +/- distance of
 %                   focus loop from FocusGuess).
 %                   If Half range is not consistent with step size, it will
