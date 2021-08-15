@@ -286,8 +286,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     if InPar.Plot
         for Icam=1:1:Ncam
-            plot(Res.BestFocusPos,Res.BestFocFWHM,PlotMinMarker,...
-                 'Color',Colors(Icam,:),'MarkerFaceColor',Colors(Icam,:));
+            plot(Res.BestFocusPos(:,Icam),Res.BestFocFWHM(:,Icam),...
+                 'Marker',PlotMinMarker,'MarkerFaceColor',Colors(Icam,:));
         end
         hold off
         drawnow
