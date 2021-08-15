@@ -46,7 +46,11 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            'NimExp'   - Number of images per exposure. Default is 1.
 %            'ImageHalfSize' - Half size of sub image in which to measure
 %                   the focus. If empty use full image. Default is 1000.
-%            'SeveralPositions' - FIXME add description
+%            'SeveralPositions' - Nx2 array of positions at which the focus
+%                                 is checked, in pixel coordinates. If empty,
+%                                 defaults to image center + 6 positions
+%                                 on a circle of radius 2000 pixels around
+%                                 it.
 %            'SigmaVec' - Vector of gaussian kernel sigma-width (template
 %                   bank) with wich to cross-correlate the image.
 %                   This will define the range and resolution of the
@@ -63,7 +67,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            .Az          - Mount Az [deg]
 %            .Alt         - Mount Alt [deg]
 %            .AM          - Mount airmass []
-% By: Eran Ofek          April 2020 : rev Enrico Segre August 2021
+% By: Eran Ofek          April 2020 ; complete rev. Enrico Segre August 2021
 % Example: [FocRes] = Unit.focusLoop(1) 
 
     MountObj=UnitObj.Mount;
@@ -80,7 +84,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     DefSeveralPositions = [CenterPos; CenterPos + 2000.*[cosd(Theta), sind(Theta)]];
 
     InPar = inputParser;
-    addOptional(InPar,'FocusGuess',26000);  
+    addOptional(InPar,'FocusGuess',[]);  
     addOptional(InPar,'HalfRange',200);  
     addOptional(InPar,'Step',40);  
     addOptional(InPar,'FocusGuessTemp',25);  
@@ -98,7 +102,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     if ~isempty(InPar.SeveralPositions)
         InPar.ImageHalfSize = [];
-        Nsp=numel(InPar.SeveralPositions);
+        Nsp=size(InPar.SeveralPositions,1);
     else
         Nsp=1;
     end
@@ -115,6 +119,14 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     % adapt HalfRange accoring to number of steps
     InPar.HalfRange = InPar.Step.*(Nfocus-1).*0.5;
 
+    if isempty(InPar.FocusGuess)
+        % take the current focus as best guess, if not otherwise provided
+        InPar.FocusGuess=NaN(Ncam,1);
+        for i=itel
+            InPar.FocusGuess(i)=UnitObj.Focuser{i}.classCommand(sprintf('Pos'));
+        end
+    end
+    
     % make sure FocusGuess is a column vector of length Ncam
     InPar.FocusGuess = InPar.FocusGuess(:).*ones(Ncam,1);
 
@@ -163,7 +175,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     if ~UnitObj.readyToExpose(itel,true)
         return
     end
-    for Icam=1:1:Ncam
+    for Icam=1:Ncam
         FocObj{Icam}.classCommand(sprintf('Pos=%d;', StartFocus)); % TODO vector StartFocus
     end
     if ~UnitObj.readyToExpose(itel,true)
@@ -173,7 +185,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     FocVal = nan(Nfocus,Nsp,Ncam);
     for Ifocus=1:Nfocus
         for Icam=1:Ncam
-            UnitObj.report(sprintf('Focuser %d -- at position: %f (#%d out of %d)\n',...
+            UnitObj.report(sprintf('Focuser %d at position: %f (#%d out of %d)\n',...
                                    Icam, FocusPosCam(Ifocus,Icam), Ifocus, Nfocus));
         end
 
@@ -214,7 +226,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                 % do nothing, safeguard
             end
             % FIXME temporary, to debug
-            FocVal(Ifocus,:,Icam)=5*rand;
+            FocVal(Ifocus,:,Icam)=5*rand(1,Nsp);
         end
 
         
@@ -246,8 +258,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
             usableFocusImages=find(~isnan(FocVal(:,Isp,Icam)));
             switch numel(usableFocusImages)
                 case 0
-                UnitObj.reportError(['impossible to determine the best focus'...
-                                     ' position for camera ' CamObj{Icam}.Id])
+                    UnitObj.reportError(['impossible to determine the best focus'...
+                        ' position for camera ' CamObj{Icam}.Id])
                 case 1
                     % only one position with non NaN focus, use it
                     Res.BestFocusPos(Isp,Icam)=actualFocuserPos(usableFocusImages,Icam);
@@ -273,7 +285,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                             obs.util.tools.parabolicInterpolation(f,v);
                     end
             end
-                    
+            
         end
     end
     
@@ -296,7 +308,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     % we should move to the best focus only if there was no unit fault
     %  throughout the loop, and if it was really possible to find the
     %  optimum
-    if true % FIXME, the ok condition
+    if all(~isnan(BestFocusPos)) % FIXME, the ok condition
         if Ncam==1
             UnitObj.report('Moving the focuser at its best position\n');
         else
