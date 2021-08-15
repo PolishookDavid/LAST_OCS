@@ -89,7 +89,16 @@ while ~ready && (now-t0)*86400 < timeout
         break
     end
     if ~ready && wait
-        Unit.report('unit not yet ready to shoot images, waiting...\n')
+        % report why we are still waiting
+        msg=sprintf('mount: %s; ',status.mount);
+        for i=1:numel(itel)
+            msg=horzcat(msg,sprintf('cam. %s: %s, foc. %s: %s; ',...
+                            Unit.Camera{itel(i)}.classCommand('Id'),...
+                            status.camera{i},...
+                            Unit.Focuser{itel(i)}.classCommand('Id'),...
+                            status.focuser{i} ));
+        end
+        Unit.report(horzcat(msg,'waiting...\n'))
     end
     % status query commands take already some time, hence don't add pauses
 end
