@@ -68,6 +68,10 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 % By: Eran Ofek          April 2020 ; complete rev. Enrico Segre August 2021
 % Example: [FocRes] = Unit.focusLoop(1) 
 
+    if isempty(itel)
+        itel=1:numel(UnitObj.Camera);
+    end
+
     MountObj=UnitObj.Mount;
     CamObj=UnitObj.Camera(itel);
     FocObj=UnitObj.Focuser(itel);
@@ -76,6 +80,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     PlotMarker    = 'o';
     PlotMinMarker = 'p';
 
+    % this for the first camera, TODO, what if other cameras are different?
     effA=CamObj{1}.classCommand('effective_area'); % this is maybe only for QHYccd?
     CenterPos=double([effA.syEff,effA.sxEff]/2);
     Theta     = (0:60:300).';
