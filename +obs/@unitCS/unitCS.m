@@ -129,16 +129,19 @@ classdef unitCS < obs.LAST_Handle
     
     % setters/getters
     methods
-        function power=get.CameraPower(UnitObj)
+        function Power=get.CameraPower(UnitObj)
             numcam=numel(UnitObj.Camera);
-            power=false(1,numcam);
-            for i=1:numcam
+            Power=false(1,numcam);
+            Switches=unique(UnitObj.CameraPowerUnit);
+            for i=1:numel(Switches)
+                onThisSwitch=UnitObj.CameraPowerUnit==Switches(i);
                 try
-                    IPswitch=UnitObj.PowerSwitch{UnitObj.CameraPowerUnit(i)};
-                    IPoutput=UnitObj.CameraPowerOutput(i);
-                    power(i)=IPswitch.classCommand(sprintf('OutputN(%d);',IPoutput));
+                    outputs=...
+                        UnitObj.PowerSwitch{Switches(i)}.classCommand('Outputs;');
+                    Power(onThisSwitch)=...
+                         outputs(UnitObj.CameraPowerOutput(onThisSwitch));
                 catch
-                    power(i)=false;
+                    Power(onThisSwitch)=false;
                 end
             end
         end

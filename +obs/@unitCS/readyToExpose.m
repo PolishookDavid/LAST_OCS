@@ -51,6 +51,19 @@ t0=now;
 status=struct('mount','','camera',{cell(size(itel))},...
               'power',false(size(itel)),'focuser',{cell(size(itel))});
 
+cameraId=cell(size(itel));
+focuserId=cell(size(itel));
+for i=1:itel
+    cameraId{i}=Unit.Camera{i}.classCommand('Id');
+    if isempty(cameraId{i})
+        cameraId{i}=num2str(i);
+    end
+    focuserId{i}=Unit.Focuser{i}.classCommand('Id');
+    if isempty(focuserId{i})
+        focuserId{i}=num2str(i);
+    end
+end
+
 while ~ready && (now-t0)*86400 < timeout
     status.mount=Unit.Mount.classCommand('Status');
     ready = any(strcmp(status.mount,{'idle','tracking','home','aborted'}));
@@ -60,28 +73,26 @@ while ~ready && (now-t0)*86400 < timeout
                             Unit.Mount.classCommand('Id'),status.mount);
         break
     end
+    status.power=Unit.classCommand('CameraPower;');
     for i=itel
         status.camera{i}=Unit.Camera{i}.classCommand('CamStatus;');
-        status.power(i)=Unit.classCommand(sprintf('CameraPower(%d);',i));
         status.focuser{i}=Unit.Focuser{i}.classCommand('Status;');
         ready = ready && strcmp(status.camera{i},'idle') && status.power(i) ...
                       && strcmp(status.focuser{i},'idle');
         fault = fault || any(strcmp(status.camera{i},{'unknown',''}));        
         if fault
-            faultcause=sprintf('Camera %s status is: %s',...
-                                Unit.Camera{i}.classCommand('Id'),status.camera{i});
+            faultcause=sprintf('Camera %s status is: %s',cameraId{i},status.camera{i});
             break
         end
         fault = fault || ~status.power(i);
         if fault
-            faultcause=sprintf('Camera %s power is OFF',...
-                                Unit.Camera{i}.classCommand('Id'));
+            faultcause=sprintf('Camera %s power is OFF',cameraId{i});
             break
         end
         fault = fault || any(strcmp(status.focuser{i},{'stuck','unknown',''}));
         if fault
             faultcause=sprintf('Focuser %s status is: %s',...
-                                Unit.Focuser{i}.classCommand('Id'),status.focuser{i});
+                                focuserId{i},status.focuser{i});
             break
         end
     end
@@ -91,12 +102,10 @@ while ~ready && (now-t0)*86400 < timeout
     if ~ready && wait
         % report why we are still waiting
         msg=sprintf('mount: %s; ',status.mount);
-        for i=1:numel(itel)
+        for i=itel
             msg=horzcat(msg,sprintf('cam. %s: %s, foc. %s: %s; ',...
-                            Unit.Camera{itel(i)}.classCommand('Id'),...
-                            status.camera{i},...
-                            Unit.Focuser{itel(i)}.classCommand('Id'),...
-                            status.focuser{i} ));
+                            cameraId{i},status.camera{i},...
+                            focuserId{i},status.focuser{i} ));
         end
         Unit.report(horzcat(msg,'waiting...\n'))
     end
