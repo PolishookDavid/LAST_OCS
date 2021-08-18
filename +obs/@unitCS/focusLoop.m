@@ -17,7 +17,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            [If sensor object is empty then do not use temperature.
 %             Omit SensorObj if absent] TODO
 %          * varargin is pairs of ...,key,val,... where the following keys
-%            are availble:
+%            are available:
 %            'FocusGuess' - Best focus guess value.
 %                   If vector then this is the best focus value for each
 %                   camera. Default is the current focuser position.
@@ -41,7 +41,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %                   The sign of this argument defines the direction of the
 %                   backlash. Default is 150.
 %            'ExpTime'  - Exposure time. Default is 5 sec.
-%            'NimExp'   - Number of images per exposure. Default is 1.
+%            'NimExp'   - Number of images per exposure. Default is 1. NOT
+%                         USED YET
 %            'ImageHalfSize' - Half size of sub image in which to measure
 %                   the focus. If empty use full image. Default is 1000.
 %            'SeveralPositions' - Nx2 array of positions at which the focus
@@ -56,11 +57,15 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %                   Default is [0.1, logspace(0,1,25)].'.
 %            'PixScale' - ["/pix]. Default is 1.25"/pix.
 %            'Plot' - Default is true. Will add to existing plot.
+%            'Random' - Report random focus values instead of the result
+%                       of the focus estimation routine on the image.
+%                       Default false. Useful for wet tests when
+%                       the cameras cannot see a starry sky image.
 % Output : - A structure with the focus measurments and best value.
 %            The following fields are available:
 %            .PosVec   - Vector of tested focus positions.
 %            .FocVal   - Vector of FWHM [arcsec] at each tested position.
-%            .BestFocFWHM - Best fit FWHM [arcsec]
+%            .BestFocusFWHM - Best fit FWHM [arcsec]
 %            .BestFocusPos  - Best fit focus value.
 %            .Az          - Mount Az [deg]
 %            .Alt         - Mount Alt [deg]
@@ -100,6 +105,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');
     addOptional(InPar,'PixScale',1.25);  % "1/pix
     addOptional(InPar,'Plot',true);
+    addOptional(InPar,'Random',false);
     parse(InPar,varargin{:});
     InPar = InPar.Results;
 
@@ -171,7 +177,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     % End argument parsing and preliminaries, operate
 
-    Res=struct('PosVec',[],'FocVal',[],'BestFocFWHM',[],'BestFocusPos',[],...
+    Res=struct('PosVec',[],'FocVal',[],'BestFocusFWHM',[],'BestFocusPos',[],...
                 'Az',[],'Alt',[],'AM',[]);
 
     % go to focus start position (but why? not to FocusValCam(1)?)
@@ -228,8 +234,11 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
             else
                 % do nothing, safeguard
             end
-            % FIXME temporary, to debug
-            FocVal(Ifocus,:,Icam)=5*rand(1,Nsp);
+            if InPar.Random
+                % to debug, overwrite whichever estimated focus value with
+                %  a random number
+                FocVal(Ifocus,:,Icam)=5*rand(1,Nsp);
+            end
         end
 
         
@@ -266,10 +275,10 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                 case 1
                     % only one position with non NaN focus, use it
                     Res.BestFocusPos(Isp,Icam)=actualFocuserPos(usableFocusImages,Icam);
-                    Res.BestFocFWHM(Isp,Icam)=FocVal(usableFocusImages,Isp,Icam);
+                    Res.BestFocusFWHM(Isp,Icam)=FocVal(usableFocusImages,Isp,Icam);
                 case 2
                     % two positions with non NaN focus, use the best
-                    [Res.BestFocFWHM(Isp,Icam),imin]=...
+                    [Res.BestFocusFWHM(Isp,Icam),imin]=...
                         min(FocVal(usableFocusImages,Isp,Icam));
                     Res.BestFocusPos(Isp,Icam)=actualFocuserPos(imin,Icam);
                 otherwise
@@ -277,14 +286,14 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                     % minimum if the minimum is at the extremum
                     if usableFocusImages(1)==imin || usableFocusImages(end)==imin
                         Res.BestFocusPos(Isp,Icam)=actualFocuserPos(imin,Icam);
-                        Res.BestFocFWHM(Isp,Icam)=FocVal(imin,Isp,Icam);
+                        Res.BestFocusFWHM(Isp,Icam)=FocVal(imin,Isp,Icam);
                     else
                         % otherwise, three point parabolic interpolation
                         q=find(usableFocusImages==imin);
                         p=usableFocusImages(q-1:q+1);
                         f=actualFocuserPos(p,Icam);
                         v=FocVal(p,Isp,Icam);
-                        [Res.BestFocusPos(Isp,Icam),Res.BestFocFWHM(Isp,Icam)]=...
+                        [Res.BestFocusPos(Isp,Icam),Res.BestFocusFWHM(Isp,Icam)]=...
                             obs.util.tools.parabolicInterpolation(f,v);
                     end
             end
@@ -297,11 +306,11 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     % no sense all this report for many cameras and many focus points
     % UnitObj.report(sprintf('Best focus value  : %f\n',BestFocusPos));
-    % UnitObj.report(sprintf('FWHM at best focus: %f\n',Res.BestFocFWHM));
+    % UnitObj.report(sprintf('FWHM at best focus: %f\n',Res.BestFocusFWHM));
 
     if InPar.Plot
         for Icam=1:1:Ncam
-            plot(Res.BestFocusPos(:,Icam),Res.BestFocFWHM(:,Icam),...
+            plot(Res.BestFocusPos(:,Icam),Res.BestFocusFWHM(:,Icam),...
                  'Marker',PlotMinMarker,'MarkerFaceColor',Colors(Icam,:));
         end
         hold off

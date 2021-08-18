@@ -53,7 +53,7 @@ status=struct('mount','','camera',{cell(size(itel))},...
 
 cameraId=cell(size(itel));
 focuserId=cell(size(itel));
-for i=1:itel
+for i=itel
     cameraId{i}=Unit.Camera{i}.classCommand('Id');
     if isempty(cameraId{i})
         cameraId{i}=num2str(i);
