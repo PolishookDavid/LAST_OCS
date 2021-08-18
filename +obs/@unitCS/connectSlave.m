@@ -23,6 +23,15 @@ function connectSlave(Unit,islaves)
             M=S.Messenger;
             M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
 
+            % Pass along Config descriptive (but semi-mandatory,unfortunately)
+            %  parameters: .ProjName, .NodeNumber, .TimeZone
+            M.query(sprintf('%s.Config.ProjName=''%s'';',SlaveUnitName,...
+                            Unit.Config.ProjName));
+            M.query(sprintf('%s.Config.NodeNumber=%s;',SlaveUnitName,...
+                            num2str(Unit.Config.NodeNumber)));
+            M.query(sprintf('%s.Config.TimeZone=%s;',SlaveUnitName,...
+                            num2str(Unit.Config.TimeZone)));
+
             % populate remote power switches
             M.query([SlaveUnitName '.PowerSwitch=cell(1,' ...
                      num2str(numel(Unit.PowerSwitch)) ');']);
