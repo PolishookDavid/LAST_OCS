@@ -28,8 +28,8 @@ function saveCurImage(UnitObj,itel)
         CameraObj.Messenger.query(sprintf('%s.saveCurImage(%d)',remoteUnitName,itel));
     else
         % Construct directory name to save image in
-        ProjName = sprintf('%s.%d.%02d.%d', UnitObj.Config.ProjName,...
-            UnitObj.Config.NodeNumber, 1, itel);
+        ProjName = sprintf('%s.%d.%s.%d', UnitObj.Config.ProjName,...
+            UnitObj.Config.NodeNumber, UnitObj.Id, itel);
         JD = CameraObj.classCommand('TimeStartLastImage') + 1721058.5;
         
         % default values for fields which may be a bit too fragile to store
