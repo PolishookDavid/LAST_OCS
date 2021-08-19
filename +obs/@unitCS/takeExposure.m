@@ -66,7 +66,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
         % keep the previous SaveOnDisk status
         saving=false(size(Cameras));
         for i=numel(Cameras)
-            saving(i)=Unit.Camera.classCommand('SaveOnDisk;');
+            saving(i)=Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk;');
             Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk=false;');
         end
     end
