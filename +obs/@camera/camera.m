@@ -65,17 +65,7 @@ classdef camera < obs.LAST_Handle
         %DisplayZoomValueAllImage = 0.08;  % Value for ds9.zoom, to present the entire image
         %DisplayReducedIm = true;   % Remove the dark and flat field before display
         %CCDnum = 0;         % ????   % Perhaps obselete. Keep here until we sure it should be removed
-	
-    
-    properties (Hidden,Transient)        
-        Handle;           % Handle to camera driver class        
-        ReadoutTimer;     % A timer object to operate after exposure start, to wait until the image is ready.
-        SequenceFrame double % progressive frame number when a sequence of exposures is requested
-        SequenceLength double % total number of frames requested for the sequence
-        % A flag marking if to print software printouts or not (??)
-    end
-    
-    
+
     % constructor and destructor
     methods
                 
