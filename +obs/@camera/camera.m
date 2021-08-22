@@ -70,9 +70,9 @@ classdef camera < obs.LAST_Handle
     properties (Hidden,Transient)        
         Handle;           % Handle to camera driver class        
         ReadoutTimer;     % A timer object to operate after exposure start, to wait until the image is ready.
-        % The serial number of the last image - not implemented anymore
-        %LastImageSerialNum = 0;
-        % A flag marking if to print software printouts or not        
+        SequenceFrame double % progressive frame number when a sequence of exposures is requested
+        SequenceLength double % total number of frames requested for the sequence
+        % A flag marking if to print software printouts or not (??)
     end
     
     

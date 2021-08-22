@@ -12,8 +12,11 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     %          - Number of images to obtain. Default is 1.
     %          * ...,key,val,...
     %            'WaitFinish' - default is false (to reduce delays)
-    %            'ImType' - default is ''.
-    %            'Object' - default is ''.
+    %            'ImType'     - default is ''.
+    %            'Object'     - default is ''.
+    %            'MinExpTimeForSave' - default is 5 [sec]. .SaveOnDisk
+    %                                  will be temporarily turned off if
+    %                                  ExpTime is smaller than that.
 
     % Take care, Unit.Camera{i}.classCommand('waitFinish') may timeout
     %  because of no reply, if the messenger timeout is shorter than
