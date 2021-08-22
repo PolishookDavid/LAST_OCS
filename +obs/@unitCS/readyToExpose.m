@@ -53,12 +53,12 @@ status=struct('mount','','camera',{cell(size(itel))},...
 
 cameraId=cell(size(itel));
 focuserId=cell(size(itel));
-for i=itel
-    cameraId{i}=Unit.Camera{i}.classCommand('Id');
+for i=1:numel(itel)
+    cameraId{i}=Unit.Camera{itel(i)}.classCommand('Id');
     if isempty(cameraId{i})
         cameraId{i}=num2str(i);
     end
-    focuserId{i}=Unit.Focuser{i}.classCommand('Id');
+    focuserId{i}=Unit.Focuser{itel(i)}.classCommand('Id');
     if isempty(focuserId{i})
         focuserId{i}=num2str(i);
     end
@@ -74,9 +74,9 @@ while ~ready && (now-t0)*86400 < timeout
         break
     end
     status.power=Unit.classCommand('CameraPower;');
-    for i=itel
-        status.camera{i}=Unit.Camera{i}.classCommand('CamStatus;');
-        status.focuser{i}=Unit.Focuser{i}.classCommand('Status;');
+    for i=1:numel(itel)
+        status.camera{i}=Unit.Camera{itel(i)}.classCommand('CamStatus;');
+        status.focuser{i}=Unit.Focuser{itel(i)}.classCommand('Status;');
         ready = ready && strcmp(status.camera{i},'idle') && status.power(i) ...
                       && strcmp(status.focuser{i},'idle');
         fault = fault || any(strcmp(status.camera{i},{'unknown',''}));        
@@ -102,7 +102,7 @@ while ~ready && (now-t0)*86400 < timeout
     if ~ready && wait
         % report why we are still waiting
         msg=sprintf('mount: %s; ',status.mount);
-        for i=itel
+        for i=1:numel(itel)
             msg=horzcat(msg,sprintf('cam. %s: %s, foc. %s: %s; ',...
                             cameraId{i},status.camera{i},...
                             focuserId{i},status.focuser{i} ));
