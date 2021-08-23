@@ -27,9 +27,11 @@ function treatNewImage(UnitObj,Source,EventData)
         
         % Save the image according to setting.
         if SourceCamera.SaveOnDisk
-            % FIXME this cannot create the header, if the mount is remote,
-            %  because messenger needs callback. I.e., this cannot work
-            %  in a slave unit session.
+            % this creates a header, and succeeds in querying a remote mount
+            %  in a slave, only because we have created a Messenger and a
+            %  Responder there. With only a single messenger, asynchronous
+            %  commands and queries from both sides would mix up and create
+            %  a mess.
             UnitObj.saveCurImage(icam);
             SourceCamera.LastImageSaved = true;
         end

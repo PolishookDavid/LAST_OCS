@@ -71,6 +71,10 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
         for i=numel(Cameras)
             saving(i)=Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk;');
             Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk=false;');
+            % however, this seems to have had no effect inside
+            % unitCS.treatNewImage. Why? some issue of snapshotting the
+            % object at the moment of creation of the listener, or
+            % something intricate else?
         end
     end
 
@@ -91,7 +95,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     end
 
     % start acquisition on each of the local cameras, using nonblocking
-    %  methods,and of the remote ones, using blind sends for maximum speed.
+    %  methods, and of the remote ones, using blind sends for maximum speed.
     %  This difference prevents the use of .classCommand() for both
     for i=Cameras
         if isa(Unit.Camera{i},'obs.remoteClass')
