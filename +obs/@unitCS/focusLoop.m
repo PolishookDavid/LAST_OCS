@@ -199,7 +199,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     FocVal = nan(Nfocus,Nsp,Ncam);
     for Ifocus=1:Nfocus
         for Icam=1:Ncam
-            UnitObj.report(sprintf('Focuser %d at position: %.0f (#%d out of %d)\n',...
+            UnitObj.report(sprintf('Focuser %d to position: %.0f (#%d out of %d)\n',...
                                    Icam, FocusPosCam(Ifocus,Icam), Ifocus, Nfocus));
         end
 
@@ -276,19 +276,13 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                 obs.util.tools.minimum123(actualFocuserPos(:,Icam),FocVal(:,Isp,Icam));
             if isnan(Res.BestFocusPos(Isp,Icam))
                 UnitObj.reportError(['impossible to determine the best focus'...
-                    ' position for camera ' CamObj{Icam}.Id])
+                    ' position for camera ' leg{Icam}])
             end            
         end
     end
     
     % for many focus points, take as best global focus the mean
     BestFocusPos=mean(Res.BestFocusPos,1);
-    
-    for Icam=1:Ncam
-        UnitObj.report(sprintf('Best focus for camera %s @%.0f: FWHM=%f\n',...
-                                leg{Icam}, BestFocusPos(Icam),...
-                                mean(Res.BestFocusFWHM(:,Icam))))
-    end
 
     if InPar.Plot
         for Icam=1:Ncam
@@ -313,6 +307,9 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         
         % move up (best+backlash, was - start position to avoid backlash)
         for Icam=1:1:Ncam
+            UnitObj.report(sprintf('Best focus for camera %s @%.0f: FWHM=%f\n',...
+                                   leg{Icam}, BestFocusPos(Icam),...
+                                   mean(Res.BestFocusFWHM(:,Icam))))
             FocObj{Icam}.classCommand(sprintf('Pos = %d;',...
                 BestFocusPos(Icam)+InPar.BacklashFocus));
         end
