@@ -16,6 +16,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            the mount, camera, and focuser objects.
 %            [If sensor object is empty then do not use temperature.
 %             Omit SensorObj if absent] TODO
+%          - Vector of telescope indices. If empty use all. Default is [].
 %          * varargin is pairs of ...,key,val,... where the following keys
 %            are available:
 %            'FocusGuess' - Best focus guess value.
