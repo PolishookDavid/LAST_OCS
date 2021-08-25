@@ -23,12 +23,12 @@ function takeDarks(C,varargin)
 %   ExpTime>5
 
 InPar = inputParser;
-addOptional(InPar,'ExpTime',15);    % vector of ExpTime(s)
-addOptional(InPar,'Ndark',10);   % number of dark images to take at each step
-addOptional(InPar,'Temp',-8);    % vector of temperatures
-addOptional(InPar,'MaxTempDiff',2);    % vector of temperatures
-addOptional(InPar,'WaitTempTimeout',120);    % [s]
-addOptional(InPar,'ImType','dark');    % [s]
+addOptional(InPar,'ExpTime',15);
+addOptional(InPar,'Ndark',10);
+addOptional(InPar,'Temp',-8);
+addOptional(InPar,'MaxTempDiff',2);
+addOptional(InPar,'WaitTempTimeout',120);
+addOptional(InPar,'ImType','dark');
 parse(InPar,varargin{:});
 InPar = InPar.Results;
 
