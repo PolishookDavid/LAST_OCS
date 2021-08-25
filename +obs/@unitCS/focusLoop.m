@@ -56,7 +56,6 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %                   This will define the range and resolution of the
 %                   measured seeing.
 %                   Default is [0.1, logspace(0,1,25)].'.
-%            'PixScale' - ["/pix]. Default is 1.25"/pix.
 %            'Plot' - Default is true. Will add to existing plot.
 %            'Random' - Report random focus values instead of the result
 %                       of the focus estimation routine on the image.
@@ -104,7 +103,6 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     addOptional(InPar,'ImageHalfSize',1000);  % If [] use full image
     addOptional(InPar,'SeveralPositions',DefSeveralPositions);  % If [] use full image
     addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');
-    addOptional(InPar,'PixScale',1.25);  % "1/pix
     addOptional(InPar,'Plot',true);
     addOptional(InPar,'Random',false);
     parse(InPar,varargin{:});
@@ -180,10 +178,14 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     Res=struct('PosVec',[],'FocVal',[],'BestFocusFWHM',[],'BestFocusPos',[],...
                 'Az',[],'Alt',[],'AM',[]);
-            
+    
+    % read once for good camera properties which will not change during the
+    %  course of this procedure, to avoid multiple reads
     leg=cell(1,Ncam);
+    PixScale=nan(1,Ncam);
     for Icam=1:Ncam
         leg{Icam}=CamObj{Icam}.classCommand('Id;');
+        PixScale(Icam)=CamObj{Icam}.classCommand('PixScale;');
     end
 
     % go to focus start position (which accounts for backlash)
@@ -228,13 +230,13 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
             if isa(CamObj(Icam),'obs.camera')
                 FocVal(Ifocus,:,Icam)=obs.util.image.imageFocus(CamObj(Icam).LastImage,...
                                                  InPar.ImageHalfSize,...
-                                                 InPar.SigmaVec, InPar.PixScale,...
+                                                 InPar.SigmaVec, PixScale(Icam),...
                                                  InPar.SeveralPositions);
             elseif isa(CamObj(Icam),'obs.remoteClass')
                 % do this in slave for remote cameras: construct command...
                 focuscommand= sprintf('obs.util.image.imageFocus(%s.LastImage,%g,%s,%g,%s);',...
                               CamObj(Icam).RemoteName, InPar.ImageHalfSize, ...
-                              mat2str(InPar.SigmaVec), InPar.PixScale, ...
+                              mat2str(InPar.SigmaVec), PixScale(Icam), ...
                               mat2str(InPar.SeveralPositions) );
                 FocVal(Ifocus,:,Icam)=CamObj(Icam).Messenger.query(focuscommand);
             else
