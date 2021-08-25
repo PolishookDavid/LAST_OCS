@@ -1,4 +1,4 @@
-function [ResPolarAlign,Res]=auto_polar_align_drift(CamObj,MountObj,varargin)
+function [ResPolarAlign,Res]=polarAlignOnline_drift(CamObj,MountObj,varargin)
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a camera and a mount object
 % *** Designed to be run in the matlab session where the objects are

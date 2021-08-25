@@ -1,10 +1,6 @@
-function take_darks(C,varargin)
+function takeDarks(C,varargin)
 % Take a sequence of dark images
-
-
-
-
-
+% FIXME - NEEDS TO BE REDONE ACCORDING TO THE mastrolindo changes
 
 InPar = inputParser;
 addOptional(InPar,'ExpTime',15);    % vector of ExpTime
@@ -16,7 +12,6 @@ addOptional(InPar,'ImType','dark');    % [s]
 addOptional(InPar,'Verbose',true);
 parse(InPar,varargin{:});
 InPar = InPar.Results;
-
 
 C.SaveOnDisk = true;
 
@@ -34,7 +29,6 @@ for Itemp=1:1:Ntemp
     CoolingPower = C.CoolingPower;
     if abs(C.Temperature-Temp)<InPar.MaxTempDiff && CoolingPower<100
         % ok to continue
-    
     
         C.ImType = InPar.ImType;
         for Iexp=1:1:Nexp

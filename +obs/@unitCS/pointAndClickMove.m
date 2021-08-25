@@ -1,7 +1,9 @@
-function move(MountObj)
+function pointAndClickMove(UnitObj,telescope)
     % Interactively moving the mount by clicking a position on image
-    % THIS SHOULD BE AN UTILITY OR WHATEVER, NOT A METHOD OF THE
-    %  MOUNT ABSTRACTION CLASS
+    % TODO!
+    % NEED TO CHECK IF DS9 IS OPEN AND THE RELEVANT FRAME IS DISPLAYED!
+    % WHAT TO DO FOR REMOTE DS9 XWINDOW? CAN WE AVOID THE EXPENSIVE
+    % ds9.read2sim?
     RAD = 180./pi;
     ARCSEC_IN_DEG = 3600;
 
@@ -21,8 +23,8 @@ function move(MountObj)
     DY = CenterYX(1) - Y;
     DX = CenterYX(2) - X;
 
-    RA  = MountObj.RA;
-    Dec = MountObj.Dec;
+    RA  = UnitObj.Mount.RA;
+    Dec = UnitObj.Mount.Dec;
 
     % convert to J2000.0
     [RA,Dec] = celestial.coo.convert_coo(RA./RAD,Dec./RAD,'tdate','J2000.0');
@@ -31,6 +33,6 @@ function move(MountObj)
     RA  = RA  + RAMotionSign.* DX.*PixScale./(ARCSEC_IN_DEG.*cosd(Dec));
     Dec = Dec + DecMotionSign.*DY.*PixScale./ARCSEC_IN_DEG;
 
-    MountObj.goto(RA,Dec,'InCooType','J2000.0');
+    UnitObj.Mount.goToTarget(RA,Dec,'InCooType','J2000.0');
 
 end

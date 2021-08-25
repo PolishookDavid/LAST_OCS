@@ -1,4 +1,5 @@
-function take_twilight_flat(C,M,varargin)
+function takeTwilightFlats(UnitObj,itel,varargin)
+% TODO!!
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a camera and a mount object
 % *** Designed to be run in the matlab session where the objects are
@@ -16,6 +17,8 @@ function take_twilight_flat(C,M,varargin)
 %     By :
 % Example: obs.util.tools.take_twilight_flat(C,M);
 
+M=UnitObj.Mount;
+C=UnitObj.Camera{itel};
 
 RAD = 180./pi;
 
@@ -75,10 +78,10 @@ while AttemptTakeFlat
         C.waitFinish;
         C.SaveOnDisk = true;
         
-        MeanValPerSec      = InPar.MeanFun(single(C.LastImage(:)))./InPar.TestExpTime;
+        MeanValPerSec = InPar.MeanFun(single(C.LastImage(:)))./InPar.TestExpTime;
         % expected mean value at min exp time
-        MeanValAtMin = MeanValPerSec .* min(InPar.ExpTimeRange);
-        MeanValAtMax = MeanValPerSec .* max(InPar.ExpTimeRange);
+        MeanValAtMin = MeanValPerSec * min(InPar.ExpTimeRange);
+        MeanValAtMax = MeanValPerSec * max(InPar.ExpTimeRange);
 
         if InPar.Verbose
             fprintf('Flat test image\n');
@@ -88,8 +91,7 @@ while AttemptTakeFlat
             fprintf('     Image ExpTime      : %6.1f\n',InPar.TestExpTime);
             fprintf('     Image MeanValPerSec: %10.1f\n',MeanValPerSec);
         end
-        
-        
+               
         if MeanValAtMax>InPar.MinFlatLimit && MeanValAtMin<InPar.MaxFlatLimit
             % Sun Altitude and image mean value are in allowed range
             % start twiligh flat sequemce
@@ -148,8 +150,6 @@ while AttemptTakeFlat
                 else
                     ContFlat = false;
                 end
-
-                
 
                 % check weather or abort commands
                 % TBD

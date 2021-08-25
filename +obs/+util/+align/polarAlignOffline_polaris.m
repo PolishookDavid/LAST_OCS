@@ -1,4 +1,4 @@
-function [Res,ResFit]=polar_align_pole(S,varargin)
+function [Res,ResFit]=polarAlignOffline_polaris(S,varargin)
 % Perform polar alignment on existing images of the polar region taken with
 % different HA
 % Package: obs.util.tools

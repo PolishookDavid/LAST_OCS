@@ -13,7 +13,6 @@
 %   C.disconnect
 %   clear C
 
-
 classdef camera < obs.LAST_Handle
  
     properties
@@ -25,8 +24,10 @@ classdef camera < obs.LAST_Handle
         LastImageName char     = '';          % The name of the last image 
     end
     
+    % telescope
     properties(Hidden)
-        Filter char            = '';          % Filter Name % not in driver
+        Filter char     = '';          % Filter Name
+        PixScale double = 1.25;     % image scale, "/pixels
     end
         
     % limits
@@ -38,8 +39,10 @@ classdef camera < obs.LAST_Handle
     properties(Hidden, GetAccess = public, SetAccess = public)
         CameraNumber double    = 1         %  1       2      3      4
         CameraPos char         = '';       % 'NE' | 'SE' | 'SW' | 'NW'
+        %CCDnum = 0;         % ????   % Perhaps obselete. Keep here until we sure it should be removed
     end
-        
+    
+    % logging
     properties(Hidden)
         LogFile             = '';          % FileName. If not provided, then if LogFileDir is not available then do not write LogFile.
         LogFileDir;
@@ -58,13 +61,12 @@ classdef camera < obs.LAST_Handle
         Frame double         = [];      % frame number to be passed to ds9
         DisplayZoom double   = 0.08;    % ds9 zoom
         DivideByFlat logical = false;    % subtract dark and divide by flat before display
-    end
-    
         %DisplayMatlabFig = 0; % Will be updated after first image  % When presenting image in matlab, on what figure number to present
         %DisplayAllImage = true;   % Display the entire image, using ds9.zoom
         %DisplayZoomValueAllImage = 0.08;  % Value for ds9.zoom, to present the entire image
         %DisplayReducedIm = true;   % Remove the dark and flat field before display
-        %CCDnum = 0;         % ????   % Perhaps obselete. Keep here until we sure it should be removed
+    end
+    
 
     % constructor and destructor
     methods

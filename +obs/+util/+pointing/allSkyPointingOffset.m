@@ -1,4 +1,4 @@
-function [TargetVec,Res]=MeasurePointingOffset(C,M,varargin)
+function [TargetVec,Res]=allSkyPointingOffset(C,M,varargin)
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a camera and a mount object
 % *** Designed to be run in the matlab session where the objects are

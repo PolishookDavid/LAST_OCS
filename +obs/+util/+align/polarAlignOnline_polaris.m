@@ -1,4 +1,4 @@
-function [ResP,Res]=auto_polar_align_pole(C,M,varargin)
+function [ResP,Res]=polarAlignOnline_polaris(C,M,varargin)
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a camera and a mount object
 % *** Designed to be run in the matlab session where the objects are
