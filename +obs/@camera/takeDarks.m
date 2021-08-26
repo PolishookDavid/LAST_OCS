@@ -33,6 +33,8 @@ parse(InPar,varargin{:});
 InPar = InPar.Results;
 
 C.classCommand('SaveOnDisk = true;');
+% but maybe images should be saved to a service directory, different than
+%  that for science images, which is specified in the configuration?
 
 Nexp  = numel(InPar.ExpTime);
 Ntemp = numel(InPar.Temp);

@@ -1,4 +1,4 @@
-function [HeaderCell,Info]=constructHeader(UnitObj,itel)
+function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
     % Construct image header for takes of the nth telescope. Intended to
     %   work only both for local and remote telescopes as well as mount in this unit
     % This could well be demoted to private method, it is temporarily left
@@ -8,6 +8,8 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
     % Output  : - A 3 column cell array with header for image
     %           - A structure with all the header key and vals.
     
+    RAD = 180./pi;
+
     CameraObj=UnitObj.Camera{itel};
     FocuserObj=UnitObj.Focuser{itel};
     
@@ -24,49 +26,16 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
         Info=struct();
         HeaderCell=cell(0,3);
         return
+    else
+        % fill the header first with all which can be retrieved from the
+        %  camera alone
+        [CameraHeader,CameraInfo]=imageHeader(CameraObj);
     end
     
-    RAD = 180./pi;
-
-    % Image related information
-    %    12345678
-    Info.NAXIS    = numel(SizeImIJ);
-    Info.NAXIS1   = SizeImIJ(2);
-    Info.NAXIS2   = SizeImIJ(1);
-    Info.BITPIX   = -32;
-    Info.BZERO    = 0.0;
-    Info.BSCALE   = 1.0;
-    Info.IMTYPE   = CameraObj.classCommand('ImType');
-    Info.OBJECT   = CameraObj.classCommand('Object');
-
-    % internal gain
-    Info.INTGAIN  = CameraObj.classCommand('Gain');
-
-    % keys which may be or be not in Config:
-    % Gain, Read noise, Dark current
-    Keys={'GAIN','DARKCUR','READNOI'};
-    for i=1:numel(Keys)
-        Field = Keys{i};
-        if isfield(CameraObj.classCommand('Config'),Field)
-            Info.(Field)     = CameraObj.classCommand('Config').(Field);
-        else
-            Info.(Field)     = NaN;
-        end
-    end
-    %
-    Info.BINX     = CameraObj.classCommand('Binning(1)');
-    Info.BINY     = CameraObj.classCommand('Binning(2)');
-    % 
-    Info.CamNum   = CameraObj.classCommand('CameraNumber');
-    Info.CamPos   = CameraObj.classCommand('CameraPos');
-    Info.CamType  = class(CameraObj);
-    Info.CamModel = CameraObj.classCommand('CameraModel');
-    Info.CamName  = CameraObj.classCommand('CameraName');
-
-    Info.JD       = 1721058.5 + CameraObj.classCommand('TimeStartLastImage');
-    %Info.ExpTime  = CameraObj.classCommand('LastImageExpTime');
-    Info.ExpTime  = CameraObj.classCommand('ExpTime');
-
+    % get remaining info from mount and focuser 
+    %  (The camera object is queried once more to get its eventual offset
+    %  from RA and Dec, MountCameraDist. Moreover, JD is taken from the 
+    %  already retrieved CameraInfo.JD)
     if isa(UnitObj.Mount,'obs.mount') || isa(UnitObj.Mount,'obs.remoteClass')
         % Mount information
         Info.MountNum = UnitObj.Mount.classCommand('Id');
@@ -89,8 +58,8 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
         else
             Info.ObsHeight = NaN;
         end
-        Info.LST      = celestial.time.lst(Info.JD,Info.ObsLon./RAD,'a').*360;  % deg
-        DateObs       = convert.time(Info.JD,'JD','StrDate');
+        Info.LST      = celestial.time.lst(CameraInfo.JD,Info.ObsLon./RAD,'a').*360;  % deg
+        DateObs       = convert.time(CameraInfo.JD,'JD','StrDate');
         Info.DATE_OBS = DateObs{1};
         % get RA/Dec - Mount equinox of date
         Info.M_RA     = UnitObj.Mount.classCommand('RA');
@@ -131,27 +100,23 @@ function [HeaderCell,Info]=constructHeader(UnitObj,itel)
         Info.FOCUS    = FocuserObj.classCommand('Pos');
         Info.PRVFOCUS = FocuserObj.classCommand('LastPos');
     end
-
-    % struct to HeaderCell + comments
-    % Input : Info, CommentsDB
-    CommentsDB = CameraObj.classCommand('ConfigHeader');
-
+    
+    % Now put the information from camera and rest of the unit together.
+    % We use esplicitely CameraHeader, which can contain comments retrieved
+    %  from Cameraobj.ConfigHeader, beyond the key-value pairs contained in
+    %  CameraInfo
+    AllInfo=CameraInfo(:);
+    
+    % Add Info fields to AllInfo, and Info -> HeaderCell for this part
     FN  = fieldnames(Info);
     Nfn = numel(FN);
-    if ~isempty(CommentsDB)
-        CommentFN = fieldnames(CommentsDB);
-    end
     HeaderCell = cell(Nfn,3);
-    for Ifn=1:1:Nfn
+    for Ifn=1:Nfn
+        AllInfo.(upper(FN{Ifn}))=Info.(FN{Ifn});
         HeaderCell{Ifn,1} = upper(FN{Ifn});
         HeaderCell{Ifn,2} = Info.(FN{Ifn});
-        if ~isempty(CommentsDB)
-            % get comment
-            Ind = find(strcmpi(FN{Ifn},CommentFN));
-            if ~isempty(Ind)
-                HeaderCell{Ifn,3} = CommentsDB.(CommentFN{Ind});
-            end
-        end
     end
+    
+    HeaderCell = [CameraHeader(:)',HeaderCell(:)'];
 
 end
