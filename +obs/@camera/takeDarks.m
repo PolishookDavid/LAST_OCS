@@ -6,13 +6,11 @@ function takeDarks(C,varargin)
 %   - 'Ndark'            number of dark images to take at each step [10]
 %   - 'Temp'             vector of temperatures (default [-8])
 %   - 'MaxTempDiff'      temperature difference from target tolerated [2]
-%   - 'WaitTempTimeout'  maximum waiting time for temperature stabilization [120(sec)]
+%   - 'WaitTempTimeout'  maximum waiting time for temperature stabilization [180(sec)]
 %   - 'ImType'           label type of the images ['dark']
 %
 % Output: none from the method, but resulting images are saved on disk
 %   to a service directory, sprcified in the configuration (Config.DarkDBDir)
-%
-% FIXME - NEEDS TO BE REDONE ACCORDING TO THE mastrolindo changes
 %
 % Since I don't think that this method should be called in parallel
 %  for all cameras of a unit, it stays a camera method. Therefore,
@@ -39,7 +37,7 @@ addOptional(InPar,'ExpTime',15);
 addOptional(InPar,'Ndark',10);
 addOptional(InPar,'Temp',-8);
 addOptional(InPar,'MaxTempDiff',2);
-addOptional(InPar,'WaitTempTimeout',120);
+addOptional(InPar,'WaitTempTimeout',180);
 addOptional(InPar,'ImType','dark');
 parse(InPar,varargin{:});
 InPar = InPar.Results;
@@ -73,16 +71,15 @@ for Itemp=1:Ntemp
         for Iexp=1:Nexp
             ExpTime=InPar.ExpTime(Iexp);
             C.ExpTime = ExpTime;
-            C.report('Taking dark exposure(s)\n');
-            C.report(sprintf('   ExpTime        : %f\n',ExpTime));
-            if InPar.Ndark>1 && ExpTime>5 % 5 sec to account for reading and saving overheads
+            C.report(sprintf('Taking %d dark exposure(s) of %g sec at T=%.1f°C\n',...
+                             InPar.Ndark,ExpTime,C.Temperature));
+            if false && InPar.Ndark>1 && ExpTime>5 %% FIXME when we can save 
                 C.takeLive(InPar.Ndark);
                 % saving is missing here yet
                 C.waitFinish
             else
                 for Idark=1:InPar.Ndark
                     C.takeExposure;
-                    C.report(sprintf('       exposure %d/%d\n',Idark,InPar.Ndark))
                     C.waitFinish;
                     C.saveCurImage(C.Config.DarkDBDir)
                 end
