@@ -20,9 +20,7 @@ function [ResP,Res]=polarAlignOnline_polaris(UnitObj,itel,varargin)
 %                   Default is celestial.coo.convertdms([2 31 49.09],'H','d')
 %            'PolarisDec' - Polaris J2000.0 Dec. [deg].
 %                   Default is celestial.coo.convertdms([1 89 15 50.8],'D','d')
-%            'Xalong' -%M.waitFinish;
-pause(10);
- options are: 'ra','-ra','dec','-dec'
+%            'Xalong' - options are: 'ra','-ra','dec','-dec'
 %                   Default is '-ra';
 %            'Yalong' - options are: 'ra','-ra','dec','-dec'
 %                   Default is 'dec';

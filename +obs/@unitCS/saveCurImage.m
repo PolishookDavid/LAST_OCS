@@ -1,11 +1,23 @@
-function saveCurImage(UnitObj,itel)
+function saveCurImage(UnitObj,itel,Path)
     % Save last image to disk according the user's settings
     % Also set LastImageSaved to true, until a new image is taken
+    % Inputs:
+    %    - indices of the cameras whose images have to be saved
+    %    - optional path, if it needs to be different than the default for
+    %                     science images
+    %
     % Intended for local as well as remote cameras in the UnitObj.
     % When called for a remote camera, the saving command is passed to
     %  the slave session hosting that camera. That is the simplest thing to
     %  do, rather than constructing the filename, and the header, all by
     %  roundtrip queries
+
+    if ~exist('itel','var')
+        itel=[];
+    end
+    if isempty(itel)
+        itel=1:numel(UnitObj.Camera);
+    end
 
     CameraObj=UnitObj.Camera{itel};
     
@@ -35,7 +47,7 @@ function saveCurImage(UnitObj,itel)
         % default values for fields which may be a bit too fragile to store
         %  only in config files: Filter, DataDir, BaseDir
         
-        [FileName,Path]=imUtil.util.file.construct_filename('ProjName',ProjName,...
+        [FileName,DefaultPath]=imUtil.util.file.construct_filename('ProjName',ProjName,...
             'Date',JD,...
             'Filter',CameraObj.Config.Filter,...
             'FieldID',CameraObj.Object,...
@@ -48,6 +60,10 @@ function saveCurImage(UnitObj,itel)
             'DataDir',CameraObj.Config.DataDir,...
             'Base',CameraObj.Config.BaseDir);
         
+        if ~exist('Path','var')
+            Path=DefaultPath;
+        end
+
         CameraObj.LastImageName = FileName;
         
         % create the header locally, even from remote objects, because
