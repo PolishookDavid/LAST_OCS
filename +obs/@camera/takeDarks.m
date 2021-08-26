@@ -10,17 +10,29 @@ function takeDarks(C,varargin)
 %   - 'ImType'           label type of the images ['dark']
 %
 % Output: none from the method, but resulting images are saved on disk
+%   to a service directory, sprcified in the configuration (Config.DarkDBDir)
 %
 % FIXME - NEEDS TO BE REDONE ACCORDING TO THE mastrolindo changes
 %
 % Since I don't think that this method should be called in parallel
-%  for all cameras of a unit, it stays a camera method.
+%  for all cameras of a unit, it stays a camera method. Therefore,
+%  I use .waitFinish without concern for messenger timeouts.
 % I assume that the typical use case would be bench characterization of
 %  capped cameras, when disconnected from telescopes, and not a part
-%  of the unitCS scheduled operation.
+%  of the unitCS scheduled operation. Nevertheless, better to
+%  turn temporarily off SaveOnDisk, because if this method is called
+%  on a camera inserted in a unit, we don't additionally want the unit
+%  callback to save the image as science image.
 %  
 % delicate point here: should we use live sequences, for Ndark>1 &&
 %   ExpTime>5
+
+%  FIXME: how do we save automatically during a live sequence?
+%  do we temporarily turn on a listener on LastImage? But then we'll want
+%  to disarm that of the unit, if it exists. Do we use the former idea of 
+%  ImageHandler? A mess.
+% CameraObj.saveCurImage(CameraObj.Config.DarkDBDir)
+
 
 InPar = inputParser;
 addOptional(InPar,'ExpTime',15);
@@ -32,23 +44,22 @@ addOptional(InPar,'ImType','dark');
 parse(InPar,varargin{:});
 InPar = InPar.Results;
 
-C.classCommand('SaveOnDisk = true;');
-% but maybe images should be saved to a service directory, different than
-%  that for science images, which is specified in the configuration?
-
 Nexp  = numel(InPar.ExpTime);
 Ntemp = numel(InPar.Temp);
 
+saving=C.SaveOnDisk;
+C.SaveOnDisk=false;
+
 for Itemp=1:Ntemp
     targetTemp = InPar.Temp(Itemp);
-    C.classCommand(['Temperature =' num2str(targetTemp) ';']);
+    C.Temperature = targetTemp;
     % wait for temperature to stablize
     t0=now;
     while (now-t0)*86400 < InPar.WaitTempTimeout
         pause(2)
-        CoolingPower = C.classCommand('CoolingPower;');
-        cameraTemperature=C.classCommand('Temperature;');
-        C.report(sprintf('   Requested Temp : %f, Actual Temp    : %f\n',...
+        CoolingPower = C.CoolingPower;
+        cameraTemperature=C.Temperature;
+        C.report(sprintf('   Requested Temp : %.1f, Actual Temp : %.1f\n',...
                          targetTemp,cameraTemperature));
         if abs(cameraTemperature-targetTemp)<InPar.MaxTempDiff
             break
@@ -61,22 +72,20 @@ for Itemp=1:Ntemp
         C.ImType = InPar.ImType;
         for Iexp=1:Nexp
             ExpTime=InPar.ExpTime(Iexp);
-            C.classCommand(['ExpTime =' num2str(ExpTime) ';']);
+            C.ExpTime = ExpTime;
             C.report('Taking dark exposure(s)\n');
             C.report(sprintf('   ExpTime        : %f\n',ExpTime));
             if InPar.Ndark>1 && ExpTime>5 % 5 sec to account for reading and saving overheads
-                C.classCommand(['takeLive(' num2str(InPar.Ndark) ');']);
+                C.takeLive(InPar.Ndark);
+                % saving is missing here yet
+                C.waitFinish
             else
-                C.classCommand('takeExposure;');
-            end
-            % wait for finish in a decent way. FIXME!
-            status='exposing';
-            while strcmp(status,{'exposing','reading'})
-                status=C.classCommand('CamStatus;');
-            end
-            if strcmp(status,'unknown')
-                C.reportError('camera gone fishing!')
-                break
+                for Idark=1:InPar.Ndark
+                    C.takeExposure;
+                    C.report(sprintf('       exposure %d/%d\n',Idark,InPar.Ndark))
+                    C.waitFinish
+                    C.saveCurImage(C.Config.DarkDBDir)
+                end
             end
         end
     else
@@ -85,6 +94,8 @@ for Itemp=1:Ntemp
     end
 end
 
-% return to default values
+% restore default values
 C.ImType = 'science';
+C.SaveOnDisk = saving;
+
 
