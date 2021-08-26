@@ -59,7 +59,7 @@ for Itemp=1:Ntemp
         pause(2)
         CoolingPower = C.CoolingPower;
         cameraTemperature=C.Temperature;
-        C.report(sprintf('   Requested Temp : %.1f, Actual Temp : %.1f\n',...
+        C.report(sprintf('   Requested Temperature : %.1f°C, Actual : %.1f°C\n',...
                          targetTemp,cameraTemperature));
         if abs(cameraTemperature-targetTemp)<InPar.MaxTempDiff
             break
@@ -83,13 +83,13 @@ for Itemp=1:Ntemp
                 for Idark=1:InPar.Ndark
                     C.takeExposure;
                     C.report(sprintf('       exposure %d/%d\n',Idark,InPar.Ndark))
-                    C.waitFinish
+                    C.waitFinish;
                     C.saveCurImage(C.Config.DarkDBDir)
                 end
             end
         end
     else
-        C.reportError(sprintf('Temperature did not reach the target of %f.1°C',...
+        C.reportError(sprintf('Temperature did not reach the target of %.1f°C',...
                                targetTemp));
     end
 end
