@@ -1,4 +1,4 @@
-function [ResPolarAlign,Res]=polarAlignOnline_drift(CamObj,MountObj,varargin)
+function [ResPolarAlign,Res]=polarAlignOnline_drift(UnitObj,itel,varargin)
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a camera and a mount object
 % *** Designed to be run in the matlab session where the objects are
@@ -13,9 +13,9 @@ function [ResPolarAlign,Res]=polarAlignOnline_drift(CamObj,MountObj,varargin)
 %              declination drift as a function of HA/Dec in order to
 %              measure the position of the mount RA axis compared to the
 %              celestial pole.
-%              The script can also works offline on pre-aquired images.
-% Input  : - The camera object or a cell of file names (offline mode).
-%          - The mount object.
+%              Cfr also the offline version which works on pre-aquired
+%              images, obs.util.align.polarAlignOffline_drift().
+% Input  : - The index of the single camera to use for the procedure
 %          * Pairs of ...,key,val,... arguments. Possible keywords are:
 %            'Nimage' - Number of images per field that will be taken in
 %                   order to estimate the drift in the field position.
@@ -30,112 +30,36 @@ function [ResPolarAlign,Res]=polarAlignOnline_drift(CamObj,MountObj,varargin)
 %            'Lat' - Lat (for offline mode). Default is 31.9 deg.
 %            'Verbose' - Default is true.
 %            'Verbose' - Default is true.
-% Example: obs.util.auto_polar_align(C,M)
-%          [ResP,Res]=obs.util.tools.auto_polar_align(List)   % offline mode
-%          [ResP,Res]=obs.util.tools.auto_polar_align_drift(C,M); % save -v7.3 Res.mat Res
+% Example:
+%          [ResP,Res]=P.tools.polarAlignOnline_drift(1); % save -v7.3 Res.mat Res
 
-RAD = 180./pi;
-SEC_IN_DAY = 86400;
+    RAD = 180./pi;
+    SEC_IN_DAY = 86400;
 
-InPar = inputParser;
-addOptional(InPar,'Nimage',5);   % number of images per field (fr drift)
-addOptional(InPar,'WaitTime',10);  
-addOptional(InPar,'ExpTime',5);  
-addOptional(InPar,'VecHA',[-60 0 60]);
-addOptional(InPar,'VecDec',[0]);
-addOptional(InPar,'Lon',35.04);  % for offline mode
-addOptional(InPar,'Lat',31.02);   % for offline mode
-addOptional(InPar,'Verbose',true);  
-addOptional(InPar,'Plot',true);  
-parse(InPar,varargin{:});
-InPar = InPar.Results;
+    InPar = inputParser;
+    addOptional(InPar,'Nimage',5);   % number of images per field (fr drift)
+    addOptional(InPar,'WaitTime',10);  
+    addOptional(InPar,'ExpTime',5);  
+    addOptional(InPar,'VecHA',[-60 0 60]);
+    addOptional(InPar,'VecDec',[0]);
+    addOptional(InPar,'Lon',35.04);  % for offline mode
+    addOptional(InPar,'Lat',31.02);   % for offline mode
+    addOptional(InPar,'Verbose',true);  
+    addOptional(InPar,'Plot',true);  
+    parse(InPar,varargin{:});
+    InPar = InPar.Results;
 
-
-
-if iscell(CamObj)
-    %--- OFFLINE MODE ---
-    % camera object is a cell array of file names
-    
-    Lon = InPar.Lon;
-    Lat = InPar.Lat;
-    
-    FileName = CamObj;
-    
-    N = numel(FileName);
-    S = FITS.read2sim(FileName);
-    VecRA  = cell2mat(getkey(S,'RA'));
-    VecDec = cell2mat(getkey(S,'DEC'));
-    VecHA = cell2mat(getkey(S,'HA'));
-    VecJD = cell2mat(getkey(S,'JD'));
-    
-    Ntarget = 4;
-    Nimage  = 3;
-    
-    K = 0;
-    for Itarget=1:1:Ntarget
-        for Iimage=1:1:Nimage
-            K = K + 1;
-            
-            Res(Itarget).MountHA = VecHA(K);
-            Res(Itarget).MountDec = VecDec(K);
-            Res(Itarget).JD(Iimage) = VecJD(K);
-            
-            %--- astrometry ---
-            ResAst = obs.util.tools.astrometry_center(S(K));
-            % save results
-            Res(Itarget).S(Iimage) = ResAst.Image;
-            Res(Itarget).FileName{Iimage} = FileName{K};
-            Res(Itarget).AstR(Iimage) = ResAst.AstRes;
-            Res(Itarget).AstAssymRMS(Iimage) = ResAst.AstRes.AssymErr;
-            Res(Itarget).AstRA(Iimage)  = ResAst.CenterRA;
-            Res(Itarget).AstDec(Iimage) = ResAst.CenterDec;
-
-        end
-        
-        % measure field drift
-        Time = (Res(Itarget).JD-mean(Res(Itarget).JD)).*SEC_IN_DAY;
-
-        % Drift in Declination
-        PolyPar  = polyfit(Time,Res(Itarget).AstDec.*RAD,1);  % deg/s
-        PolyPred = polyval(PolyPar,Time);
-        Resid    = Res(Itarget).AstDec.*RAD - PolyPred;
-        Res(Itarget).DecDriftRMS = std(Resid.*3600)./range(Time);  % ["/s]
-        Res(Itarget).DecDrift    = PolyPar(1).*3600;
-
-        % Drift in R.A.
-        PolyPar  = polyfit(Time,Res(Itarget).AstRA.*RAD,1);
-        PolyPred = polyval(PolyPar,Time);
-        Resid    = Res(Itarget).AstRA.*RAD - PolyPred;
-        Res(Itarget).RADriftRMS = std(Resid.*3600)./range(Time);  % ["/s]
-        Res(Itarget).RADrift    = PolyPar(1).*3600;
-        
-    end
-    
-
-
-
-    
-    
-else
-    %--- ONSKY MODE ---
-    
-    % assume camera and mount object are provided
-    
-    M = MountObj; % mount object;
-    C = CamObj; % camera object;
+    C=unitObj.Camera{itel};
+    M=UnitObj.Mount;
 
     % set exposure time
     C.ExpTime = InPar.ExpTime;
-    
-    
-    
+
     Lon = M.MountPos(1);
     Lat = M.MountPos(2);
     % wait time between position measurments
     Nimage   = InPar.Nimage; % number of images per field
-    
 
-    %
     % select fields
     VecHA  = InPar.VecHA(:);
     VecDec = InPar.VecDec(:).*ones(numel(VecHA),1);
@@ -164,9 +88,9 @@ else
 
         M.Dec = Dec;
         M.waitFinish;
-        
+
         pause(1);
-        
+
         %--- read actual telescope coordinates from mount
         Res(Itarget).MountRA  = M.RA;
         Res(Itarget).MountDec = M.Dec;
@@ -177,7 +101,7 @@ else
             if InPar.Verbose
                 fprintf('Target number %d -- Image number %d out of %d\n',Itarget,Iimage,Nimage);
             end
-            
+
             Res(Itarget).JD(Iimage) = celestial.time.julday;
 
             %--- take image ---
@@ -189,7 +113,7 @@ else
 
             %--- astrometry ---
             ResAst = obs.util.tools.astrometry_center(FileName,'RA',Res(Itarget).MountRA./RAD,...
-                                                         'Dec',Res(Itarget).MountDec./RAD);
+                'Dec',Res(Itarget).MountDec./RAD);
             % save results
             Res(Itarget).S(Iimage) = ResAst.Image;
             Res(Itarget).FileName{Iimage} = FileName;
@@ -224,7 +148,7 @@ else
         Res(Itarget).RADriftRMS = std(Resid.*3600)./range(Time);  % ["/s]
         Res(Itarget).RADrift    = PolyPar(1).*3600;
 
-        
+
         % plot
         if InPar.Plot
             clf;
@@ -237,17 +161,6 @@ else
             fprintf('Field number: %d, image number: %d\n',Itarget,Iimage);
             fprintf('HA: %f (deg), Dec: %f (deg)\n',VecHA(Itarget),VecDec(Itarget));
             fprintf('Dec drift: %f +/- %f, RA drift: %f +/- %f\n',Res(Itarget).DecDrift,Res(Itarget).DecDriftRMS,...
-                                                                  Res(Itarget).RADrift,Res(Itarget).RADriftRMS);
-            
+                Res(Itarget).RADrift,Res(Itarget).RADriftRMS);
         end
     end
-end
-
-%%
-
-
-
-%%
-ResPolarAlign = [];
-clf;
-[ResPolarAlign] = celestial.coo.polar_alignment([Res.MountHA]./RAD,[Res.MountDec]./RAD,[Res.DecDrift],[Res.RADrift],Lat./RAD,InPar.Plot);
