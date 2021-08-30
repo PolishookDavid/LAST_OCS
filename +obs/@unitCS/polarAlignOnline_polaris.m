@@ -1,8 +1,15 @@
 function [ResP,Res]=polarAlignOnline_polaris(UnitObj,itel,varargin)
 % *** Converted from old calls, to be checked with mastrolindo
+% *** NOGO. first refactor the function, then we discuss.
 %
-% Perform polar alignment using the pole rotation method
-% Package: +obs.util.align
+% NOTE: as astrometry is called on a filename, it is assumed that the
+%  file is accessible to the running session. Which may not at all be the
+%  case for a remote session. Your problem. Astrometry should then be run
+%  on the instance owning locally the camera then.
+%
+% Perform polar alignment using the pole rotation method, using a single
+%    camera
+% Package: +obs.unitCS
 % Description: Use the 'rotate around polar axis method' to polar align
 %               the mount. The mount is directed to the pole and rotated in
 %               HA. In each HA an image is taken. The stars will circle the
@@ -28,7 +35,7 @@ function [ResP,Res]=polarAlignOnline_polaris(UnitObj,itel,varargin)
 % Output : - A structure containing required shifts of mount from celestial
 %            pole.
 %          - A structure with all the measured images.
-% By: Eran Ofek                         Jul 2020
+% By: Eran Ofek  Jul 2020          rev. Enrico Segre, Aug 2021
 % Example: [ResP,Res]=Unit.polarAlignOnline_polaris(1)
 
 M=UnitObj.Mount;
@@ -92,9 +99,14 @@ for Iha=1:1:Nha
     %--- wait for image ---
     UnitObs.readyToExpose(itel,true);
     FileName = C.classCommand('LastImageName;');
+    % yeah. And what if the image is on another computer?
 
     
     %--- astrometry ---
+    % TODO: if that is a procedure common also to the offline call, factor
+    %       it out
+    % TODO: this should be run in by the session owning the camera, or at
+    %       least on its same computer
     %S = FITS.read2sim(FileName);
     S(Iha) = FITS.read2sim(FileName);
     %S = trim_image(S,[3001 4000 3001 4000]);

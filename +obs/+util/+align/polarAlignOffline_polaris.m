@@ -1,4 +1,6 @@
 function [Res,ResFit]=polarAlignOffline_polaris(S,varargin)
+% *** cfr. obs.unitCS.polarAlignOnline_polaris(): most of the code is
+%          common and must be refactored!
 % Perform polar alignment on existing images of the polar region taken with
 % different HA
 % Package: obs.util.tools

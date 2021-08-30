@@ -2,7 +2,9 @@ function [ResPolarAlign,Res]=polarAlignOnline_drift(UnitObj,itel,varargin)
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a camera and a mount object
 % *** Designed to be run in the matlab session where the objects are
-%     locally defined
+%     locally defined (which is a strong limitation). Notably, the
+%     showstopper is that the images to be analysed are accessed by their
+%     filenames after they have supposedly been saved on disk
 %
 % Automatic polar alignment routine for telescopes on equatorial mount
 % Package: +obs.util.tools
