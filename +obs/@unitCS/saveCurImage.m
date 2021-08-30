@@ -18,67 +18,69 @@ function saveCurImage(UnitObj,itel,Path)
     if isempty(itel)
         itel=1:numel(UnitObj.Camera);
     end
-
-    CameraObj=UnitObj.Camera{itel};
     
-    if isa(CameraObj,'obs.remoteClass')
-        SizeImIJ = CameraObj.Messenger.query(...
-            sprintf('size(%s.LastImage)',CameraObj.RemoteName));
-    else
-        SizeImIJ = size(CameraObj.LastImage);
-    end
-
-    if prod(SizeImIJ)==0
-        UnitObj.reportError(sprintf('no image taken by telescope %d to be saved',...
-                            itel))
-        return
-    end
-
-    % Write the fits file, in the session where the camera object lives
-    if isa(CameraObj,'obs.remoteClass')
-        remoteUnitName=inputname(1);
-        CameraObj.Messenger.query(sprintf('%s.saveCurImage(%d)',remoteUnitName,itel));
-    else
-        % Construct directory name to save image in
-        ProjName = sprintf('%s.%d.%s.%d', UnitObj.Config.ProjName,...
-            UnitObj.Config.NodeNumber, UnitObj.Id, itel);
-        JD = CameraObj.classCommand('TimeStartLastImage') + 1721058.5;
+    for icam=itel
+        CameraObj=UnitObj.Camera{icam};
         
-        % default values for fields which may be a bit too fragile to store
-        %  only in config files: Filter, DataDir, BaseDir
-        
-        [FileName,DefaultPath]=imUtil.util.file.construct_filename('ProjName',ProjName,...
-            'Date',JD,...
-            'Filter',CameraObj.Config.Filter,...
-            'FieldID',CameraObj.Object,...
-            'Type',CameraObj.ImType,...
-            'Level','raw',...
-            'SubLevel','',...
-            'Product','im',...
-            'Version',1,...
-            'FileType','fits',...
-            'DataDir',CameraObj.Config.DataDir,...
-            'Base',CameraObj.Config.BaseDir);
-        
-        if ~exist('Path','var')
-            Path=DefaultPath;
+        if isa(CameraObj,'obs.remoteClass')
+            SizeImIJ = CameraObj.Messenger.query(...
+                sprintf('size(%s.LastImage)',CameraObj.RemoteName));
+        else
+            SizeImIJ = size(CameraObj.LastImage);
         end
-
-        CameraObj.LastImageName = FileName;
         
-        % create the header locally, even from remote objects, because
-        %  round-trip queries fail
-        HeaderCell=constructHeader(UnitObj,itel);
-        UnitObj.report(sprintf('Writing image %s to disk\n',...
-            CameraObj.classCommand('LastImageName')));
+        if prod(SizeImIJ)==0
+            UnitObj.reportError(sprintf('no image taken by telescope %d to be saved',...
+                icam))
+            return
+        end
         
-        PWD = pwd;
-        tools.os.cdmkdir(Path);  % cd and on the fly mkdir
-        FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
-                   'Header',HeaderCell,'DataType','single','Overwrite',true);
-        cd(PWD);
-
-        CameraObj.LastImageSaved = true;
+        % Write the fits file, in the session where the camera object lives
+        if isa(CameraObj,'obs.remoteClass')
+            remoteUnitName=inputname(1);
+            CameraObj.Messenger.query(sprintf('%s.saveCurImage(%d)',remoteUnitName,icam));
+        else
+            % Construct directory name to save image in
+            ProjName = sprintf('%s.%d.%s.%d', UnitObj.Config.ProjName,...
+                UnitObj.Config.NodeNumber, UnitObj.Id, icam);
+            JD = CameraObj.classCommand('TimeStartLastImage') + 1721058.5;
+            
+            % default values for fields which may be a bit too fragile to store
+            %  only in config files: Filter, DataDir, BaseDir
+            
+            [FileName,DefaultPath]=imUtil.util.file.construct_filename('ProjName',ProjName,...
+                'Date',JD,...
+                'Filter',CameraObj.Config.Filter,...
+                'FieldID',CameraObj.Object,...
+                'Type',CameraObj.ImType,...
+                'Level','raw',...
+                'SubLevel','',...
+                'Product','im',...
+                'Version',1,...
+                'FileType','fits',...
+                'DataDir',CameraObj.Config.DataDir,...
+                'Base',CameraObj.Config.BaseDir);
+            
+            if ~exist('Path','var')
+                Path=DefaultPath;
+            end
+            
+            CameraObj.LastImageName = FileName;
+            
+            % create the header locally, even from remote objects, because
+            %  round-trip queries fail
+            HeaderCell=constructHeader(UnitObj,icam);
+            UnitObj.report(sprintf('Writing image %s to disk\n',...
+                CameraObj.classCommand('LastImageName')));
+            
+            PWD = pwd;
+            tools.os.cdmkdir(Path);  % cd and on the fly mkdir
+            FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
+                'Header',HeaderCell,'DataType','single','Overwrite',true);
+            cd(PWD);
+            
+            CameraObj.LastImageSaved = true;
+        end
     end
 
     % CameraObj.classCommand(['LogFile.write(' ...

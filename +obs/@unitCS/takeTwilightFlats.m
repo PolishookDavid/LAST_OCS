@@ -43,7 +43,7 @@ addOptional(InPar,'TestExpTime',1);
 addOptional(InPar,'MeanFun','nanmedian');
 addOptional(InPar,'EastFromZenith',20);
 addOptional(InPar,'RandomShift',3);
-addOptional(InPar,'ImType','SkyFlat');
+addOptional(InPar,'ImType','skyflat');
 addOptional(InPar,'WaitTimeCheck',30);
 addOptional(InPar,'Plot',true);
 parse(InPar,varargin{:});
@@ -101,7 +101,7 @@ while AttemptTakeFlat
             % compute mean of the image taken (remotely if the camera is remote)
             if isa(C{icam},'obs.remoteClass')
                 % TODO check if ok with @ in string
-                ImageMean=C{icam}.Messenger.query(sprintf('single(%s(%s.LastImage(:)))',...
+                ImageMean=C{icam}.Messenger.query(sprintf('%s(single(%s.LastImage(:)))',...
                                                      InPar.MeanFun,C{icam}.RemoteName));
                 MeanValPerSec(icam) = ImageMean/InPar.TestExpTime;
             else
@@ -115,18 +115,18 @@ while AttemptTakeFlat
         MeanValAtMax = mean(MeanValPerSec) * max(InPar.ExpTimeRange);
 
         UnitObj.report('Flat test image\n');
-        UnitObj.report(sprintf('     SunAlt             : %5.2f\n',Sun.Alt.*RAD));
-        UnitObj.report(sprintf('     Az                 : %6.2f\n',M.classCommand('Az')));
-        UnitObj.report(sprintf('     Alt                : %6.2f\n',M.classCommand('Alt')));
-        UnitObj.report(sprintf('     Image ExpTime      : %6.1f\n',InPar.TestExpTime));
-        UnitObj.report(sprintf('     Image MeanValPerSec: %10.1f\n',mean(MeanValPerSec)));
+        UnitObj.report(sprintf('    SunAlt              : %6.2f\n',Sun.Alt.*RAD));
+        UnitObj.report(sprintf('    Az                  : %6.2f\n',M.classCommand('Az')));
+        UnitObj.report(sprintf('    Alt                 : %6.2f\n',M.classCommand('Alt')));
+        UnitObj.report(sprintf('    Image ExpTime       : %5.1f\n',InPar.TestExpTime));
+        UnitObj.report(sprintf('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec)));
                
         if MeanValAtMax>InPar.MinFlatLimit && MeanValAtMin<InPar.MaxFlatLimit
             % Sun Altitude and image mean value are in allowed range
             % start twilight flat sequemce
 
             % set ImType to flat
-            C.classCommand(['ImType =' InPar.ImType ';']);
+            C{icam}.classCommand(['ImType =''' InPar.ImType ''';']);
             
             ContFlat = true;
             while ContFlat
@@ -144,21 +144,27 @@ while AttemptTakeFlat
                 M.classCommand(sprintf('goTo(%f,%f);',RA,Dec));
                 UnitObj.readyToExpose(itel,true);
                 
-                EstimatedExpTime = InPar.MaxFlatLimit/MeanValPerSec;
+                EstimatedExpTime = InPar.MaxFlatLimit/mean(MeanValPerSec);
+                UnitObj.report(sprintf('Estimated exposure time: %g sec\n',...
+                                        EstimatedExpTime));
                 if EstimatedExpTime>min(InPar.ExpTimeRange) &&...
                         EstimatedExpTime<max(InPar.ExpTimeRange)
  
+                    % this is almost the same code as above @line 95...
+                    %  should be factorized!
                     UnitObj.takeExposure(itel,EstimatedExpTime);
                     UnitObj.readyToExpose(itel);
                     
                     for icam=1:Ncam
                         % save the images to the service directories
+                        % BUG - passes 'UnitObj' instead of the true pier
+                        %       object name
                         UnitObj.saveCurImage(itel(icam),...
                                   C{icam}.classCommand('Config.FlatDBDir'))
                         % compute the mean of the image taken (remotely if the camera is remote)
                         if isa(C{icam},'obs.remoteClass')
                             % TODO check if ok with @ in string
-                            ImageMean=C{icam}.Messenger.query(sprintf('single(%s(%s.LastImage(:)))',...
+                            ImageMean=C{icam}.Messenger.query(sprintf('%s(single(%s.LastImage(:)))',...
                                 InPar.MeanFun,C{icam}.RemoteName));
                             MeanValPerSec(icam) = ImageMean/EstimatedExpTime;
                         else
@@ -181,6 +187,9 @@ while AttemptTakeFlat
                     if exist('/home/eran/abort','file') % FIXME !!!!
                         ContFlat = false; % why value unused anyway?
                     end
+                else
+                    UnitObj.report(sprintf('Estimated exposure time > %g sec, aborting \n',...
+                                           max(InPar.ExpTimeRange)));
                 end
                 
                 % get Sun altitude
@@ -196,7 +205,7 @@ while AttemptTakeFlat
                     ContFlat = false;
                 end
 
-                % check weather or abort commands
+                % check whether or abort commands
                 % TBD
                 
             end
@@ -221,7 +230,7 @@ end
     
 % returm ImType to default value and restore SaveOnDisk
 for icam=1:Ncam
-    C{icam}.classCommand('ImType = ''science'';');
+    C{icam}.classCommand('ImType = ''sci'';');
     if saving(icam)
         C{icam}.classCommand('SaveOnDisk = true;');
     end
