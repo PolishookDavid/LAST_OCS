@@ -24,6 +24,14 @@ function takeTwilightFlats(UnitObj,itel,varargin)
 %  specified by each camera's Config.FlatDBDir
 %     By :
 % Example: P.take_twilight_flat();
+%
+% Notes: I made it sort of work with mastrolindo, but code should be
+%  revised:
+%  - most of the code is duplicated; that should be factored;
+%  - for many cameras, estimated exposure times should be individual and
+%    not the mean of all of them;
+%  - a real stopping mechanism should be in place, including a max number
+%    of flat images to take
 
 if ~exist('itel','var')
     itel=[];
