@@ -16,7 +16,7 @@ function takeTwilightFlats(UnitObj,itel,varargin)
 %                                            ** eval() in slave
 %               'EastFromZenith' [20]
 %               'RandomShift'    [3]
-%               'ImType'         ['SkyFlat']
+%               'ImType'         ['skyflat']
 %               'WaitTimeCheck'  [30]
 %               'Plot'           true
 %
@@ -61,8 +61,9 @@ saving=false(1,Ncam);
 for icam=1:Ncam
     saving(icam)=C{icam}.classCommand('SaveOnDisk;');
     C{icam}.classCommand('SaveOnDisk = false;');
+    % set ImType to flat
+    C{icam}.classCommand(['ImType =''' InPar.ImType ''';']);
 end
-
 
 Lon = M.classCommand('MountPos(1)');
 Lat = M.classCommand('MountPos(2)');
@@ -118,15 +119,12 @@ while AttemptTakeFlat
         UnitObj.report(sprintf('    SunAlt              : %6.2f\n',Sun.Alt.*RAD));
         UnitObj.report(sprintf('    Az                  : %6.2f\n',M.classCommand('Az')));
         UnitObj.report(sprintf('    Alt                 : %6.2f\n',M.classCommand('Alt')));
-        UnitObj.report(sprintf('    Image ExpTime       : %5.1f\n',InPar.TestExpTime));
+        UnitObj.report(sprintf('    Image ExpTime       : %6.21f\n',InPar.TestExpTime));
         UnitObj.report(sprintf('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec)));
                
         if MeanValAtMax>InPar.MinFlatLimit && MeanValAtMin<InPar.MaxFlatLimit
             % Sun Altitude and image mean value are in allowed range
             % start twilight flat sequemce
-
-            % set ImType to flat
-            C{icam}.classCommand(['ImType =''' InPar.ImType ''';']);
             
             ContFlat = true;
             while ContFlat
@@ -181,8 +179,8 @@ while AttemptTakeFlat
                     UnitObj.report(sprintf('     SunAlt             : %5.2f\n',Sun.Alt.*RAD));
                     UnitObj.report(sprintf('     Az                 : %6.2f\n',M.classCommand('Az')));
                     UnitObj.report(sprintf('     Alt                : %6.2f\n',M.classCommand('Alt')));
-                    UnitObj.report(sprintf('     Image ExpTime      : %6.1f\n',InPar.TestExpTime));
-                    UnitObj.report(sprintf('     Image MeanValPerSec: %10.1f\n',mean(MeanValPerSec)));
+                    UnitObj.report(sprintf('     Image ExpTime      : %6.2f\n',InPar.TestExpTime));
+                    UnitObj.report(sprintf('     Image MeanValPerSec: %5.1f\n',mean(MeanValPerSec)));
                     
                     if exist('/home/eran/abort','file') % FIXME !!!!
                         ContFlat = false; % why value unused anyway?
@@ -210,6 +208,10 @@ while AttemptTakeFlat
                 
             end
         else
+            UnitObj.report(sprintf(['estimated mean image value at max(ExpTime)=%g,'...
+                                    'out of range [%g,%g], waiting'],...
+                                    MeanValAtMax,InPar.MinFlatLimit,...
+                                    InPar.MaxFlatLimit))
             pause(InPar.WaitTimeCheck);            
         end
 

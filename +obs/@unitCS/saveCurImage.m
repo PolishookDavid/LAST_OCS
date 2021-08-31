@@ -18,7 +18,7 @@ function saveCurImage(UnitObj,itel,Path)
     if isempty(itel)
         itel=1:numel(UnitObj.Camera);
     end
-    
+        
     for icam=itel
         CameraObj=UnitObj.Camera{icam};
         
@@ -37,8 +37,14 @@ function saveCurImage(UnitObj,itel,Path)
         
         % Write the fits file, in the session where the camera object lives
         if isa(CameraObj,'obs.remoteClass')
-            remoteUnitName=inputname(1);
-            CameraObj.Messenger.query(sprintf('%s.saveCurImage(%d)',remoteUnitName,icam));
+            remoteUnitName=strtok(CameraObj.RemoteName,'.');
+            if exist('Path','var')
+                CameraObj.Messenger.query(sprintf('%s.saveCurImage(%d,''%s'')',...
+                                                 remoteUnitName,icam,Path));
+            else
+                CameraObj.Messenger.query(sprintf('%s.saveCurImage(%d)',...
+                                                  remoteUnitName,icam));
+            end
         else
             % Construct directory name to save image in
             ProjName = sprintf('%s.%d.%s.%d', UnitObj.Config.ProjName,...
