@@ -1,6 +1,5 @@
 function [ResP,Res]=polarAlignOnline_polaris(UnitObj,itel,varargin)
-% *** Converted from old calls, to be checked with mastrolindo
-% *** NOGO. first refactor the function, then we discuss.
+% *** Mastrolindo status: NO GO. First refactor the function, then we discuss.
 %
 % NOTE: as astrometry is called on a filename, it is assumed that the
 %  file is accessible to the running session. Which may not at all be the

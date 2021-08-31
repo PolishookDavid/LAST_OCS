@@ -4,7 +4,7 @@
 %              sensors.
 % Input  : 
 % Output : A unit class
-%     By :
+%     By : Enrico
 % Example: 
 %
 % Settings parameters options:

@@ -1,4 +1,6 @@
 function pointAndClickMove(UnitObj,telescope)
+    % *** Mastrolindo staus: Bad idea. Redesign. Not checked at all
+    %
     % Interactively moving the mount by clicking a position on image
     % TODO!
     % NEED TO CHECK IF DS9 IS OPEN AND THE RELEVANT FRAME IS DISPLAYED!

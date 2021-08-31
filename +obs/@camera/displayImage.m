@@ -1,4 +1,7 @@
 function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
+    % *** Mastrolindo status: Ok but ds9 part uncapable of receiving simultaneous
+    %                     frames, and in need of some finer parameter
+    %                     passing
     % display LastImage in ds9 or matlab figure
     % Input : - A obs.camera object
     %         - Display window: 'ds9' | 'matlab' | ''.

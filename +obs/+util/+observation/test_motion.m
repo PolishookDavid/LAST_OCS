@@ -1,4 +1,5 @@
 function test_motion(M)
+% *** Mastrolindo status: not reworked yet. So simple that it might work.
 % telescope pointing stress test on grid of coordinates
 %
 % Input: a local mount object

@@ -1,4 +1,4 @@
-% mount control handle class
+% Mount control superclass
 % Package: +obs/@mount
 % Description: operate mount drivers.
 %              Intended for working with Xerxes, iOptron and Celestron mounts

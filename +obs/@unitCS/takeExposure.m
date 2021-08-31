@@ -17,6 +17,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     %            'MinExpTimeForSave' - default is 5 [sec]. .SaveOnDisk
     %                                  will be temporarily turned off if
     %                                  ExpTime is smaller than that.
+    %                                  (BUG - doesn't happen)
 
     % Take care, Unit.Camera{i}.classCommand('waitFinish') may timeout
     %  because of no reply, if the messenger timeout is shorter than

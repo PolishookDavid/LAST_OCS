@@ -1,5 +1,5 @@
 function saveCurImage(CameraObj,Path)
-    % Save the last acquired image to disk
+    % Save the last acquired image to disk (camera only version)
     % Also set LastImageSaved to true, until a new image is taken
     % Input: the path where to save the image. If omitted, the default one
     %  constructed from .Config.BaseDir and .Config.DataDir is used

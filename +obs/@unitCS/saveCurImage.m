@@ -1,16 +1,16 @@
 function saveCurImage(UnitObj,itel,Path)
-    % Save last image to disk according the user's settings
-    % Also set LastImageSaved to true, until a new image is taken
-    % Inputs:
-    %    - indices of the cameras whose images have to be saved
-    %    - optional path, if it needs to be different than the default for
-    %                     science images
-    %
-    % Intended for local as well as remote cameras in the UnitObj.
-    % When called for a remote camera, the saving command is passed to
-    %  the slave session hosting that camera. That is the simplest thing to
-    %  do, rather than constructing the filename, and the header, all by
-    %  roundtrip queries
+% Save the last images to disk according the user's settings (unit version)
+% Also set LastImageSaved to true, until a new image is taken
+% Inputs:
+%    - indices of the cameras whose images have to be saved
+%    - optional path, if it needs to be different than the default for
+%                     science images
+%
+% Intended for local as well as remote cameras in the UnitObj.
+% When called for a remote camera, the saving command is passed to
+%  the slave session hosting that camera. That is the simplest thing to
+%  do, rather than constructing the filename, and the header, all by
+%  roundtrip queries
 
     if ~exist('itel','var')
         itel=[];

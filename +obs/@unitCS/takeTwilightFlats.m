@@ -1,4 +1,5 @@
 function takeTwilightFlats(UnitObj,itel,varargin)
+% *** Mastrolindo status: works, but needs serious redesign, see below.
 %
 % Obtain a series of twiligh flat images using a LAST pier system.
 % Package: +obs.unitCS

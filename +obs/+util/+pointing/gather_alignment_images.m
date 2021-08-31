@@ -1,4 +1,5 @@
 function Info=gather_alignment_images(X,C)
+% *** Mastrolindo status: not reworked yet
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a mount and a camera objects
 % *** Designed to be run in the matlab session where the objects are
