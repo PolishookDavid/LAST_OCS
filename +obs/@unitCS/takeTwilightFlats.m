@@ -119,7 +119,7 @@ while AttemptTakeFlat
         UnitObj.report(sprintf('    SunAlt              : %6.2f\n',Sun.Alt.*RAD));
         UnitObj.report(sprintf('    Az                  : %6.2f\n',M.classCommand('Az')));
         UnitObj.report(sprintf('    Alt                 : %6.2f\n',M.classCommand('Alt')));
-        UnitObj.report(sprintf('    Image ExpTime       : %6.21f\n',InPar.TestExpTime));
+        UnitObj.report(sprintf('    Image ExpTime       : %6.2f\n',InPar.TestExpTime));
         UnitObj.report(sprintf('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec)));
                
         if MeanValAtMax>InPar.MinFlatLimit && MeanValAtMin<InPar.MaxFlatLimit
@@ -155,13 +155,13 @@ while AttemptTakeFlat
                     
                     for icam=1:Ncam
                         % save the images to the service directories
-                        % BUG - passes 'UnitObj' instead of the true pier
-                        %       object name
                         UnitObj.saveCurImage(itel(icam),...
                                   C{icam}.classCommand('Config.FlatDBDir'))
                         % compute the mean of the image taken (remotely if the camera is remote)
                         if isa(C{icam},'obs.remoteClass')
-                            % TODO check if ok with @ in string
+                            % TODO check if ok with @ in string -
+                            %  otherwise I would think it is impossible to
+                            %  oass a function handle to a slave
                             ImageMean=C{icam}.Messenger.query(sprintf('%s(single(%s.LastImage(:)))',...
                                 InPar.MeanFun,C{icam}.RemoteName));
                             MeanValPerSec(icam) = ImageMean/EstimatedExpTime;
@@ -203,7 +203,7 @@ while AttemptTakeFlat
                     ContFlat = false;
                 end
 
-                % check whether or abort commands
+                % check whether ? or abort commands
                 % TBD
                 
             end
