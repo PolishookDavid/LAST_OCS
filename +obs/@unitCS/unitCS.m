@@ -25,12 +25,6 @@ classdef unitCS < obs.LAST_Handle
         CameraPowerUnit double =[]; % switch unit controlling each camera
         CameraPowerOutput double =[]; % switch output controlling each camera
     end
-        
-    properties %(Dependent)
-        % Cameras
-        ImType     = 'sci';
-        Object     = '';
-    end
 
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle)
         %these are set only when reading the configuration
