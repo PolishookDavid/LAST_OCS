@@ -64,7 +64,7 @@ classdef unitCS < obs.LAST_Handle
             % populate mount, camera, focuser and power switches handles
             for i=1:numel(UnitObj.PowerDriver)
                 UnitObj.PowerSwitch{i}=eval([UnitObj.PowerDriver{i} ...
-                           '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);
+                           '(''' sprintf('%s_%d',UnitObj.Id,i) ''')']);
             end
             
             % for now always one mount per unit (or, empty mount when absent)
