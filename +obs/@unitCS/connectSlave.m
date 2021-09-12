@@ -6,7 +6,7 @@ function connectSlave(Unit,islaves)
 %  later on for a specific slave if that slave needs to be restarted
     
     if ~exist('islaves','var')
-        islaves=1:numel(Unit.Slaves);
+        islaves=1:numel(Unit.Slave);
     end
     
     for i=islaves
