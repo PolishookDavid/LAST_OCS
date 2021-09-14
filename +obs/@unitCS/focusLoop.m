@@ -73,6 +73,9 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 % By: Eran Ofek          April 2020 ; complete rev. Enrico Segre August 2021
 % Example: [FocRes] = Unit.focusLoop(1) 
 
+    if nargin<2
+        itel=[];
+    end
     if isempty(itel)
         itel=1:numel(UnitObj.Camera);
     end
@@ -218,7 +221,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         % take one exposure with all cameras
         UnitObj.takeExposure(itel,InPar.ExpTime);
         % wait for all cameras
-        if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+10)
+        if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+20)
             break
         end
 
