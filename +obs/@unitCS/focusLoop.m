@@ -133,8 +133,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     if isempty(InPar.FocusGuess)
         % take the current focus as best guess, if not otherwise provided
         InPar.FocusGuess=NaN(Ncam,1);
-        for i=itel
-            InPar.FocusGuess(i)=UnitObj.Focuser{i}.classCommand(sprintf('Pos'));
+        for i=1:Ncam
+            InPar.FocusGuess(i)=UnitObj.Focuser{itel(i)}.classCommand(sprintf('Pos'));
         end
     end
     
@@ -206,7 +206,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     for Ifocus=1:Nfocus
         for Icam=1:Ncam
             UnitObj.report(sprintf('Focuser %d to position: %.0f (#%d out of %d)\n',...
-                                   Icam, FocusPosCam(Ifocus,Icam), Ifocus, Nfocus));
+                                   itel(Icam), FocusPosCam(Ifocus,Icam), Ifocus, Nfocus));
         end
 
         % set all focusers
