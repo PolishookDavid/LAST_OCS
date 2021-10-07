@@ -117,6 +117,6 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         HeaderCell{Ifn,2} = Info.(FN{Ifn});
     end
     
-    HeaderCell = [CameraHeader(:)',HeaderCell(:)'];
+    HeaderCell = [CameraHeader; HeaderCell];
 
 end
