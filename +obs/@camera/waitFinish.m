@@ -35,8 +35,8 @@ function Flag=waitFinish(CameraObj)
                 Flag=true;
                 break
             otherwise
-                CameraObj.reportError(sprintf('camera %s is in a suspicious "%s" status, exiting',...
-                                          CameraObj.Id, CamStatus))
+                CameraObj.reportError('camera %s is in a suspicious "%s" status, exiting',...
+                                          CameraObj.Id, CamStatus)
             break
         end
         pause(PollingTime);

@@ -30,8 +30,8 @@ function saveCurImage(UnitObj,itel,Path)
         end
         
         if prod(SizeImIJ)==0
-            UnitObj.reportError(sprintf('no image taken by telescope %d to be saved',...
-                icam))
+            UnitObj.reportError('no image taken by telescope %d to be saved',...
+                icam)
             return
         end
         
@@ -76,8 +76,8 @@ function saveCurImage(UnitObj,itel,Path)
             % create the header locally, even from remote objects, because
             %  round-trip queries fail
             HeaderCell=constructHeader(UnitObj,icam);
-            UnitObj.report(sprintf('Writing image %s to disk\n',...
-                CameraObj.classCommand('LastImageName')));
+            UnitObj.report('Writing image %s to disk\n',...
+                           CameraObj.classCommand('LastImageName'));
             
             PWD = pwd;
             tools.os.cdmkdir(Path);  % cd and on the fly mkdir

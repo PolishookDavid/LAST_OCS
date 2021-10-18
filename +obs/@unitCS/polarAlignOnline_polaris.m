@@ -64,7 +64,7 @@ InPar = InPar.Results;
 UnitObj.report('Polar alignment (pole method)\n');
 
 % set exposure time
-C.classCommand(['ExpTime = ' num2str(InPar.ExpTime) ';']);
+C.classCommand('ExpTime = %f;',InPar.ExpTime);
 
 Lon = M.classCommand('MountPos(1)');
 Lat = M.classCommand('MountPos(2)');
@@ -73,7 +73,7 @@ Nha = numel(InPar.VecHA);
 
 S = SIM(Nha,1);
 for Iha=1:1:Nha
-    UnitObj.report(sprintf('Setting to HA number %d of %d\n',Iha,Nha));
+    UnitObj.report('Setting to HA number %d of %d\n',Iha,Nha)
     
     HA  = InPar.VecHA(Iha);
     Dec = InPar.PoleDec;
@@ -86,10 +86,10 @@ for Iha=1:1:Nha
 
     %--- point telescope to RA/Dec ---
     if Iha==1
-        M.classCommand(['Dec =' num2str(Dec) ';']);
+        M.classCommand('Dec =%f;',Dec);
         UnitObs.readyToExpose(itel,true);
     end
-    M.classCommand(['RA =' num2str(RA) ';']);
+    M.classCommand('RA =%f;',RA);
     UnitObs.readyToExpose(itel,true);
         
     % take exposure
@@ -151,8 +151,8 @@ RA  = LST - HA;
 RA  = mod(RA,360);
 
 %--- point telescope to RA/Dec ---
-M.classCommand(['Dec =' num2str(Dec) ';']);
-M.classCommand(['RA =' num2str(RA) ';']);
+M.classCommand('Dec = %f;',Dec);
+M.classCommand('RA = %f;',RA);
 UnitObj.readyToExpose(itel)
 
 % fit a circle to the [X,Y] position of polaris in all the images.
@@ -206,23 +206,23 @@ switch lower(InPar.Yalong)
 end
 
 if InPar.Verbose
-    UnitObj.report('\n\n');
-    UnitObj.report('------------------------\n');
-    UnitObj.report('ds9 legend: \n');
-    UnitObj.report(sprintf('    Marker Polaris %s\n',InPar.MarkerPolaris));
-    UnitObj.report(sprintf('    Marker celestial pole %s\n',InPar.MarkerCelPole));
-    UnitObj.report(sprintf('    Marker mount pole %s\n',InPar.MarkerMountPole));
+    UnitObj.report('\n\n')
+    UnitObj.report('------------------------\n')
+    UnitObj.report('ds9 legend: \n')
+    UnitObj.report('    Marker Polaris %s\n',InPar.MarkerPolaris)
+    UnitObj.report('    Marker celestial pole %s\n',InPar.MarkerCelPole)
+    UnitObj.report('    Marker mount pole %s\n',InPar.MarkerMountPole)
     UnitObj.report('Shift the mount Az/Alt such that the celestial pole coincides with the mount pole\n');
-    UnitObj.report(sprintf('Required delta X shift [pix]     : %f\n',ResP.DX));
-    UnitObj.report(sprintf('Required delta Y shift [pix]     : %f\n',ResP.DY));
+    UnitObj.report('Required delta X shift [pix]     : %f\n',ResP.DX)
+    UnitObj.report('Required delta Y shift [pix]     : %f\n',ResP.DY)
     if (ResP.DAz > 0)
-       UnitObj.report(sprintf('Decrease Az by:  [arcmin] : %f\n',ResP.DAz));
+       UnitObj.report('Decrease Az by:  [arcmin] : %f\n',ResP.DAz)
     else
-       UnitObj.report(sprintf('Increase Az by:  [arcmin] : %f\n',ResP.DAz));
+       UnitObj.report('Increase Az by:  [arcmin] : %f\n',ResP.DAz)
     end
     if (ResP.DAlt > 0)
-       UnitObj.report(sprintf('Decrease Alt by [arcmin]: %f\n',ResP.DAlt));
+       UnitObj.report('Decrease Alt by [arcmin]: %f\n',ResP.DAlt)
     else
-       UnitObj.report(sprintf('Increase Alt by [arcmin]: %f\n',ResP.DAlt));
+       UnitObj.report('Increase Alt by [arcmin]: %f\n',ResP.DAlt)
     end
 end

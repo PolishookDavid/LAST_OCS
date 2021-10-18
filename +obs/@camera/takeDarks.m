@@ -57,8 +57,8 @@ for Itemp=1:Ntemp
         pause(2)
         CoolingPower = C.CoolingPower;
         cameraTemperature=C.Temperature;
-        C.report(sprintf('   Requested Temperature : %.1f°C, Actual : %.1f°C\n',...
-                         targetTemp,cameraTemperature));
+        C.report('   Requested Temperature : %.1f°C, Actual : %.1f°C\n',...
+                         targetTemp,cameraTemperature);
         if abs(cameraTemperature-targetTemp)<InPar.MaxTempDiff
             break
         end
@@ -71,8 +71,8 @@ for Itemp=1:Ntemp
         for Iexp=1:Nexp
             ExpTime=InPar.ExpTime(Iexp);
             C.ExpTime = ExpTime;
-            C.report(sprintf('Taking %d dark exposure(s) of %g sec at T=%.1f°C\n',...
-                             InPar.Ndark,ExpTime,C.Temperature));
+            C.report('Taking %d dark exposure(s) of %g sec at T=%.1f°C\n',...
+                             InPar.Ndark,ExpTime,C.Temperature);
             if false && InPar.Ndark>1 && ExpTime>5 %% FIXME when we can save 
                 C.takeLive(InPar.Ndark);
                 % saving is missing here yet
@@ -86,8 +86,8 @@ for Itemp=1:Ntemp
             end
         end
     else
-        C.reportError(sprintf('Temperature did not reach the target of %.1f°C',...
-                               targetTemp));
+        C.reportError('Temperature did not reach the target of %.1f°C',...
+                               targetTemp);
     end
 end
 

@@ -9,8 +9,8 @@ function saveCurImage(CameraObj,Path)
     %  programmatic use, for example for saving darks or user images
     
     if isempty(CameraObj.LastImage)
-        CameraObj.reportError(sprintf('no image taken by camera %s to be saved',...
-                              CameraObj.Id))
+        CameraObj.reportError('no image taken by camera %s to be saved',...
+                              CameraObj.Id)
         return
     end
     
@@ -42,8 +42,8 @@ function saveCurImage(CameraObj,Path)
     % create the header locally, even from remote objects, because
     %  round-trip queries fail
     HeaderCell=CameraObj.imageHeader;
-    CameraObj.report(sprintf('Writing image %s to disk\n',...
-                              CameraObj.LastImageName));
+    CameraObj.report('Writing image %s to disk\n',...
+                              CameraObj.LastImageName);
     
     PWD = pwd;
     tools.os.cdmkdir(Path);  % cd and on the fly mkdir

@@ -28,7 +28,7 @@ function Flag=waitFinish(MountObj)
             case 'slewing'
                 % MountObj.report('.');
             otherwise
-                MountObj.reportError(sprintf('Mount status: %s',Status));
+                MountObj.reportError('Mount status: %s',Status);
                 break
         end
     end

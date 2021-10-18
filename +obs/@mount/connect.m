@@ -3,8 +3,8 @@ function connect(MountObj)
 %  called by the driver connect method itself (superclass invocation) only
 %  if physical connection is successful.
 
-    MountObj.report(sprintf('Loading post connection configuration for Mount %s\n',...
-                            MountObj.Id))
+    MountObj.report('Loading post connection configuration for Mount %s\n',...
+                     MountObj.Id)
     % load configuration
     MountObj.loadConfig(MountObj.configFileName('connect'))
     % Mount location coordinates and UTC

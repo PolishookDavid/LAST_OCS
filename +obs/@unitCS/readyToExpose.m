@@ -115,6 +115,6 @@ end
 if fault
     Unit.reportError(faultcause);
 elseif wait && ~ready
-    Unit.report(sprintf('unit still not ready to shoot after %.1f seconds\n',...
-                        (now-t0)*86400));
+    Unit.report('unit still not ready to shoot after %.1f seconds\n',...
+                        (now-t0)*86400)
 end

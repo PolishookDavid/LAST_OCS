@@ -31,16 +31,16 @@ function ImageToDisplay=divideByFlat(CameraObj,Image)
         Dark = FITS.read1(fullfile(CameraObj.Config.DarkDBDir, ...
                                      [CameraObj.PhysicalId '_Dark.fits'] ));
     catch
-        CameraObj.reportError(sprintf('cannot read Dark reference image for camera %s',...
-                                       CameraObj.PhysicalId))
+        CameraObj.reportError('cannot read Dark reference image for camera %s',...
+                                       CameraObj.PhysicalId)
     end
     
     try
         Flat = FITS.read1(fullfile(CameraObj.Config.FlatDBDir, ...
                                      [CameraObj.PhysicalId '_Flat.fits'] ));
     catch
-        CameraObj.reportError(sprintf('cannot read Flat reference image for camera %s',...
-                                       CameraObj.PhysicalId))
+        CameraObj.reportError('cannot read Flat reference image for camera %s',...
+                                       CameraObj.PhysicalId)
     end
     
     ImageToDisplay = ImageToDisplay(x1:x2,y1:y2);

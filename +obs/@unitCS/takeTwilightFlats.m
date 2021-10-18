@@ -102,7 +102,7 @@ while AttemptTakeFlat
         RA  = LST - 0;  % RA at HA=0
         RA  = RA + InPar.EastFromZenith;
         RA  = mod(RA,360);
-        M.classCommand(sprintf('goTo(%f,%f);',RA,Lat));
+        M.classCommand('goTo(%f,%f);',RA,Lat);
         
         % take test image without saving to disk
         UnitObj.takeExposure(itel,InPar.TestExpTime);
@@ -125,11 +125,11 @@ while AttemptTakeFlat
         MeanValAtMax = mean(MeanValPerSec) * max(InPar.ExpTimeRange);
 
         UnitObj.report('Flat test image\n');
-        UnitObj.report(sprintf('    SunAlt              : %6.2f\n',Sun.Alt.*RAD));
-        UnitObj.report(sprintf('    Az                  : %6.2f\n',M.classCommand('Az')));
-        UnitObj.report(sprintf('    Alt                 : %6.2f\n',M.classCommand('Alt')));
-        UnitObj.report(sprintf('    Image ExpTime       : %6.2f\n',InPar.TestExpTime));
-        UnitObj.report(sprintf('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec)));
+        UnitObj.report('    SunAlt              : %6.2f\n',Sun.Alt.*RAD)
+        UnitObj.report('    Az                  : %6.2f\n',M.classCommand('Az'))
+        UnitObj.report('    Alt                 : %6.2f\n',M.classCommand('Alt'))
+        UnitObj.report('    Image ExpTime       : %6.2f\n',InPar.TestExpTime)
+        UnitObj.report('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec))
                
         if MeanValAtMax>InPar.MinFlatLimit && MeanValAtMin<InPar.MaxFlatLimit
             % Sun Altitude and image mean value are in allowed range
@@ -148,12 +148,12 @@ while AttemptTakeFlat
                 RA  = mod(RA,360);
                 RA  = RA + (rand(1,1)-0.5).*2.*InPar.RandomShift;
                 Dec = Lat + (rand(1,1)-0.5).*2.*InPar.RandomShift;
-                M.classCommand(sprintf('goTo(%f,%f);',RA,Dec));
+                M.classCommand('goTo(%f,%f);',RA,Dec);
                 UnitObj.readyToExpose(itel,true);
                 
                 EstimatedExpTime = InPar.MaxFlatLimit/mean(MeanValPerSec);
-                UnitObj.report(sprintf('Estimated exposure time: %g sec\n',...
-                                        EstimatedExpTime));
+                UnitObj.report('Estimated exposure time: %g sec\n',...
+                                        EstimatedExpTime)
                 if EstimatedExpTime>min(InPar.ExpTimeRange) &&...
                         EstimatedExpTime<max(InPar.ExpTimeRange)
  
@@ -184,19 +184,19 @@ while AttemptTakeFlat
                     MeanValAtMin = mean(MeanValPerSec) * min(InPar.ExpTimeRange);
                     MeanValAtMax = mean(MeanValPerSec) * max(InPar.ExpTimeRange);
                                         
-                    UnitObj.report(sprintf('Flat image number %d\n',Counter));
-                    UnitObj.report(sprintf('     SunAlt             : %5.2f\n',Sun.Alt.*RAD));
-                    UnitObj.report(sprintf('     Az                 : %6.2f\n',M.classCommand('Az')));
-                    UnitObj.report(sprintf('     Alt                : %6.2f\n',M.classCommand('Alt')));
-                    UnitObj.report(sprintf('     Image ExpTime      : %6.2f\n',InPar.TestExpTime));
-                    UnitObj.report(sprintf('     Image MeanValPerSec: %5.1f\n',mean(MeanValPerSec)));
+                    UnitObj.report('Flat image number %d\n',Counter)
+                    UnitObj.report('     SunAlt             : %5.2f\n',Sun.Alt.*RAD)
+                    UnitObj.report('     Az                 : %6.2f\n',M.classCommand('Az'))
+                    UnitObj.report('     Alt                : %6.2f\n',M.classCommand('Alt'))
+                    UnitObj.report('     Image ExpTime      : %6.2f\n',InPar.TestExpTime)
+                    UnitObj.report('     Image MeanValPerSec: %5.1f\n',mean(MeanValPerSec))
                     
                     if exist('/home/eran/abort','file') % FIXME !!!!
                         ContFlat = false; % why value unused anyway?
                     end
                 else
-                    UnitObj.report(sprintf('Estimated exposure time > %g sec, aborting \n',...
-                                           max(InPar.ExpTimeRange)));
+                    UnitObj.report('Estimated exposure time > %g sec, aborting \n',...
+                                           max(InPar.ExpTimeRange))
                 end
                 
                 % get Sun altitude
@@ -217,10 +217,10 @@ while AttemptTakeFlat
                 
             end
         else
-            UnitObj.report(sprintf(['estimated mean image value at max(ExpTime)=%g,'...
+            UnitObj.report(['estimated mean image value at max(ExpTime)=%g,'...
                                     'out of range [%g,%g], waiting'],...
                                     MeanValAtMax,InPar.MinFlatLimit,...
-                                    InPar.MaxFlatLimit))
+                                    InPar.MaxFlatLimit)
             pause(InPar.WaitTimeCheck);            
         end
 
@@ -230,7 +230,7 @@ while AttemptTakeFlat
 
     else
         UnitObj.report('Not ready to start flat - SunAlt is not in range\n');
-        UnitObj.report(sprintf('     SunAlt             : %5.2f\n',Sun.Alt.*RAD));
+        UnitObj.report('     SunAlt             : %5.2f\n',Sun.Alt.*RAD)
 
         if Counter==0
             % else for (Sun.Alt.*RAD)>InPar.MinSunAlt && (Sun.Alt.*RAD)<InPar.MaxSunAlt

@@ -134,7 +134,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         % take the current focus as best guess, if not otherwise provided
         InPar.FocusGuess=NaN(Ncam,1);
         for i=1:Ncam
-            InPar.FocusGuess(i)=UnitObj.Focuser{itel(i)}.classCommand(sprintf('Pos'));
+            InPar.FocusGuess(i)=UnitObj.Focuser{itel(i)}.classCommand('Pos');
         end
     end
     
@@ -196,7 +196,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         return
     end
     for Icam=1:Ncam
-        FocObj{Icam}.classCommand(sprintf('Pos=%d;', StartFocus(Icam)));
+        FocObj{Icam}.classCommand('Pos=%d;', StartFocus(Icam));
     end
     if ~UnitObj.readyToExpose(itel,true)
         return
@@ -205,13 +205,13 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     FocVal = nan(Nfocus,Nsp,Ncam);
     for Ifocus=1:Nfocus
         for Icam=1:Ncam
-            UnitObj.report(sprintf('Focuser %d to position: %.0f (#%d out of %d)\n',...
-                                   itel(Icam), FocusPosCam(Ifocus,Icam), Ifocus, Nfocus));
+            UnitObj.report('Focuser %d to position: %.0f (#%d out of %d)\n',...
+                            itel(Icam), FocusPosCam(Ifocus,Icam), Ifocus, Nfocus)
         end
 
         % set all focusers
         for Icam=1:Ncam
-            FocObj{Icam}.classCommand(sprintf('Pos=%d;',FocusPosCam(Ifocus,Icam)));
+            FocObj{Icam}.classCommand('Pos=%d;',FocusPosCam(Ifocus,Icam));
         end
         % wait for all focusers
         if ~UnitObj.readyToExpose(itel,true)
@@ -228,7 +228,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         for Icam=1:Ncam
             % check real focuser position (commanded position might have been
             %  beyond limits)
-            actualFocuserPos(Ifocus,Icam)=FocObj{Icam}.classCommand(sprintf('Pos'));
+            actualFocuserPos(Ifocus,Icam)=FocObj{Icam}.classCommand('Pos');
             % measure FWHM for each image taken
             if isa(CamObj(Icam),'obs.camera')
                 FocVal(Ifocus,:,Icam)=obs.util.image.imageFocus(CamObj(Icam).LastImage,...
@@ -313,17 +313,17 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         
         % move up (best+backlash, was - start position to avoid backlash)
         for Icam=1:1:Ncam
-            UnitObj.report(sprintf('Best focus for camera %s @%.0f: FWHM=%f\n',...
-                                   leg{Icam}, BestFocusPos(Icam),...
-                                   mean(Res.BestFocusFWHM(:,Icam))))
-            FocObj{Icam}.classCommand(sprintf('Pos = %d;',...
-                BestFocusPos(Icam)+InPar.BacklashFocus));
+            UnitObj.report('Best focus for camera %s @%.0f: FWHM=%f\n',...
+                            leg{Icam}, BestFocusPos(Icam),...
+                            mean(Res.BestFocusFWHM(:,Icam)))
+            FocObj{Icam}.classCommand('Pos = %d;',...
+                BestFocusPos(Icam)+InPar.BacklashFocus);
         end
         UnitObj.readyToExpose(itel,true); % here we could check only focusers
         
         % go to best focus
         for Icam=1:1:Ncam
-            FocObj{Icam}.classCommand(sprintf('Pos = %d;',BestFocusPos(Icam)));
+            FocObj{Icam}.classCommand('Pos = %d;',BestFocusPos(Icam));
         end
     end
     

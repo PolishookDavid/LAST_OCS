@@ -21,8 +21,8 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
     end
 
     if prod(SizeImIJ)==0
-        UnitObj.reportError(sprintf('no image taken by telescope %d, no header to create',...
-                            itel))
+        UnitObj.reportError('no image taken by telescope %d, no header to create',...
+                            itel)
         Info=struct();
         HeaderCell=cell(0,3);
         return
