@@ -9,7 +9,9 @@ function treatNewImage(CameraObj,Source,EventData)
         return
     end
     
-    CameraObj.report('New image available (%d/%d) from camera %s\n',...
-                      CameraObj.ProgressiveFrame,CameraObj.SequenceLength,...
-                      CameraObj.Id)
-    CameraObj.displayImage;
+    if ~isempty(CameraObj.LastImage)
+        CameraObj.report('New image available (%d/%d) from camera %s\n',...
+            CameraObj.ProgressiveFrame,CameraObj.SequenceLength,...
+            CameraObj.Id)
+        CameraObj.displayImage;
+    end
