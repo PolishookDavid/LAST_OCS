@@ -38,10 +38,10 @@ classdef unitCS < obs.LAST_Handle
         % current yml configuration reader, the configuration can contain
         % only a string significating class names, which are then used
         % to construct the actual object handles by eval()'s
-        PowerDriver
-        MountDriver
-        FocuserDriver
-        CameraDriver
+        PowerDriver % class name of the power switch driver [configuration only]
+        MountDriver % class name of the mount driver [configuration only]
+        FocuserDriver % class names of the focuser drivers [configuration only]
+        CameraDriver  % class names of the camera drivers [configuration only]
     end
 
     methods
