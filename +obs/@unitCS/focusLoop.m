@@ -50,7 +50,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %                                 is checked, in pixel coordinates. If empty,
 %                                 defaults to image center + 6 positions
 %                                 on a circle of radius 2000 pixels around
-%                                 it.
+%                                 it. Only for Method='imageFocus'.
 %            'SigmaVec' - Vector of gaussian kernel sigma-width (template
 %                   bank) with wich to cross-correlate the image.
 %                   This will define the range and resolution of the
@@ -112,12 +112,12 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');
     addOptional(InPar,'Plot',true);
     addOptional(InPar,'Random',false);
-    addoptional(Inpar,'Method','fwhm_fromBank',...
+    addOptional(InPar,'Method','fwhm_fromBank',...
                       @(x)any(strcmp(x,{'fwhm_fromBank','imageFocus'})) );
     parse(InPar,varargin{:});
     InPar = InPar.Results;
 
-    if ~isempty(InPar.SeveralPositions)
+    if ~isempty(InPar.SeveralPositions) && strcmp(InPar.Method,'imageFocus')
         InPar.ImageHalfSize = [];
         Nsp=size(InPar.SeveralPositions,1);
     else
