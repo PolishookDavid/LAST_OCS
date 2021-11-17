@@ -1,7 +1,11 @@
 function FocVal=imageFocus(Image,ImageHalfSize,SigmaVec,PixScale,SeveralPositions)
 % Compute a quality value of the focus of the image according to various
-%   control parameters.
+%   control parameters (for use essentially of unitCS.focusLoop)
+%
 % Code derived from what was in focus_loop_new()
+%
+% This function is probably obsoleted by the new imUtil.psf.fwhm_fromBank,
+%  called directly by focusLoop.
 %
 % Output: FocVal, scalar or array of same length of SeveralPositions
 %
