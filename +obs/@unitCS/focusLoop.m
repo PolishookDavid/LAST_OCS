@@ -236,7 +236,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
             %  beyond limits)
             actualFocuserPos(Ifocus,Icam)=FocObj{Icam}.classCommand('Pos');
             % measure FWHM for each image taken
-            if isa(CamObj(Icam),'obs.camera')
+            if isa(CamObj{Icam},'obs.camera')
                 switch InPar.Method
                     case 'imageFocus'
                         FocVal(Ifocus,:,Icam)=...
@@ -249,7 +249,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                             imUtil.psf.fwhm_fromBank(CamObj(Icam).LastImage,...
                                             'HalfSize',InPar.ImageHalfSize);
                 end
-            elseif isa(CamObj(Icam),'obs.remoteClass')
+            elseif isa(CamObj{Icam},'obs.remoteClass')
                 % do this in slave for remote cameras: construct command...
                 switch InPar.Method
                     case 'imageFocus'
@@ -261,9 +261,9 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                     otherwise
                         focuscommand=...
                             sprintf('imUtil.psf.fwhm_fromBank(%s.LastImage,''HalfSize'',%g);',...
-                            CamObj(Icam).RemoteName, InPar.ImageHalfSize);
+                            CamObj{Icam}.RemoteName, InPar.ImageHalfSize);
                 end
-                FocVal(Ifocus,:,Icam)=CamObj(Icam).Messenger.query(focuscommand);
+                FocVal(Ifocus,:,Icam)=CamObj{Icam}.Messenger.query(focuscommand);
             else
                 % do nothing, safeguard
             end
