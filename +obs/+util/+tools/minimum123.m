@@ -22,13 +22,12 @@ function [xmin,ymin]=minimum123(x,y)
         otherwise
             [~,imin] = min(y(usablePoints));
             % minimum if the minimum is at the extremum
-            if usablePoints(1)==imin || usablePoints(end)==imin
-                xmin=x(imin);
-                ymin=y(imin);
+            if imin==1 || imin==numel(usablePoints)
+                xmin=x(usablePoints(imin));
+                ymin=y(usablePoints(imin));
             else
                 % otherwise, three point parabolic interpolation
-                q=find(usablePoints==imin);
-                p=usablePoints(q-1:q+1);
+                p=usablePoints(imin-1:imin+1);
                 f=x(p);
                 v=y(p);
                 [xmin,ymin]= obs.util.tools.parabolicInterpolation(f,v);
