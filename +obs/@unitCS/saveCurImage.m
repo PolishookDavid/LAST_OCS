@@ -71,7 +71,7 @@ function saveCurImage(UnitObj,itel,Path)
                 Path=DefaultPath;
             end
             
-            CameraObj.LastImageName = FileName;
+            CameraObj.LastImageName = fullfile(Path,FileName);
             
             % create the header locally, even from remote objects, because
             %  round-trip queries fail

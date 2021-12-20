@@ -10,7 +10,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     %            the Camera.ExpTime, and the Camera.ExpTime
     %            will be set to this value.
     %          - Number of images to obtain. Default is 1.
-    %          - ...,key,val,... :
+    %          * ...,key,val,... :
     %            'WaitFinish' - default is false (to reduce delays)
     %            'ImType'     - (passed along to write image file), default is ''
     %            'Object'     - (passed along to write image file), default is ''.
