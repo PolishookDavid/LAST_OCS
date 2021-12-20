@@ -55,8 +55,9 @@ function Summary = alignCameraRotation(UnitCS, Args)
         Dec = OutCoo(2);
         
         % take exposure and wait till finish
-        UnitCS.takeExposure(Args.Cameras, Args.ExpTime, 1, 'WaitFinish',true);        
-        
+        UnitCS.takeExposure(Args.Cameras, Args.ExpTime, 1);
+        UnitCS.readyToExpose(Args.Cameras, true, Args.ExpTime+10);
+         
         % get image names
         % Image full names are stored in a cell array FileNames{1..4}
         for Icam=1:1:Ncam

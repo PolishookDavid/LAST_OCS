@@ -10,18 +10,18 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     %            the Camera.ExpTime, and the Camera.ExpTime
     %            will be set to this value.
     %          - Number of images to obtain. Default is 1.
-    %          * ...,key,val,...
+    %          - ...,key,val,... :
     %            'WaitFinish' - default is false (to reduce delays)
-    %            'ImType'     - default is ''.
-    %            'Object'     - default is ''.
+    %            'ImType'     - (passed along to write image file), default is ''
+    %            'Object'     - (passed along to write image file), default is ''.
     %            'MinExpTimeForSave' - default is 5 [sec]. .SaveOnDisk
     %                                  will be temporarily turned off if
     %                                  ExpTime is smaller than that.
     %                                  (BUG - doesn't happen)
-
-    % Take care, Unit.Camera{i}.classCommand('waitFinish') may timeout
+    % TAKE CARE, Unit.Camera{i}.classCommand('waitFinish') may timeout
     %  because of no reply, if the messenger timeout is shorter than
-    %  ExpTime
+    %  ExpTime. Consider using the method readyToExpose(...,true,timeout)
+    %  for finer control.
     
     % argument parsing
     if ~exist('Cameras','var') || isempty(Cameras)
@@ -99,26 +99,32 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages,varargin)
     %  methods, and of the remote ones, using blind sends for maximum speed.
     %  This difference prevents the use of .classCommand() for both
     for i=Cameras
-        if isa(Unit.Camera{i},'obs.remoteClass')
-            remotename=Unit.Camera{i}.RemoteName;
-            if Nimages>1
-                Unit.Camera{i}.Messenger.send(sprintf('%s.takeLive(%d)',remotename,Nimages));
+        CamStatus=Unit.Camera{i}.classCommand('CamStatus;');
+        if strcmp(CamStatus,'idle')
+            if isa(Unit.Camera{i},'obs.remoteClass')
+                remotename=Unit.Camera{i}.RemoteName;
+                if Nimages>1
+                    Unit.Camera{i}.Messenger.send(sprintf('%s.takeLive(%d)',remotename,Nimages));
+                else
+                    Unit.Camera{i}.Messenger.send(sprintf('%s.takeExposure',remotename));
+                end
             else
-                Unit.Camera{i}.Messenger.send(sprintf('%s.takeExposure',remotename));
+                if Nimages>1
+                    Unit.Camera{i}.takeLive(Nimages);
+                else
+                    Unit.Camera{i}.takeExposure;
+                end
             end
+            % otherwise it would be just:
+            %         if Nimages>1
+            %             Unit.Camera{i}.classCommand('takeLive(%d)',Nimages);
+            %         else
+            %             Unit.Camera{i}.classCommand('takeExposure');
+            %         end
         else
-            if Nimages>1
-                Unit.Camera{i}.takeLive(Nimages);
-            else
-                Unit.Camera{i}.takeExposure;
-            end
+            Unit.reportError('Camera %d status is "%s", cannot take exposures!',...
+                             i,CamStatus)
         end
-        % otherwise it would be just:
-%         if Nimages>1
-%             Unit.Camera{i}.classCommand('takeLive(%d)',Nimages);
-%         else
-%             Unit.Camera{i}.classCommand('takeExposure');
-%         end
     end
     
     % restore the previous SaveOnDisk status if needed
