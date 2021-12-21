@@ -6,16 +6,23 @@ function Unit=connect(Unit)
     % 3) spawn Matlab slaves for all remote instruments, create in them
     %    appropriate unitCS objects, populate them with consistent
     %    property values, and initiate the connections there
+    % This method is designed to be called both for the master Unit and for
+    %  its copies in eventual slaves.
     
     % for powering on, we could rely only on the right states being written
-    %  in the power switches configuration files
+    %  in the power switches configuration files. Let's assume that the
+    %  power switches are always controlled by the Master
     for i=1:numel(Unit.PowerSwitch)
-        Unit.PowerSwitch{i}.classCommand('connect');
+        if ~isa(Unit.PowerSwitch{i},'obs.remoteClass')
+            Unit.PowerSwitch{i}.classCommand('connect');
+        end
     end
     
-    % however, turning explicitely on the powers is perhaps safer ad clearer
-    Unit.CameraPower(:)=true;
-    Unit.MountPower=true;
+    % however, turning explicitely on the powers would be perhaps safer 
+    %  and clearer - but would need more gymnastics in slaves, also
+    %  the switches configurationswould need to be copied there
+    % Unit.CameraPower(:)=true;
+    % Unit.MountPower=true;
 
     pause(2) % a small delay to give time to the cameras to come up
     
