@@ -16,7 +16,7 @@ function Summary = alignCameraRotation(UnitCS, Args)
     %            ** NOTE: if not given, instead of a default, should be
     %                     taken from
     %                     UnitCS.Camera{Cameras}.lassCommand('TelescopeOffset')
-    % Outout : - A summary structure
+    % Output : - A summary structure
     %            .S - Structure array of [HA, Cam] for astrometric summary
     %                   for each HA/camera.
     %            .MountJ - J2000.0 RA/Dec/HA for each mount pointing.

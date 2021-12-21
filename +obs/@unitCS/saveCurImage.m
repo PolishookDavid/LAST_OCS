@@ -47,12 +47,15 @@ function saveCurImage(UnitObj,itel,Path)
             end
         else
             % Construct directory name to save image in
+
+% old filename generation
             ProjName = sprintf('%s.%d.%s.%d', UnitObj.Config.ProjName,...
                 UnitObj.Config.NodeNumber, UnitObj.Id, icam);
             JD = CameraObj.classCommand('TimeStartLastImage') + 1721058.5;
             
             % default values for fields which may be a bit too fragile to store
-            %  only in config files: Filter, DataDir, BaseDir
+            %  only in config files: Filter, DataDir, BaseDir (of Unit
+            %  and Camera -- see the private method unitCS.constructFilename)
             
             [FileName,DefaultPath]=imUtil.util.file.construct_filename('ProjName',ProjName,...
                 'Date',JD,...
@@ -66,7 +69,10 @@ function saveCurImage(UnitObj,itel,Path)
                 'FileType','fits',...
                 'DataDir',CameraObj.Config.DataDir,...
                 'Base',CameraObj.Config.BaseDir);
-            
+
+% CHECK -this should be used instead, if it works
+%            [FileName,DefaultPath]=constructFilename(Unit,icam);
+
             if ~exist('Path','var')
                 Path=DefaultPath;
             end

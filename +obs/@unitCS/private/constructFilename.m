@@ -1,0 +1,35 @@
+function [FileName,Path]=constructFilename(Unit,icam)
+% construct a canonical filename for saving images produced by camera itel
+
+    CameraObj=Unit.Camera{icam};
+
+    IP=ImagePath;
+
+    % Is it right to use this (JD) as Time?
+    IP.Time = CameraObj.classCommand('TimeStartLastImage') + 1721058.5;
+    IP.CropID = 1;
+    IP.CCDID = 1;
+
+    try
+        % CHECK -- this will run most of the times in the slaves,
+        %  We rely on that connectSlave duplicates the relevant fields
+        %  of Unit.Config, so that we don't need to include them in the
+        %  respective configuration files
+        ProjName = sprintf('%s.%02d.%s',...
+                            Unit.Config.ProjName,  Unit.Config.NodeNumber, ...
+                            Unit.Mount.classCommand('Id;'),...  % Eran would want a number...
+                            CameraObj.classCommand('Config.CameraNumber;') );
+        IP.ProjName= ProjName;
+        IP.Filter = CameraObj.classCommand('Config.Filter;');
+        IP.FieldID = '';  % get this from unitCS - need to discuss this
+        IP.Counter =  CameraObj.classCommand('ProgressiveFrame;');
+        IP.BasePath = fullfile(CameraObj.classCommand('Config.BaseDir;'),...
+                               CameraObj.classCommand('Config.DataDir;'));
+    catch
+        Unit.reportError(['canonical image file name generation needs' ...
+                          ' parameters which are not in config, check!'])
+    end
+
+    FileName = IP.genFile;
+    Path         = IP.genPath;
+
