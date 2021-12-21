@@ -28,6 +28,7 @@ classdef camera < obs.LAST_Handle
     properties(Hidden)
         Filter char     = '';          % Filter Name
         PixScale double = 1.25;     % image scale, "/pixels
+        TelescopeOffset double =[0,0] % HA and Dec offsets w.r.t mount pointing
     end
         
     % limits

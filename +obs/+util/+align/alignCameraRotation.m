@@ -13,6 +13,9 @@ function Summary = alignCameraRotation(UnitCS, Args)
     %            'TelOffsets' - A two column matrix of telescope offsets
     %                   [deg] relative to mount pointiong [DeltaRA, DeltaDec]
     %                   Default is [2.2 3.3;2.2 -3.3; -2.2 -3.3; -2.2 3.3].*0.5
+    %            ** NOTE: if not given, instead of a default, should be
+    %                     taken from
+    %                     UnitCS.Camera{Cameras}.lassCommand('TelescopeOffset')
     % Outout : - A summary structure
     %            .S - Structure array of [HA, Cam] for astrometric summary
     %                   for each HA/camera.
