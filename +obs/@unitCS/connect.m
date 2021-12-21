@@ -7,12 +7,15 @@ function Unit=connect(Unit)
     %    appropriate unitCS objects, populate them with consistent
     %    property values, and initiate the connections there
     
-    % for powering on, we rely on the right states being written in
-    %  the power switches configuration files, rather than turning
-    %  the individual powers on (which perhaps would be clearer)
+    % for powering on, we could rely only on the right states being written
+    %  in the power switches configuration files
     for i=1:numel(Unit.PowerSwitch)
         Unit.PowerSwitch{i}.classCommand('connect');
     end
+    
+    % however, turning explicitely on the powers is perhaps safer ad clearer
+    Unit.CameraPower(:)=true;
+    Unit.MountPower=true;
 
     pause(2) % a small delay to give time to the cameras to come up
     
