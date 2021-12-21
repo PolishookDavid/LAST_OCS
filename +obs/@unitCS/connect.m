@@ -1,18 +1,20 @@
 function Unit=connect(Unit)
     % Connect the unitCS to all its local and remote instruments
     % Purposes:
-    % 1) connect all instruments assigned locally to this unit
-    % 2) spawn Matlab slaves for all remote instruments, create in them
+    % 1) turn on on power of mount and cameras
+    % 2) connect all instruments assigned locally to this unit
+    % 3) spawn Matlab slaves for all remote instruments, create in them
     %    appropriate unitCS objects, populate them with consistent
     %    property values, and initiate the connections there
     
+    % for powering on, we rely on the right states being written in
+    %  the power switches configuration files, rather than turning
+    %  the individual powers on (which perhaps would be clearer)
     for i=1:numel(Unit.PowerSwitch)
-        if ~isa(Unit.PowerSwitch{i},'obs.remoteClass')
-            Unit.PowerSwitch{i}.classCommand('connect');
-        end
+        Unit.PowerSwitch{i}.classCommand('connect');
     end
-    
-    pause(2) % a small delay to give timeto the cameras to come up
+
+    pause(2) % a small delay to give time to the cameras to come up
     
     if isa(Unit.Mount,'obs.mount')
         % real mount

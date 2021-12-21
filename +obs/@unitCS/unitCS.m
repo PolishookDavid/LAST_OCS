@@ -15,6 +15,7 @@ classdef unitCS < obs.LAST_Handle
     properties
         PowerSwitch  cell   % handles to IP power switches units
         Mount               % handle to the mount(s) abstraction object
+        MountPower logical % power of the mount, off/on
         Camera cell    % cell, handles to the camera abstraction objects
         CameraPower logical % power of the cameras off/on
         Focuser cell   % cell, handles to the focuser abstraction objects
@@ -24,6 +25,8 @@ classdef unitCS < obs.LAST_Handle
         % non-structured notation because of limitations of the yml configuration
         CameraPowerUnit double =[]; % switch unit controlling each camera
         CameraPowerOutput double =[]; % switch output controlling each camera
+        MountPowerUnit double =[];% switch controlling mount power
+        MountPowerOutput double=[]; % switch output controlling the mount
     end
 
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle)
@@ -123,6 +126,21 @@ classdef unitCS < obs.LAST_Handle
     
     % setters/getters
     methods
+        function power=get.MountPower(UnitObj)
+            try
+                power=...
+                    UnitObj.PowerSwitch{UnitObj.MountPowerUnit}.classCommand('Outputs(%d);',...
+                                                UnitObj.MountPowerOutput);
+            catch
+                power=false;
+            end
+        end
+        
+        function set.MountPower(UnitObj,power)
+            UnitObj.PowerSwitch{UnitObj.MountPowerUnit}.classCommand('Outputs(%d)=%d;',...
+                                UnitObj.MountPowerOutput,power);
+        end
+        
         function Power=get.CameraPower(UnitObj)
             numcam=numel(UnitObj.Camera);
             Power=false(1,numcam);
