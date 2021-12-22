@@ -1,5 +1,5 @@
 function [FileName,Path]=constructFilename(Unit,icam)
-% construct a canonical filename for saving images produced by camera itel
+% construct a canonical filename for saving images produced by camera icam
 %  (format decided 11/2021)
 
     CameraObj=Unit.Camera{icam};
@@ -16,9 +16,10 @@ function [FileName,Path]=constructFilename(Unit,icam)
         %  We rely on that connectSlave has duplicated the relevant fields
         %  of Unit.Config, so that we don't need to include them in the
         %  respective configuration files
-        ProjName = sprintf('%s.%02d.%s',...
+        %  We write a fixed 01 for the mount, because so far unitCS is designed
+        %   for a single one
+        ProjName = sprintf('%s.%02d.01.%02d',...
                             Unit.Config.ProjName,  Unit.Config.NodeNumber, ...
-                            Unit.Mount.classCommand('Id;'),...  % Eran would want a number...
                             CameraObj.classCommand('Config.CameraNumber;') );
         IP.ProjName= ProjName;
         IP.Filter = CameraObj.classCommand('Config.Filter;');
