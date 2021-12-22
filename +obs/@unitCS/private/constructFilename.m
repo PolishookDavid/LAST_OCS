@@ -1,5 +1,6 @@
 function [FileName,Path]=constructFilename(Unit,icam)
 % construct a canonical filename for saving images produced by camera itel
+%  (format decided 11/2021)
 
     CameraObj=Unit.Camera{icam};
 
@@ -11,8 +12,8 @@ function [FileName,Path]=constructFilename(Unit,icam)
     IP.CCDID = 1;
 
     try
-        % CHECK -- this will run most of the times in the slaves,
-        %  We rely on that connectSlave duplicates the relevant fields
+        % This will run most of the times in the slaves.
+        %  We rely on that connectSlave has duplicated the relevant fields
         %  of Unit.Config, so that we don't need to include them in the
         %  respective configuration files
         ProjName = sprintf('%s.%02d.%s',...
