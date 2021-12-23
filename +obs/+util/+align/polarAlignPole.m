@@ -1,8 +1,16 @@
 function [Result, ResFit] = polarAlignPole(UnitCS, Args)
     % Polar alignment using the circling around pole method
     %   
-    % Input  : -
-    % Output : -
+    % Input  : - A UnitCS object.
+    %          * ...,key,val,...
+    %            'HA' - Vector of HA [deg] in which to observe.
+    %                   One of the values must be zero.
+    %                   Default is (-90:45:90).
+    %            'Dec' - Pole Declination. Default is 89.99999 [deg].
+    %            'Camera' - Camera index. Default is 1.
+    % Output : - Astrometric results.
+    %          - Fitted results, and deviation from pole.
+    % Author : Eran Ofek (Dec 2021)
     
     % need a function that thae images, plot them with circle around coo...
     % align... BestCen, CelPole...
@@ -114,7 +122,7 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         ds9.plot([Result(Iha).CelPoleX, Result(Iha).CelPoleY], Args.MarkerNCP,     'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','CP');
         ds9.plot([[Result.PolarisX].', [Result.PolarisY].'],   Args.MarkerPolaris, 'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','Polaris');
         
-        ds9.plot(BestCen(1),BestCen(2), InPar.MarkerMount,'Size',InPar.MarkerSize.*[1 1 0], 'Text','Mount');
+        ds9.plot(BestCen(1),BestCen(2), InPar.MarkerMount,'Size',Args.MarkerSize.*[1 1 0], 'Text','Mount');
         ds9.plot(BestCen(1),BestCen(2), InPar.MarkerMount,'Size',BestRad);
         
     end

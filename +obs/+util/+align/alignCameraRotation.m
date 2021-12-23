@@ -38,7 +38,14 @@ function Summary = alignCameraRotation(UnitCS, Args)
     % Example: Summary = obs.util.align.alignCameraRotation(UnitCS);
     
     arguments
-       Helou
+        UnitCS    % UnitCS class
+        Args.HA      = [-60, -30, 0, 30, 60];
+        Args.Dec     = 0;
+        
+        Args.ExpTime = 3;
+        Args.Cameras = [1 2 3 4];
+        Args.TelOffsets = [2.2 3.3;2.2 -3.3; -2.2 -3.3; -2.2 3.3].*0.5;   % telescope are always numbered: NE, SE, SW, NW 
+        
     end
    
     RAD = 180./pi;
