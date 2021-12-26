@@ -48,13 +48,11 @@ function Unit=connect(Unit)
     
     % and now remote:
     % - spawn slaves
-    for i=1:numel(Unit.Slave)
-        % connect the slave
-        SlaveUnitName=inputname(1);
-        % this is a bit tricky but ensures that the remote unitCS object
-        %  gets the right name
-        eval([SlaveUnitName '=Unit;']);
-        eval(sprintf('%s.connectSlave(%d)',SlaveUnitName,i));
-    end
+    SlaveUnitName=inputname(1);
+    % this is a bit tricky but ensures that the remote unitCS object
+    %  gets the right name
+    eval([SlaveUnitName '=Unit;']);
+    eval(sprintf('%s.connectSlave(%s)',SlaveUnitName,...
+         mat2str(1:numel(Unit.Slave))));
 
 end
