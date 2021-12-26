@@ -277,17 +277,20 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         if InPar.Plot
             % clear all matlab plots
             %close all
+            nxplot=ceil(sqrt(Ncam));
+            nyplot=ceil(Ncam/nxplot);
             clf
             for Icam=1:Ncam
+                subplot(nxplot,nyplot,Icam)
                 plot(actualFocuserPos(:,Icam),FocVal(:,:,Icam),'ko',...
                     'Color',Colors(Icam,:),...
                     'Marker',PlotMarker','MarkerFaceColor',Colors(Icam,:));
                 xlim([min(FocusPosCam,[],'all'),max(FocusPosCam,[],'all')]);
                 hold on
+                xlabel('Focus position','FontSize',18);
+                ylabel('FWHM [arcsec]','FontSize',18);
+                title(leg{Icam},'Interpreter','none')
             end
-            xlabel('Focus position','FontSize',18);
-            ylabel('FWHM [arcsec]','FontSize',18);
-            legend(leg,'Location','NorthEastOutside','Interpreter','none')
             drawnow
         end
 
@@ -314,12 +317,13 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     if InPar.Plot
         for Icam=1:Ncam
+            subplot(nxplot,nyplot,Icam)
             plot(Res.BestFocusPos(:,Icam),Res.BestFocusFWHM(:,Icam),...
                 'Marker',PlotMinMarker,'MarkerSize',10,...
                 'MarkerFaceColor',Colors(Icam,:));
         end
         hold off
-        legend(leg,'Location','NorthEastOutside','Interpreter','none')
+        title(leg{Icam},'Interpreter','none')
         drawnow
     end
 
