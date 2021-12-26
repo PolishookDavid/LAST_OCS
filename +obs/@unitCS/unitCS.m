@@ -107,6 +107,11 @@ classdef unitCS < obs.LAST_Handle
 
         function delete(UnitObj)
             % delete unit object and related sub objects
+% Be careful. Since the resources for each child are in fact unique (fixed
+%  udp port numbers, fixed switch, focuser, mount), it can very well
+%  happen that the destructor of an old object is called just after
+%  a new one is created, causing hardware to be turned off immediately
+%  after it is turned on, if the specific delete() includes that.
             for i=1:numel(UnitObj.Slave)
                 delete(UnitObj.Slave{i})
             end
