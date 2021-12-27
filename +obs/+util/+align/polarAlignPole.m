@@ -11,7 +11,7 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
     % Output : - Astrometric results.
     %          - Fitted results, and deviation from pole.
     % Author : Eran Ofek (Dec 2021)
-    
+    % Example: [Result, ResFit] = obs.util.align.polarAlignPole(P, 'HA',[-40:40:40],'Camera',3)
     % need a function that thae images, plot them with circle around coo...
     % align... BestCen, CelPole...
     
@@ -25,6 +25,7 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         Args.HA      = (-90:45:90);
         Args.Dec     = 89.99999;
         
+        Args.UsePolarisCoo logical = true;  % for astrometry
         Args.PolarisRA  = celestial.coo.convertdms([2 31 49.09],'H','d');      % deg
         Args.PolarisDec = celestial.coo.convertdms([1 89 15 50.8],'D','d');    % deg
         Args.NCP_RA     = 0;
@@ -34,10 +35,10 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         Args.Lon        = 34.81694;
         Args.Lat        = 31.91111;
         
-        Args.Xalong     = '-ra';
+        Args.Xalong     = 'ra';
         Args.Yalong     = 'dec';
         
-        Args.ExpTime = 3;
+        Args.ExpTime = 5;
         Args.Camera  = 1;  % one camera only
         Args.TelOffsets = zeros(4,2); % [2.2 3.3;2.2 -3.3; -2.2 -3.3; -2.2 3.3].*0.5;   % telescope are always numbered: NE, SE, SW, NW 
         
@@ -48,6 +49,8 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         Args.MarkerMount    = 'co';
         Args.MarkerWidth    = 3;
         Args.MarkerSize     = [40 40 0];
+        
+        Args.Verbose logical = true;
         
     end
         
@@ -83,22 +86,35 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         Result(Iha).HA  = UnitCS.Mount.HA;
         
         % take exposure and wait till finish
-        UnitCS.takeExposure(Args.Cameras, Args.ExpTime, 1);
-        UnitCS.readyToExpose(Args.Cameras, true, Args.ExpTime+10);
+        UnitCS.takeExposure(Args.Camera, Args.ExpTime, 1);
+        UnitCS.readyToExpose(Args.Camera, true, Args.ExpTime+10);
          
         % get image names
         % Image full names are stored in a cell array FileNames{1..4}
-        try
+        %try
             Result(Iha).FileName = UnitCS.Camera{Icam}.classCommand('LastImageName');
+            if Args.UsePolarisCoo
+                AstRA  = Args.PolarisRA;
+                AstDec = Args.PolarisDec;
+            else
+                AstRA  = RA+Args.TelOffsets(Icam,1);
+                AstDec = Dec+Args.TelOffsets(Icam,2);
+            end
+            
             [~, Result(Iha).Image, Result(Iha).Summary] = imProc.astrometry.astrometryCropped(Result(Iha).FileName,...
                                                                           'CropSize',[],...
-                                                                          'RA',RA+Args.TelOffsets(Icam,1),...
-                                                                          'Dec',Dec+Args.TelOffsets(Icam,2));
+                                                                          'RA',AstRA,...
+                                                                          'Dec',AstDec,...
+                                                                          'Scale',1.25,...
+                                                                          'DistEdges',[30:3:900],...
+                                                                          'RefRangeMag',[7 15]);
+            if Args.Verbose 
+                Result(Iha).Summary
+            end
+            [Result(Iha).PolarisX, Result(Iha).PolarisY] = Result(Iha).Image.WCS.sky2xy(Args.PolarisRA, Args.PolarisDec, 'InUnits','deg');
+            [Result(Iha).NCPX, Result(Iha).NCPY] = Result(Iha).Image.WCS.sky2xy(Args.NCP_RA, Args.NCP_Dec, 'InUnits','deg');
                 
-            [Result(Iha).PolarisX, Result(Iha).PolarisY] = Result(Iha, Icam).Image.WCS.sky2xy(Args.PolarisRA, Args.PolarisDec, 'InUnits','deg');
-            [Result(Iha).NCPX, Result(Iha).NCPY] = Result(Iha, Icam).Image.WCS.sky2xy(Args.NCP_RA, Args.NCP_Dec, 'InUnits','deg');
-                
-        end
+        %end
         
         
         
@@ -119,11 +135,11 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         ds9(Result(Iha0).Image, 1)
         pause(1);
 
-        ds9.plot([Result(Iha).CelPoleX, Result(Iha).CelPoleY], Args.MarkerNCP,     'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','CP');
+        ds9.plot([Result(Iha).NCPX, Result(Iha).NCPY], Args.MarkerNCP,     'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','CP');
         ds9.plot([[Result.PolarisX].', [Result.PolarisY].'],   Args.MarkerPolaris, 'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','Polaris');
         
-        ds9.plot(BestCen(1),BestCen(2), InPar.MarkerMount,'Size',Args.MarkerSize.*[1 1 0], 'Text','Mount');
-        ds9.plot(BestCen(1),BestCen(2), InPar.MarkerMount,'Size',BestRad);
+        ds9.plot(BestCen(1),BestCen(2), Args.MarkerMount,'Size',Args.MarkerSize.*[1 1 0], 'Text','Mount');
+        ds9.plot(BestCen(1),BestCen(2), Args.MarkerMount,'Size',BestRad);
         
     end
     
@@ -131,8 +147,8 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
 
     % calc dist between mount pole and celestial pole (calculated -observed)
     % (sign is plus the direction the mount need to move)
-    ResFit.DX  = -BestCen(1) + Result(Iha0).CelPoleX;  % pix
-    ResFit.DY  = -BestCen(2) + Result(Iha0).CelPoleY;  % pix
+    ResFit.DX  = -BestCen(1) + Result(Iha0).NCPX;  % pix
+    ResFit.DY  = -BestCen(2) + Result(Iha0).NCPY;  % pix
     switch lower(Args.Xalong)
         case 'ra'
             ResFit.DAz  = ResFit.DX.*Args.PixScale./60;    % arcmin
@@ -158,13 +174,13 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
             error('Unknown RAlong option');
     end
 
-    if InPar.Verbose
+    if Args.Verbose
         fprintf('\n\n');
         fprintf('------------------------\n');
         fprintf('ds9 legend: \n');
-        fprintf('    Marker Polaris %s\n',InPar.MarkerPolaris);
-        fprintf('    Marker celestial pole %s\n',InPar.MarkerNCP);
-        fprintf('    Marker mount pole %s\n',InPar.MarkerMount);    
+        fprintf('    Marker Polaris %s\n',Args.MarkerPolaris);
+        fprintf('    Marker celestial pole %s\n',Args.MarkerNCP);
+        fprintf('    Marker mount pole %s\n',Args.MarkerMount);    
         fprintf('Shift the mount Az/Alt such that the celestial pole coincides with the mount pole\n');
         fprintf('Required delta X shift [pix]     : %f\n',ResFit.DX);
         fprintf('Required delta Y shift [pix]     : %f\n',ResFit.DY);

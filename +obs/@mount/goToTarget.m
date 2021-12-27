@@ -61,7 +61,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
 
     Flag = false;
 
-    if MountObj.IsConnected && obs.mount.ismountDriver(MountObj.Handle)
+    %if MountObj.IsConnected && obs.mount.ismountDriver(MountObj.Handle)
 
         switch lower(MountObj.Status)
             case 'park'
@@ -139,5 +139,5 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                     end
                 end
         end
-    end
+    %end
 end
