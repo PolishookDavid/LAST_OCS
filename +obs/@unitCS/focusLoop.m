@@ -285,10 +285,10 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                 plot(actualFocuserPos(:,Icam),FocVal(:,:,Icam),'ko',...
                     'Color',Colors(Icam,:),...
                     'Marker',PlotMarker','MarkerFaceColor',Colors(Icam,:));
-                xlim([min(FocusPosCam,[],'all'),max(FocusPosCam,[],'all')]);
+                xlim([min(FocusPosCam(:,Icam)),max(FocusPosCam(:,Icam))]);
                 hold on
-                xlabel('Focus position','FontSize',18);
-                ylabel('FWHM [arcsec]','FontSize',18);
+                xlabel('Focus position','FontSize',14);
+                ylabel('FWHM [arcsec]','FontSize',14);
                 title(leg{Icam},'Interpreter','none')
             end
             drawnow
