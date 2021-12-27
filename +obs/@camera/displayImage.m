@@ -40,14 +40,23 @@ function displayImage(CameraObj,Display,DisplayZoom,DivideByFlat)
                     else
                         Frame = CameraObj.Frame;
                     end
-                    ds9(Image, Frame);
-
-                    if ~isempty(DisplayZoom)
-                        ds9.zoom(DisplayZoom, DisplayZoom);
+                    try
+                        % wrap in try-catch, because ds9 (xpaset) CAN
+                        %  fail, and if this is called by a timer callback
+                        %  an error which disarms the timer causes
+                        %  more havoc
+                        ds9(Image, Frame); 
+                        if ~isempty(DisplayZoom)
+                            ds9.zoom(DisplayZoom, DisplayZoom);
+                        end
+                    catch
+                        CameraObj.reportError('error calling ds9 for display')
                     end
                 case {'mat','matlab'}
                     % find reasonable range
                     Range = quantile(Image(:),[0.2, 0.95]);
+                    % imtool is very slow, and opens every new image in a
+                    %  new window. There is much room for improvement
                     imtool(Image,Range);
                 case ''
                     % no display
