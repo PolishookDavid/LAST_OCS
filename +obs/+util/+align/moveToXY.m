@@ -13,7 +13,7 @@ function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
     ARCSEC_DEG = 3600;
     
     if isempty(ToXY)
-        ToXY = [2300 4800]   % update
+        ToXY = [2300 4800]   % update [default is center]
     end
     
     %UnitCS.takeExposure(Camera, Args.ExpTime, 1);
