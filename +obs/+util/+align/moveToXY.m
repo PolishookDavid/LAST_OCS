@@ -9,6 +9,7 @@ function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
         Args.Scale            = 1.25;    % arcsec/pix
         Args.DirRA            = '+x';
         Args.DirDec           = '+y';
+        Args.ImageSize        = [6388 9600];
     end
     ARCSEC_DEG = 3600;
     
@@ -19,8 +20,8 @@ function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
     %UnitCS.takeExposure(Camera, Args.ExpTime, 1);
     %UnitCS.readyToExpose(Camera, true, Args.ExpTime+3);
     
-    DX = FromXY(1) - ToXY(1)
-    DY = FromXY(2) - ToXY(2)
+    DX = FromXY(1) - ToXY(1);
+    DY = FromXY(2) - ToXY(2);
     
     switch lower(Args.DirRA)
         case '+x'
@@ -50,5 +51,13 @@ function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
     
     DRA = DRA.*Args.Scale./ARCSEC_DEG ./cosd(UnitCS.Mount.Dec);
     DDec = DDec.*Args.Scale./ARCSEC_DEG;
+   
+    if Args.Move
+        % actual move
+        RA  = UnitCS.Mount.RA;    % mount equinox of date coo
+        Dec = UnitCS.Mount.Dec;   % mount equinox of date coo
+        
+        UnitCS.Mount.goTo(RA+DRA, Dec+DDec, 'eq');
+    end
     
 end
