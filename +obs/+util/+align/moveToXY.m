@@ -1,11 +1,29 @@
 function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
-    %
+    % Move mount such that a set of X/Y coordinates will shift to a new X/Y position.
+    %   E.g., this can be used to center a star in the image center, etc.
+    %   This function assumes that the camera X/Y directions are aligned
+    %   with the equatorial coordinates.
+    % Input  : - An obs.unitCS object.
+    %          - The current [X,Y] of the object we want to move.
+    %          - The target [X,Y] to which the object will move.
+    %            If empty, then ImageSize./2. Default is [].
+    %          * ...,key,val,...
+    %            'Move' - A logical indicating if to move the mount or only
+    %                   calculate the DeltaRA, DeltaDec of the move.
+    %            'Scale' - Default is 1.25"/pix.
+    %            'DirRA' - RA direction on image. Default is '+x'.
+    %            'DirDec' - Dec direction on image. Default is '+y'.
+    %            'ImageSize' - Image size. Default is [6388 9600].
+    % Output : - DeltaRA [deg].
+    %          - DeltaDec [deg].
+    % AUthor : Eran Ofek (Dec 2021)
     % Example: [DRA,DDec]=obs.util.align.moveToXY(P,[5749 5151],[]);
     
     arguments
         UnitCS obs.unitCS
         FromXY
         ToXY                  = [];  % if empty use center
+        Args.Move logical     = true;
         Args.Scale            = 1.25;    % arcsec/pix
         Args.DirRA            = '+x';
         Args.DirDec           = '+y';
@@ -14,7 +32,7 @@ function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
     ARCSEC_DEG = 3600;
     
     if isempty(ToXY)
-        ToXY = [2300 4800]   % update [default is center]
+        ToXY = Args.ImageSize.*0.5;
     end
     
     %UnitCS.takeExposure(Camera, Args.ExpTime, 1);
