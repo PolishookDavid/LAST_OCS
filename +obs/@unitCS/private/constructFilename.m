@@ -27,6 +27,7 @@ function [FileName,Path]=constructFilename(Unit,icam)
         IP.Counter =  CameraObj.classCommand('ProgressiveFrame;');
         IP.BasePath = fullfile(CameraObj.classCommand('Config.BaseDir;'),...
                                CameraObj.classCommand('Config.DataDir;'));
+        IP.Type=CameraObj.ImType;
     catch
         Unit.reportError(['canonical image file name generation needs' ...
                           ' parameters which are not in config, check!'])

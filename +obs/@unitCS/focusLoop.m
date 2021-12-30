@@ -26,7 +26,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %                   focus loop from FocusGuess).
 %                   If Half range is not consistent with step size, it will
 %                   readjusted.
-%                   Default is 120.
+%                   Default is 200.
 %            'Step' - Focus loops steps. Default is 40.
 %            'FocusGuessTemp' - If the focus guess parameter is temperature
 %                   dependent. This is the nominal temperature of the
@@ -191,9 +191,11 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     % read once for good camera properties which will not change during the
     %  course of this procedure, to avoid multiple reads
     leg=cell(1,Ncam);
+    previousImType=cell(1,Ncam);
     PixScale=nan(1,Ncam);
     for Icam=1:Ncam
         leg{Icam}=CamObj{Icam}.classCommand('Id;');
+        previousImType{Icam}=CamObj{Icam}.classCommand('ImType;');
         PixScale(Icam)=CamObj{Icam}.classCommand('PixScale;');
     end
 
@@ -203,6 +205,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     end
     for Icam=1:Ncam
         FocObj{Icam}.classCommand('Pos=%d;', StartFocus(Icam));
+        % set ImType
+        CamObj{Icam}.classCommand('ImType=''focus'';');
     end
     if ~UnitObj.readyToExpose(itel,true)
         return
@@ -353,6 +357,11 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         end
     end
     
+    % restore whatever was the previous ImType for the cameras
+    for Icam=1:Ncam
+        CamObj{Icam}.classCommand('ImType=''%s'';',previousImType{Icam});
+    end
+
     Res.Az  = MountObj.Az;
     Res.Alt = MountObj.Alt;
     Res.AM  = celestial.coo.hardie(pi./2 - Res.Alt.*pi/180);
