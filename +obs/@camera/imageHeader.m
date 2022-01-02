@@ -27,10 +27,13 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     % keys which may be or be not in Config:
     % Gain, Read noise, Dark current
     Keys={'GAIN','DARKCUR','READNOI'};
+    % get the camera Config structure once
+    CameraConfig = CameraObj.classCommand('Config');
     for i=1:numel(Keys)
         Field = Keys{i};
-        if isfield(CameraObj.classCommand('Config'),Field)
-            Info.(Field)     = CameraObj.classCommand('Config').(Field);
+        %if isfield(CameraObj.classCommand('Config'),Field)
+        if isfield(CameraConfig, Field)
+            Info.(Field)     = CameraConfig.(Field);  %CameraObj.classCommand('Config').(Field);
         else
             Info.(Field)     = NaN;
         end
@@ -41,7 +44,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     % 
     Info.CamNum   = CameraObj.classCommand('CameraNumber');
     Info.CamPos   = CameraObj.classCommand('CameraPos');
-    Info.CamType  = class(CameraObj);
+    %Info.CamType  = class(CameraObj); % redundent
     Info.CamModel = CameraObj.classCommand('CameraModel');
     Info.CamName  = CameraObj.classCommand('CameraName');
 
@@ -53,7 +56,9 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     Info.SENSTEMP = CameraObj.classCommand('Temperature');
 
     % eventual additional comment fields written independently in
-    %  ConfigHeader (purpose and mechanics frankly unclear to me)
+    %  ConfigHeader:
+    % ConfigHeader may contain additional constant keyword/values taht will
+    % be written to all headers.
     CommentsDB = CameraObj.classCommand('ConfigHeader');
 
     FN  = fieldnames(Info);
