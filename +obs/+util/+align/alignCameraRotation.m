@@ -64,6 +64,7 @@ function Summary = alignCameraRotation(UnitCS, Args)
         UnitCS.Mount.goTo(Args.HA(Iha), Args.Dec(Iha), 'ha');
         % wait for telescope to arrive to target
         UnitCS.Mount.waitFinish;
+        UnitCS.Mount.track;
         
         % get J2000 RA/Dec from mount (distortion corrected) [deg]
         OutCoo = UnitCS.Mount.j2000;
@@ -89,8 +90,10 @@ function Summary = alignCameraRotation(UnitCS, Args)
             IndCam = Args.Cameras(Icam);
             try
                 FileNames{Icam} = UnitCS.Camera{IndCam}.classCommand('LastImageName');
-                [~, ~, S(Iha,Icam)] = imProc.astrometry.astrometryCropped(FileNames{IndCam}, 'RA',RA+Args.TelOffsets(IndCam,1),...
-                                                                                       'Dec',Dec+Args.TelOffsets(IndCam,2));
+                [~, ~, S(Iha,Icam)] = imProc.astrometry.astrometryCropped(FileNames{Icam}, 'RA',RA+Args.TelOffsets(IndCam,1),...
+                                                                                       'Dec',Dec+Args.TelOffsets(IndCam,2),...
+                                                                                       'RefRangeMag',[8 15],...
+                                                                                       'DistEdges',[12:3:600]);
             end
         end
     end
@@ -111,7 +114,10 @@ function Summary = alignCameraRotation(UnitCS, Args)
     for Iha=1:1:Nha
         for Icam=1:1:Ncam
             IndCam = Args.Cameras(Icam);  
-            [Summary.OffsetLong(Iha,Icam), Summary.OffsetLat(Iha,Icam), Summary.OffsetDist(Iha,Icam), Summary.OffsetPA(Iha,Icam)] = celestial.coo.sphere_offset(Summary.MountJ(Iha).RA./RAD, Summary.S(Iha,Icam)./RAD);
+            [Summary.OffsetLong(Iha,Icam), Summary.OffsetLat(Iha,Icam), Summary.OffsetDist(Iha,Icam), Summary.OffsetPA(Iha,Icam)] = celestial.coo.sphere_offset(Summary.MountJ(Iha).RA./RAD,...
+                                                                                                                                                                Summary.MountJ(Iha).Dec./RAD,...
+                                                                                                                                                                Summary.S(Iha,Icam).CenterRA./RAD,...
+                                                                                                                                                                Summary.S(Iha,Icam).CenterDec./RAD);                                            
         end
     end
     Summary.OffsetLong = Summary.OffsetLong.*RAD;
