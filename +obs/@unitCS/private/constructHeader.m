@@ -10,8 +10,8 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
     
     RAD = 180./pi;
 
-    CameraObj=UnitObj.Camera{itel};
-    FocuserObj=UnitObj.Focuser{itel};
+    CameraObj  = UnitObj.Camera{itel};
+    FocuserObj = UnitObj.Focuser{itel};
     
     if isa(CameraObj,'obs.remoteClass')
         SizeImIJ = CameraObj.Messenger.query(...
