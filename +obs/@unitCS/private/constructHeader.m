@@ -63,6 +63,7 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         else
             Val = NaN;
         end
+        Lon = Val;
         Info(I).Val = Val;
         
         I = I + 1;
@@ -88,12 +89,14 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'LST';
-        LST         = celestial.time.lst(CameraInfo.JD,Info.ObsLon./RAD,'a').*360;  % deg
+        Ijd = find(strcmp({CameraInfo.Name},'JD'));
+        JD  = CameraInfo(Ijd).Val;
+        LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
         Info(I).Val = LST;
         
         
         I = I + 1;
-        DateObs       = convert.time(CameraInfo.JD,'JD','StrDate');
+        DateObs       = convert.time(JD,'JD','StrDate');
         Info(I).Key = 'DATE-OBS';
         Info(I).Val = DateObs{1};
         
@@ -207,7 +210,7 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         
         N = numel(Info);
         HeaderCell = cell(N,3);
-        HeaderCell(:,1) = {Info.Name};
+        HeaderCell(:,1) = {Info.Key};
         HeaderCell(:,2) = {Info.Val};
         
         HeaderCell = [CameraHeader; HeaderCell];
