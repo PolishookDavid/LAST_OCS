@@ -1,6 +1,7 @@
 function [HeaderCell,Info]=imageHeader(CameraObj)
 % construct the image header based on all the information pertinent to the
-%  camera alone
+%  camera alone - THIS FUNCTION IS USED BY THE CAMERA OBJECT.
+% For HEADERS written by the UnitCS, see UnitCS private methods. 
 % The method would be private, but unitCS needs to call it when
 %  constructing a full header, hence it cannot
     if isa(CameraObj,'obs.remoteClass')

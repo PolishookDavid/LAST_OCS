@@ -54,9 +54,9 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
             Info.ObsLat = NaN;
         end
         if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsHeight')
-            Info.ObsHeight = UnitObj.Mount.classCommand('Config.ObsHeight');
+            Info.ObsAlt = UnitObj.Mount.classCommand('Config.ObsHeight');
         else
-            Info.ObsHeight = NaN;
+            Info.ObsAlt = NaN;
         end
         Info.LST      = celestial.time.lst(CameraInfo.JD,Info.ObsLon./RAD,'a').*360;  % deg
         DateObs       = convert.time(CameraInfo.JD,'JD','StrDate');
