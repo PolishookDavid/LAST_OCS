@@ -18,23 +18,23 @@ function saveCurImage(UnitObj,itel,Path)
     if isempty(itel)
         itel=1:numel(UnitObj.Camera);
     end
-        
+
     for icam=itel
         CameraObj=UnitObj.Camera{icam};
-        
+
         if isa(CameraObj,'obs.remoteClass')
             SizeImIJ = CameraObj.Messenger.query(...
                 sprintf('size(%s.LastImage)',CameraObj.RemoteName));
         else
             SizeImIJ = size(CameraObj.LastImage);
         end
-        
+
         if prod(SizeImIJ)==0
             UnitObj.reportError('no image taken by telescope %d to be saved',...
                 icam)
             return
         end
-        
+
         % Write the fits file, in the session where the camera object lives
         if isa(CameraObj,'obs.remoteClass')
             remoteUnitName=strtok(CameraObj.RemoteName,'.');
@@ -54,22 +54,24 @@ function saveCurImage(UnitObj,itel,Path)
             if ~exist('Path','var')
                 Path=DefaultPath;
             end
-            
-            CameraObj.LastImageName = fullfile(Path,FileName);
-            
+
             % create the header locally, even from remote objects, because
             %  round-trip queries fail
             HeaderCell=constructHeader(UnitObj,icam);
             UnitObj.report('Writing image %s to disk\n',...
                            CameraObj.classCommand('LastImageName'));
-            
+
             PWD = pwd;
-            tools.os.cdmkdir(Path);  % cd and on the fly mkdir
-            FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
-                'Header',HeaderCell,'DataType','single','Overwrite',true);
+            try
+                tools.os.cdmkdir(Path);  % cd and on the fly mkdir
+                FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
+                    'Header',HeaderCell,'DataType','single','Overwrite',true);
+                CameraObj.LastImageName = fullfile(Path,FileName);
+                CameraObj.LastImageSaved = true;
+            catch
+                CameraObj.reportError('saving image in %s failed',Path)
+            end
             cd(PWD);
-            
-            CameraObj.LastImageSaved = true;
         end
     end
 
