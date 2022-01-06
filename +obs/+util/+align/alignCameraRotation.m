@@ -58,8 +58,11 @@ function Summary = alignCameraRotation(UnitCS, Args)
     Args.Dec = Args.Dec(:).*ones(Nha,1);
     Ncam     = numel(Args.Cameras);
     
+    MountJ=struct();
+    MountD=struct();
+
     for Iha=1:1:Nha
-        
+
         % set mount coordinates to requested target
         UnitCS.Mount.goTo(Args.HA(Iha), Args.Dec(Iha), 'ha');
         % wait for telescope to arrive to target
@@ -86,14 +89,40 @@ function Summary = alignCameraRotation(UnitCS, Args)
          
         % get image names
         % Image full names are stored in a cell array FileNames{1..4}
+        % TODO:  if class(Cameras{Icam}) is obs.remoteClass, do
+        %         astrometry in its own slave, and avoid the need of
+        %         sharing files among different computers,
+        %         but check that astrometry is faster than messenger
+        %         timeouts
+        FileNames=cell(Ncam); % unnecessary if done like below
+        S=NaN(Nha,Ncam);
         for Icam=1:1:Ncam
             IndCam = Args.Cameras(Icam);
             try
+% instead of this, which is good only for local slaves
                 FileNames{Icam} = UnitCS.Camera{IndCam}.classCommand('LastImageName');
-                [~, ~, S(Iha,Icam)] = imProc.astrometry.astrometryCropped(FileNames{Icam}, 'RA',RA+Args.TelOffsets(IndCam,1),...
-                                                                                       'Dec',Dec+Args.TelOffsets(IndCam,2),...
-                                                                                       'RefRangeMag',[8 15],...
-                                                                                       'DistEdges',[12:3:600]);
+                [~, ~, S(Iha,Icam)] = ...
+                    imProc.astrometry.astrometryCropped(FileNames{Icam},...
+                                                       'RA',RA+Args.TelOffsets(IndCam,1),...
+                                                       'Dec',Dec+Args.TelOffsets(IndCam,2),...
+                                                       'RefRangeMag',[8 15],...
+                                                       'DistEdges',12:3:600);
+% should be something like, at the expense of readability:
+%                 astrocommand=['[~,~,s] = ',...
+%                               'imProc.astrometry.astrometryCropped(UnitCS.Camera{IndCam}.LastImageName,',...
+%                               '''RA'',RA+Args.TelOffsets(IndCam,1),',...
+%                               '''Dec'',Dec+Args.TelOffsets(IndCam,2)',...
+%                               '''RefRangeMag'',[8 15],',...
+%                               '''DistEdges'',12:3:600);'];
+%                 if isa(class(UnitCS.Camera{IndCam}),'obs.remoteClass')
+%                     UnitCS.Camera{IndCam}.Messenger.query(astrocommand);
+%                     S(Iha,Icam)=UnitCS.Camera{IndCam}.Messenger.query('s');
+%                 else
+%                     eval(astrocommand)
+%                     S(Iha,Icam)=s;
+%                 end
+            catch
+                UnicCS.reportError('astrometry failed')
             end
         end
     end
@@ -113,11 +142,13 @@ function Summary = alignCameraRotation(UnitCS, Args)
     Summary.OffsetPA   = nan(Nha, Ncam);
     for Iha=1:1:Nha
         for Icam=1:1:Ncam
-            IndCam = Args.Cameras(Icam);  
-            [Summary.OffsetLong(Iha,Icam), Summary.OffsetLat(Iha,Icam), Summary.OffsetDist(Iha,Icam), Summary.OffsetPA(Iha,Icam)] = celestial.coo.sphere_offset(Summary.MountJ(Iha).RA./RAD,...
-                                                                                                                                                                Summary.MountJ(Iha).Dec./RAD,...
-                                                                                                                                                                Summary.S(Iha,Icam).CenterRA./RAD,...
-                                                                                                                                                                Summary.S(Iha,Icam).CenterDec./RAD);                                            
+            % IndCam = Args.Cameras(Icam);
+            [Summary.OffsetLong(Iha,Icam), Summary.OffsetLat(Iha,Icam), ...
+             Summary.OffsetDist(Iha,Icam), Summary.OffsetPA(Iha,Icam)] =...
+                celestial.coo.sphere_offset(Summary.MountJ(Iha).RA./RAD,...
+                                            Summary.MountJ(Iha).Dec./RAD,...
+                                            Summary.S(Iha,Icam).CenterRA./RAD,...
+                                            Summary.S(Iha,Icam).CenterDec./RAD);
         end
     end
     Summary.OffsetLong = Summary.OffsetLong.*RAD;
