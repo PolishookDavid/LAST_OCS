@@ -64,9 +64,10 @@ function saveCurImage(UnitObj,itel,Path)
             PWD = pwd;
             try
                 tools.os.cdmkdir(Path);  % cd and on the fly mkdir
+                CameraObj.LastImageName = fullfile(Path,FileName);
                 FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
                     'Header',HeaderCell,'DataType','single','Overwrite',true);
-                CameraObj.LastImageName = fullfile(Path,FileName);
+                
                 CameraObj.LastImageSaved = true;
             catch
                 CameraObj.reportError('saving image in %s failed',Path)
