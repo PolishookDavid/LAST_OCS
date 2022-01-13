@@ -67,7 +67,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     Info(I).Name = 'INTGAIN';
     Info(I).Val  = CameraObj.classCommand('Gain');
 
-    Keys={'GAIN','DARKCUR','READNOI'};
+    Keys={'GAIN','DARKCUR','READNOI','SATURVAL','NONLIN'};
     % get the camera Config structure once
     CameraConfig = CameraObj.classCommand('Config');
     for i=1:numel(Keys)
@@ -80,39 +80,38 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
             Info.(Field)     = NaN;
         end
     end
-    
+
     I = I + 1;
     Info(I).Name = 'BINX';
     Info(I).Val  = CameraObj.classCommand('Binning(1)');
-    
+
     I = I + 1;
     Info(I).Name = 'BINY';
     Info(I).Val  = CameraObj.classCommand('Binning(2)');
-    
+
     I = I + 1;
     Info(I).Name = 'CAMNUM';
     Info(I).Val  = CameraObj.classCommand('CameraNumber');
-    
+
     I = I + 1;
     Info(I).Name = 'CAMPOS';
     Info(I).Val  = CameraObj.classCommand('CameraPos');
-    
+
     I = I + 1;
     Info(I).Name = 'CAMNAME';
     Info(I).Val  = CameraObj.classCommand('CameraName');
-    
+
     I = I + 1;
     Info(I).Name = 'SENSTEMP';
     Info(I).Val  = CameraObj.classCommand('Temperature');
-    
-    
+
+
     % build header from structure
     N = numel(Info);
     HeaderCell = cell(N,3);
     HeaderCell(:,1) = {Info.Name};
     HeaderCell(:,2) = {Info.Val};
-    
-    
+
     %%% OLD - REMOVE after testing
     
 %     Info.NAXIS    = numel(SizeImIJ);

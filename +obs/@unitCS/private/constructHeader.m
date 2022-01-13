@@ -131,15 +131,18 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         
         
         % RA & Dec including telescope offsets
+        %   ? what about CameraConfig.TelescopeOffset' ?
+        %     Besides, shouldn't this be moved to
+        %     camera.imageHeader ?
         ConfigKeyName = 'MountCameraDist';
         if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
-            CamDist = MountConfig.(ConfigKeyName);
+            CamDist = CameraConfig.(ConfigKeyName);
         else
             CamDist = 0;
         end
         ConfigKeyName = 'MountCameraPA';
         if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
-            CamPA = MountConfig.(ConfigKeyName);
+            CamPA = CameraConfig.(ConfigKeyName);
         else
             CamPA = 0;
         end
@@ -194,26 +197,26 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         I = I + 1;
         Info(I).Key = 'TRK_DEC';
         Info(I).Val = TrackingSpeed(2)./3600;  % [arcsec/s]
+    end
+    
+    % focuser information
+    if isa(FocuserObj,'obs.focuser') || isa(FocuserObj,'obs.remoteClass')
+        I = I + 1;
+        Info(I).Key = 'FOCUS';
+        Info(I).Val = FocuserObj.classCommand('Pos');
         
+        I = I + 1;
+        Info(I).Key = 'PRVFOCUS';
+        Info(I).Val = FocuserObj.classCommand('LastPos');
         
-        % focuser information
-        if isa(FocuserObj,'obs.focuser') || isa(FocuserObj,'obs.remoteClass')      
-            I = I + 1;
-            Info(I).Key = 'FOCUS';
-            Info(I).Val = FocuserObj.classCommand('Pos');
-            
-            I = I + 1;
-            Info(I).Key = 'PRVFOCUS';
-            Info(I).Val = FocuserObj.classCommand('LastPos');
-            
-        end
-        
-        N = numel(Info);
-        HeaderCell = cell(N,3);
-        HeaderCell(:,1) = {Info.Key};
-        HeaderCell(:,2) = {Info.Val};
-        
-        HeaderCell = [CameraHeader; HeaderCell];
+    end
+    
+    N = numel(Info);
+    HeaderCell = cell(N,3);
+    HeaderCell(:,1) = {Info.Key};
+    HeaderCell(:,2) = {Info.Val};
+    
+    HeaderCell = [CameraHeader; HeaderCell];
 
         
 %         if tools.struct.isfield_notempty(UnitObj.Mount.classCommand('Config'),'ObsLat')
