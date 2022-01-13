@@ -6,7 +6,9 @@ function Summary = alignCameraRotation(UnitCS, Args)
     % Input  : - A unitCS object.
     %          * ...,key,val,...
     %            'HA' - Vector of H.A. in which to take images [deg].
+    %                   If empty, dont move.
     %                   Default is [-60, -30, 0, 30, 60].
+    %                   
     %            'Dec' - Vector of Dec [deg]. Default is 0.
     %            'ExpTime' - Default is 3 s.
     %            'Cameras' - List of cameras. Default is [1 2 3 4].
@@ -54,8 +56,12 @@ function Summary = alignCameraRotation(UnitCS, Args)
         %% read telescope offset relative to mount from properties
     end
     
-    Nha      = numel(Args.HA);
-    Args.Dec = Args.Dec(:).*ones(Nha,1);
+    if isempty(Args.HA)
+        Nha = 1;
+    else
+        Nha      = numel(Args.HA);
+        Args.Dec = Args.Dec(:).*ones(Nha,1);
+    end
     Ncam     = numel(Args.Cameras);
     
     MountJ=struct();
@@ -64,10 +70,12 @@ function Summary = alignCameraRotation(UnitCS, Args)
     for Iha=1:1:Nha
 
         % set mount coordinates to requested target
-        UnitCS.Mount.goTo(Args.HA(Iha), Args.Dec(Iha), 'ha');
-        % wait for telescope to arrive to target
-        UnitCS.Mount.waitFinish;
-        UnitCS.Mount.track;
+        if ~isempty(Args.HA)
+            UnitCS.Mount.goTo(Args.HA(Iha), Args.Dec(Iha), 'ha');
+            % wait for telescope to arrive to target
+            UnitCS.Mount.waitFinish;
+            UnitCS.Mount.track;
+        end
         
         % get J2000 RA/Dec from mount (distortion corrected) [deg]
         OutCoo = UnitCS.Mount.j2000;
@@ -95,7 +103,6 @@ function Summary = alignCameraRotation(UnitCS, Args)
         %         but check that astrometry is faster than messenger
         %         timeouts
         FileNames=cell(Ncam); % unnecessary if done like below
-        S=NaN(Nha,Ncam);
         for Icam=1:1:Ncam
             IndCam = Args.Cameras(Icam);
             try
@@ -106,7 +113,7 @@ function Summary = alignCameraRotation(UnitCS, Args)
                                                        'RA',RA+Args.TelOffsets(IndCam,1),...
                                                        'Dec',Dec+Args.TelOffsets(IndCam,2),...
                                                        'RefRangeMag',[8 15],...
-                                                       'DistEdges',12:3:600);
+                                                       'DistEdges',(12:3:900));
 % should be something like, at the expense of readability:
 %                 astrocommand=['[~,~,s] = ',...
 %                               'imProc.astrometry.astrometryCropped(UnitCS.Camera{IndCam}.LastImageName,',...
@@ -122,7 +129,7 @@ function Summary = alignCameraRotation(UnitCS, Args)
 %                     S(Iha,Icam)=s;
 %                 end
             catch
-                UnicCS.reportError('astrometry failed')
+                UnitCS.reportError('astrometry failed')
             end
         end
     end

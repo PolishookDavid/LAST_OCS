@@ -10,7 +10,7 @@ function saveCurImage(UnitObj,itel,Path)
 % When called for a remote camera, the saving command is passed to
 %  the slave session hosting that camera. That is the simplest thing to
 %  do, rather than constructing the filename, and the header, all by
-%  roundtrip queries
+%  roundtrip queries. The image data anyway resides in the slave.
 
     if ~exist('itel','var')
         itel=[];
@@ -46,29 +46,29 @@ function saveCurImage(UnitObj,itel,Path)
                                                   remoteUnitName,icam));
             end
         else
-            % Construct directory name to save image in
+            % this runs where CameraObj lives, we don't need classCommand's
 
-% filename generation (format decided 11/2021)
+            % Construct directory and file name to save image
+            %  (format decided 11/2021)
             [FileName,DefaultPath]=constructFilename(UnitObj,icam);
 
             if ~exist('Path','var')
                 Path=DefaultPath;
             end
 
-            % create the header locally, even from remote objects, because
-            %  round-trip queries fail
+            FullPath=fullfile(Path,FileName);
+
             HeaderCell=constructHeader(UnitObj,icam);
-            UnitObj.report('Writing image %s to disk\n',...
-                           CameraObj.classCommand('LastImageName'));
+            UnitObj.report('Writing image %s to disk\n',FullPath);
 
             PWD = pwd;
             try
                 tools.os.cdmkdir(Path);  % cd and on the fly mkdir
-                CameraObj.LastImageName = fullfile(Path,FileName);
-                FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
+                FITS.write(single(CameraObj.LastImage), FullPath,...
                     'Header',HeaderCell,'DataType','single','Overwrite',true);
                 
                 CameraObj.LastImageSaved = true;
+                CameraObj.LastImageName = FullPath;
             catch
                 CameraObj.reportError('saving image in %s failed',Path)
             end
@@ -78,6 +78,5 @@ function saveCurImage(UnitObj,itel,Path)
 
     % CameraObj.classCommand(['LogFile.write(' ...
     %    sprintf('Image: %s is written', CameraObj.classCommand('LastImageName') ')'])
-
 
 end
