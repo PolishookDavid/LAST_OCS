@@ -77,7 +77,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
             Info(I).Name = Keys{i}; 
             Info(I).Val  = CameraConfig.(Field);  %CameraObj.classCommand('Config').(Field);
         else
-            Info.(Field)     = NaN;
+            Info(I).(Field)     = NaN;
         end
     end
 
