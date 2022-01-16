@@ -72,6 +72,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     CameraConfig = CameraObj.classCommand('Config');
     for i=1:numel(Keys)
         Field = Keys{i};
+        I= I + 1;
         Info(I).Name = Keys{i};
         %if isfield(CameraObj.classCommand('Config'),Field)
         if isfield(CameraConfig, Field)
