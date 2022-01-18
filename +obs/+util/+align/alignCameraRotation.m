@@ -38,6 +38,7 @@ function Summary = alignCameraRotation(UnitCS, Args)
     %                   and camera position for each [Ha, Cam]. [deg]
     % Author : Eran Ofek (Dec 2021)
     % Example: Summary = obs.util.align.alignCameraRotation(UnitCS);
+    %          Summary = obs.util.align.alignCameraRotation(P, 'TelOffsets',zeros(4,2),'Cameras',1,'HA',[]);
     
     arguments
         UnitCS    % UnitCS class
