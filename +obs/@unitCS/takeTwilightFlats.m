@@ -184,11 +184,21 @@ if Args.PrepMasterFlat
         % get the bias dir name 
         Config = UnitObj.Camera{Icam}.classCommand('Config');
         
-        Dark   = AstroImage(
-        CI.Bias = ...
+        MasterDarkImageFileName = 
+        MasterDarkMaskFileName  = 
+        
+        Dark   = AstroImage(MasterDarkImageFileName, 'Mask', MasterDarkMaskFileName);
+        CI.Bias = Dark;
         
         FlatImages = CI.debias(ListOfFlatFiles(Icam).List);
         CI.createFlat(FlatImages);
+        
+        MasterFlatImageFileName = 
+        MasterFlatMaskFileName  = 
+        CI.Flat.write1(MasterFlatImageFileName, 'Image');
+        CI.Flat.write1(MasterFlatMaskFileName, 'Image');
+        
+        
     end
 end
 
