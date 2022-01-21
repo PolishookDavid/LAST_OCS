@@ -54,6 +54,7 @@ arguments
     Args.PrepMasterFlat logical = true;
     
     Args.AbortFile            = '~/stopFF';
+    
 end
 
 if isempty(Itel)
@@ -180,6 +181,10 @@ if Args.PrepMasterFlat
     
     for Icam=1:1:Ncam
         % upload the Master dark image
+        % get the bias dir name 
+        Config = UnitObj.Camera{Icam}.classCommand('Config');
+        
+        Dark   = AstroImage(
         CI.Bias = ...
         
         FlatImages = CI.debias(ListOfFlatFiles(Icam).List);
