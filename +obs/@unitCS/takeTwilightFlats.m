@@ -1,4 +1,4 @@
-function takeTwilightFlats(UnitObj,itel,varargin)
+function takeTwilightFlats(UnitObj, Itel, Args)
 % *** Mastrolindo status: works, but needs serious redesign, see below.
 %
 % Obtain a series of twiligh flat images using a LAST pier system.
@@ -34,44 +34,46 @@ function takeTwilightFlats(UnitObj,itel,varargin)
 %  - a real stopping mechanism should be in place, including a max number
 %    of flat images to take
 
-if ~exist('itel','var')
-    itel=[];
+arguments
+    UnitObj
+    Itel       = [];
+    Args.MaxFlatLimit         = 40000;
+    Args.MinFlatLimit         = 2000;
+    Args.MinSunAlt            = -10;
+    Args.MaxSunAlt            = -4;
+    Args.ExpTimeRange         = [3 20];
+    Args.TestExpTime          = 1;
+    Args.MeanFun              = 'nanmedian';
+    Args.EastFromZenith       = 20;
+    Args.RandomShift          = 3;
+    
+    Args.ImType               = 'twflat';
+    Args.WaitTimeCheck        = 30;
+    Args.Plot logical         = true;
+    
+    Args.PrepMasterFlat logical = true;
+    
+    Args.AbortFile            = '~/stopFF';
 end
-if isempty(itel)
-    itel=1:numel(UnitObj.Camera);
-end
-Ncam=numel(itel);
 
-InPar = inputParser;
-addOptional(InPar,'MaxFlatLimit',40000);
-addOptional(InPar,'MinFlatLimit',2000);
-addOptional(InPar,'MinSunAlt',-10);
-addOptional(InPar,'MaxSunAlt',-4);
-addOptional(InPar,'ExpTimeRange',[3 15]);
-addOptional(InPar,'TestExpTime',1);
-addOptional(InPar,'MeanFun','nanmedian');
-addOptional(InPar,'EastFromZenith',20);
-addOptional(InPar,'RandomShift',3);
-addOptional(InPar,'ImType','skyflat');
-addOptional(InPar,'WaitTimeCheck',30);
-addOptional(InPar,'Plot',true);
-parse(InPar,varargin{:});
-InPar = InPar.Results;
+if isempty(Itel)
+    Itel = (1:numel(UnitObj.Camera));
+end
+
+Ncam = numel(Itel);
+
     
 RAD = 180./pi;
 
-M=UnitObj.Mount;
-C=UnitObj.Camera(itel);
+M = UnitObj.Mount;
+C = UnitObj.Camera(Itel);
 
 % store the present status of SaveOnDisk for each camera. We will save
 %  images, but use an explicit call in order to provide the path, with
 %  SaveOnDisk=false
-saving=false(1,Ncam);
 for icam=1:Ncam
-    saving(icam)=C{icam}.classCommand('SaveOnDisk;');
-    C{icam}.classCommand('SaveOnDisk = false;');
     % set ImType to flat
-    C{icam}.classCommand(['ImType =''' InPar.ImType ''';']);
+    UnitObj.Camera{icam}.classCommand(['ImType =''' Args.ImType ''';']);
 end
 
 Lon = M.classCommand('MountPos(1)');
@@ -79,59 +81,33 @@ Lat = M.classCommand('MountPos(2)');
 
 % get Sun Altitude
 
-MeanValPerSec=nan(1,Ncam);
 Counter = 0;
 I = 0;
 AttemptTakeFlat = true;
+ListOfFlatFiles = struct('List',cell(1,Ncam));
 while AttemptTakeFlat
     I = I + 1;
     
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 
-    if exist('/home/eran/abort','file') % FIXME !
+    if exist(Args.AbortFile,'file') 
         break
     end
-    
-    if (Sun.Alt*RAD)>InPar.MinSunAlt && (Sun.Alt*RAD)<InPar.MaxSunAlt
-        % take twilight test image and check that mean value is within allowed
-        %  range
-
-        % set telescope pointing
-        JD  = celestial.time.julday;  % current UTC JD
-        LST = celestial.time.lst(JD,Lon./RAD,'a').*360;  % deg
-        RA  = LST - 0;  % RA at HA=0
-        RA  = RA + InPar.EastFromZenith;
-        RA  = mod(RA,360);
-        M.classCommand('goTo(%f,%f);',RA,Lat);
         
-        % take test image without saving to disk
-        UnitObj.takeExposure(itel,InPar.TestExpTime);
-        UnitObj.readyToExpose(itel);
-        for icam=1:Ncam
-            % compute mean of the image taken (remotely if the camera is remote)
-            if isa(C{icam},'obs.remoteClass')
-                % TODO check if ok with @ in string
-                ImageMean=C{icam}.Messenger.query(sprintf('%s(single(%s.LastImage(:)))',...
-                                                     InPar.MeanFun,C{icam}.RemoteName));
-                MeanValPerSec(icam) = ImageMean/InPar.TestExpTime;
-            else
-                MeanValPerSec(icam) = InPar.MeanFun(single(C.LastImage(:)))/InPar.TestExpTime;
-            end
-        end
+    if (Sun.Alt*RAD)>Args.MinSunAlt && (Sun.Alt*RAD)<Args.MaxSunAlt
+        % get sky position for flat fielding
+        [RA, Dec] = getCooForFlat(Lon, EastFromZenith);
         
-        % expected mean value at min exp time [FIXME: should we take the
-        %    mean of all camera values, or what?]
-        MeanValAtMin = mean(MeanValPerSec) * min(InPar.ExpTimeRange);
-        MeanValAtMax = mean(MeanValPerSec) * max(InPar.ExpTimeRange);
-
-        UnitObj.report('Flat test image\n');
-        UnitObj.report('    SunAlt              : %6.2f\n',Sun.Alt.*RAD)
-        UnitObj.report('    Az                  : %6.2f\n',M.classCommand('Az'))
-        UnitObj.report('    Alt                 : %6.2f\n',M.classCommand('Alt'))
-        UnitObj.report('    Image ExpTime       : %6.2f\n',InPar.TestExpTime)
-        UnitObj.report('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec))
-               
-        if MeanValAtMax>InPar.MinFlatLimit && MeanValAtMin<InPar.MaxFlatLimit
+        % set telescope coordinates
+        M.Mount.goToTarget(RA,Dec);
+        
+        % estimate mean count rate in images
+        MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun);
+        
+        MeanValAtMin = mean(MeanValPerSec) * min(Args.ExpTimeRange);
+        MeanValAtMax = mean(MeanValPerSec) * max(Args.ExpTimeRange);
+        
+        if MeanValAtMax>Args.MinFlatLimit && MeanValAtMin<Args.MaxFlatLimit
             % Sun Altitude and image mean value are in allowed range
             % start twilight flat sequemce
             
@@ -139,110 +115,141 @@ while AttemptTakeFlat
             while ContFlat
                 % take flat images
                 Counter = Counter + 1;
-
-                % set telescope pointing
-                JD  = celestial.time.julday;  % current UTC JD
-                LST = celestial.time.lst(JD,Lon/RAD,'a').*360;  % deg
-                RA  = LST - 0;  % RA at HA=0
-                RA  = RA + InPar.EastFromZenith;
-                RA  = mod(RA,360);
-                RA  = RA + (rand(1,1)-0.5).*2.*InPar.RandomShift;
-                Dec = Lat + (rand(1,1)-0.5).*2.*InPar.RandomShift;
-                M.classCommand('goTo(%f,%f);',RA,Dec);
-                UnitObj.readyToExpose(itel,true);
-                
-                EstimatedExpTime = InPar.MaxFlatLimit/mean(MeanValPerSec);
-                UnitObj.report('Estimated exposure time: %g sec\n',...
-                                        EstimatedExpTime)
-                if EstimatedExpTime>min(InPar.ExpTimeRange) &&...
-                        EstimatedExpTime<max(InPar.ExpTimeRange)
- 
-                    % this is almost the same code as above @line 95...
-                    %  should be factorized!
-                    UnitObj.takeExposure(itel,EstimatedExpTime);
-                    UnitObj.readyToExpose(itel);
-                    
-                    for icam=1:Ncam
-                        % save the images to the service directories
-                        UnitObj.saveCurImage(itel(icam),...
-                                  C{icam}.classCommand('Config.FlatDBDir'))
-                        % compute the mean of the image taken (remotely if the camera is remote)
-                        if isa(C{icam},'obs.remoteClass')
-                            % TODO check if ok with @ in string -
-                            %  otherwise I would think it is impossible to
-                            %  oass a function handle to a slave
-                            ImageMean=C{icam}.Messenger.query(sprintf('%s(single(%s.LastImage(:)))',...
-                                InPar.MeanFun,C{icam}.RemoteName));
-                            MeanValPerSec(icam) = ImageMean/EstimatedExpTime;
-                        else
-                            MeanValPerSec(icam) = InPar.MeanFun(single(C.LastImage(:)))/EstimatedExpTime;
-                        end
-                    end
-                    
-                    % expected mean value at min exp time [FIXME: should we take the
-                    %    mean of all camera values, or what?]
-                    MeanValAtMin = mean(MeanValPerSec) * min(InPar.ExpTimeRange);
-                    MeanValAtMax = mean(MeanValPerSec) * max(InPar.ExpTimeRange);
-                                        
-                    UnitObj.report('Flat image number %d\n',Counter)
-                    UnitObj.report('     SunAlt             : %5.2f\n',Sun.Alt.*RAD)
-                    UnitObj.report('     Az                 : %6.2f\n',M.classCommand('Az'))
-                    UnitObj.report('     Alt                : %6.2f\n',M.classCommand('Alt'))
-                    UnitObj.report('     Image ExpTime      : %6.2f\n',InPar.TestExpTime)
-                    UnitObj.report('     Image MeanValPerSec: %5.1f\n',mean(MeanValPerSec))
-                    
-                    if exist('/home/eran/abort','file') % FIXME !!!!
-                        ContFlat = false; % why value unused anyway?
-                    end
-                else
-                    UnitObj.report('Estimated exposure time > %g sec, aborting \n',...
-                                           max(InPar.ExpTimeRange))
+        
+                if exist(Args.AbortFile,'file') 
+                    break
                 end
                 
-                % get Sun altitude
-                Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
-                if MeanValAtMax>InPar.MinFlatLimit && ...
-                          MeanValAtMin<InPar.MaxFlatLimit && ...
-                          (Sun.Alt*RAD)>InPar.MinSunAlt && ...
-                          (Sun.Alt*RAD)<InPar.MaxSunAlt && ...
-                          EstimatedExpTime>min(InPar.ExpTimeRange) &&...
-                          EstimatedExpTime<max(InPar.ExpTimeRange)
+                RA  = RA  + (rand(1,1)-0.5).*2.*Args.RandomShift;
+                Dec = Dec + (rand(1,1)-0.5).*2.*Args.RandomShift;
+                M.Mount.goToTarget(RA,Dec);         
+                M.Mount.waitFinish;
+                
+                
+                % estimated xp time
+                EstimatedExpTime = Args.MaxFlatLimit/mean(MeanValPerSec);
+
+                % take images
+                UnitObj.takeExposure(Itel, EstimatedExpTime, 1);
+                UnitObj.readyToExpose(Itel, true);
+                
+                for Icam=1:1:Ncam
+                    ListOfFlatFiles(Icam).List{Counter} = UnitObj.Camera{Icam}.classCommand('LastFileName');
+                end
+                
+                MeanValPerSec = getMeanVal(UnitObj,  MeanFun, TestExpTime);
+                MeanValAtMin = mean(MeanValPerSec) * min(Args.ExpTimeRange);
+                MeanValAtMax = mean(MeanValPerSec) * max(Args.ExpTimeRange);
+                
+                UnitObj.report('Flat test image\n');
+                UnitObj.report('    SunAlt              : %6.2f\n',Sun.Alt.*RAD)
+                UnitObj.report('    Az                  : %6.2f\n',M.classCommand('Az'))
+                UnitObj.report('    Alt                 : %6.2f\n',M.classCommand('Alt'))
+                UnitObj.report('    Image ExpTime       : %6.2f\n',Args.TestExpTime)
+                UnitObj.report('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec))
+               
+                if MeanValAtMax>Args.MinFlatLimit && MeanValAtMin<Args.MaxFlatLimit
                     ContFlat = true;
                 else
                     ContFlat = false;
                 end
-
-                % check whether ? or abort commands
-                % TBD
-                
             end
         else
-            UnitObj.report(['estimated mean image value at max(ExpTime)=%g,'...
-                                    'out of range [%g,%g], waiting'],...
-                                    MeanValAtMax,InPar.MinFlatLimit,...
-                                    InPar.MaxFlatLimit)
-            pause(InPar.WaitTimeCheck);            
+            UnitObj.report('Estimated exposure time > %g sec, aborting \n',...
+                               max(Args.ExpTimeRange));
         end
-
-        if Counter>0
-            AttemptTakeFlat = false;
-        end
-
     else
         UnitObj.report('Not ready to start flat - SunAlt is not in range\n');
         UnitObj.report('     SunAlt             : %5.2f\n',Sun.Alt.*RAD)
 
         if Counter==0
-            % else for (Sun.Alt.*RAD)>InPar.MinSunAlt && (Sun.Alt.*RAD)<InPar.MaxSunAlt
-            pause(InPar.WaitTimeCheck);
+            % else for (Sun.Alt.*RAD)>Args.MinSunAlt && (Sun.Alt.*RAD)<Args.MaxSunAlt
+            pause(Args.WaitTimeCheck);
         end
     end
 end
-    
+             
 % returm ImType to default value and restore SaveOnDisk
 for icam=1:Ncam
     C{icam}.classCommand('ImType = ''sci'';');
-    if saving(icam)
-        C{icam}.classCommand('SaveOnDisk = true;');
+end
+
+% prep a master flat image
+if Args.PrepMasterFlat
+    CI = CalibImages;
+    
+    for Icam=1:1:Ncam
+        % upload the Master dark image
+        CI.Bias = ...
+        
+        FlatImages = CI.debias(ListOfFlatFiles(Icam).List);
+        CI.createFlat(FlatImages);
     end
+end
+
+
+end
+
+
+function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
+    % Take exposures with all cameras 
+    % do not save images
+    % calculate the median counts per second
+   
+    Ncam = numel(Itel);
+
+    % save off
+    SavingState = false(1,Ncam);
+    for icam=1:Ncam
+        SavingState(icam) = UnitObj.Camera{icam}.classCommand('SaveOnDisk;');
+        UnitObj.Camera{icam}.classCommand('SaveOnDisk = false;');
+    end
+    
+    UnitObj.takeExposure(Itel, TestExpTime, 1);
+    
+    UnitObj.readyToExpose(Itel);
+                    
+    MeanValPerSec = getMeanVal(UnitObj,  MeanFun, TestExpTime);
+    
+    % save on
+    for icam=1:Ncam
+        if SavingState(icam)
+            UnitObj.Camera{icam}.classCommand('SaveOnDisk = true;');
+        end
+    end
+    
+end
+
+
+function MeanValPerSec = getMeanVal(UnitObj,  MeanFun, ExpTime)
+    % get LastImages mean value per second
+    
+    for icam=1:Ncam
+        % compute mean of the image taken (remotely if the camera is remote)
+        
+        ImageMean = UnitObj.Camera{icam}.Messenger.query(sprintf('%s(single(%s.LastImage(:)))',...
+                                             MeanFun,UnitObj.Camera{icam}.RemoteName));
+        MeanValPerSec(icam) = ImageMean/ExpTime;
+    end
+     
+end
+
+function [RA, Dec] = getCooForFlat(Lon, EastFromZenith)
+    % get RA/Dec for good flat
+    % some deg east of the Zenith and avoid galactic plane
+
+    RAD = 180./pi;
+    
+    JD  = celestial.time.julday;  % current UTC JD
+    LST = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
+    RA  = LST - 0;  % RA at HA=0
+    RA  = RA + EastFromZenith + [-20:5:20].';
+    RA  = mod(RA,360);    
+    Dec = Lat;
+    
+    % check Galactic Lat
+    [Lon,Lat] = celestial.coo.convert_coo(RA./RAD, Dec./RAD, 'J2000.0','g');
+    [~,Ira] = max(abs(Lat));
+    RA = RA(Ira);
+    
 end
