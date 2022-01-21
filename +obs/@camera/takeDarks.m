@@ -124,8 +124,10 @@ for Itemp=1:Ntemp
             MasterBiasName = sprintf('%s%s%s',Args.SaveDir, filesep, IP.genFile);
             write1(CI.Bias, MasterBiasName, IP.Product, 'FileType',IP.FileType);
             IP.Product  = 'Mask';
+            MasterBiasName = sprintf('%s%s%s',Args.SaveDir, filesep, IP.genFile);
             write1(CI.Bias, MasterBiasName, IP.Product, 'FileType',IP.FileType);
             IP.Product  = 'Var';
+            MasterBiasName = sprintf('%s%s%s',Args.SaveDir, filesep, IP.genFile);
             write1(CI.Bias, MasterBiasName, IP.Product, 'FileType',IP.FileType);
             
         end

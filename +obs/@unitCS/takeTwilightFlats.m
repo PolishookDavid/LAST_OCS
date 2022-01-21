@@ -183,9 +183,13 @@ if Args.PrepMasterFlat
         % upload the Master dark image
         % get the bias dir name 
         Config = UnitObj.Camera{Icam}.classCommand('Config');
+        DirDark = Config.CalibDarkDir;
+        SaveDir = Config.CalibFlatDir;
         
-        MasterDarkImageFileName = 
-        MasterDarkMaskFileName  = 
+        [FoundAll,MostRecentFile,MostRecentRep] = searchNewFilesInDir(DirDark, '*_dark_proc_*Image_*', '_Image_', {'_Mask_'});
+        
+        MasterDarkImageFileName = sprintf('%s%s%s',DirDark, filesep, MostRecentFile);
+        MasterDarkMaskFileName  = sprintf('%s%s%s',DirDark, filesep, MostRecentRep);
         
         Dark   = AstroImage(MasterDarkImageFileName, 'Mask', MasterDarkMaskFileName);
         CI.Bias = Dark;
@@ -193,11 +197,24 @@ if Args.PrepMasterFlat
         FlatImages = CI.debias(ListOfFlatFiles(Icam).List);
         CI.createFlat(FlatImages);
         
-        MasterFlatImageFileName = 
-        MasterFlatMaskFileName  = 
-        CI.Flat.write1(MasterFlatImageFileName, 'Image');
-        CI.Flat.write1(MasterFlatMaskFileName, 'Image');
+        IP = ImagePath;
+        IP.ProjName = Config.ProjName;
+        IP.Counter  = 0;
+        IP.CCDID    = 1;
+        IP.CropID   = 0;
+        IP.Type     = Args.ImType;
+        IP.Level    = 'proc';
+        IP.Product  = 'Image';
+        IP.FileType = 'fits';
         
+        MasterFlatName = sprintf('%s%s%s',SaveDir, filesep, IP.genFile);
+        write1(CI.Flat, MasterFlatName, IP.Product, 'FileType',IP.FileType);
+        IP.Product  = 'Mask';
+        MasterFlatName = sprintf('%s%s%s',SaveDir, filesep, IP.genFile);
+        write1(CI.Flat, MasterFlatName, IP.Product, 'FileType',IP.FileType);
+        IP.Product  = 'Var';
+        MasterFlatName = sprintf('%s%s%s',SaveDir, filesep, IP.genFile);
+        write1(CI.Flat, MasterFlatName, IP.Product, 'FileType',IP.FileType);
         
     end
 end
