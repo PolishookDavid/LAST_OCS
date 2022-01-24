@@ -45,7 +45,7 @@ arguments
     Args.WaitTempTimeout = 180;
     Args.ImType          = 'dark';
     
-    Args.PrepMasterDark logical = false;
+    Args.PrepMasterDark logical = true;
     Args.SaveDir                = pwd;
 end
 
@@ -121,6 +121,7 @@ for Itemp=1:Ntemp
             IP.Level    = 'proc';
             IP.Product  = 'Image';
             IP.FileType = 'fits';
+            
             MasterBiasName = sprintf('%s%s%s',Args.SaveDir, filesep, IP.genFile);
             write1(CI.Bias, MasterBiasName, IP.Product, 'FileType',IP.FileType);
             IP.Product  = 'Mask';
