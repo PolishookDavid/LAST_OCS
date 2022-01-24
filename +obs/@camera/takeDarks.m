@@ -113,7 +113,7 @@ for Itemp=1:Ntemp
             
             % Save Master Dark image
             IP = ImagePath;
-            IP.ProjName = C.ProjName;
+            IP.parseFileName(ImageNames(Itemp,Iexp).List{1});
             IP.Counter  = 0;
             IP.CCDID    = 1;
             IP.CropID   = 0;
@@ -139,7 +139,7 @@ for Itemp=1:Ntemp
 end
 
 % restore default values
-C.ImType = 'science';
+C.ImType     = 'science';
 C.SaveOnDisk = SavingState;
 
 
