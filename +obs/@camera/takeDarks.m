@@ -100,7 +100,7 @@ for Itemp=1:Ntemp
             for Idark=1:Args.Ndark
                 C.takeExposure;
                 C.waitFinish;
-                C.saveCurImage(C.Config.DarkDBDir)
+                %C.saveCurImage(C.Config.DarkDBDir)
                 ImageNames(Itemp,Iexp).List{Idark} = C.LastImageName;
             end
 %             end
