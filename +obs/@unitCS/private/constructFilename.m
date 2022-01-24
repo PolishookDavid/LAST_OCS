@@ -34,5 +34,5 @@ function [FileName,Path]=constructFilename(Unit,icam)
     end
 
     FileName = IP.genFile;
-    Path         = IP.genPath;
+    Path     = IP.genPath;
 
