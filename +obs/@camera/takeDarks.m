@@ -45,7 +45,7 @@ arguments
     Args.WaitTempTimeout = 180;
     Args.ImType          = 'dark';
     
-    Args.PrepMasterDark logical = true;
+    Args.PrepMasterDark logical = false;
     Args.SaveDir                = pwd;
 end
 
@@ -101,7 +101,7 @@ for Itemp=1:Ntemp
                 C.takeExposure;
                 C.waitFinish;
                 C.saveCurImage(C.Config.DarkDBDir)
-                ImageNames(Itemp,Iexp).List = C.LastImageFullPath;
+                ImageNames(Itemp,Iexp).List = C.LastImageName;
             end
 %             end
         end
