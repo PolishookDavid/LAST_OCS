@@ -40,7 +40,7 @@ arguments
     Args.MaxFlatLimit         = 40000;
     Args.MinFlatLimit         = 2000;
     Args.MinSunAlt            = -10;
-    Args.MaxSunAlt            = -4;
+    Args.MaxSunAlt            = -4;  % for DEBUG use 90
     Args.ExpTimeRange         = [3 20];
     Args.TestExpTime          = 1;
     Args.MeanFun              = 'nanmedian';
@@ -51,7 +51,7 @@ arguments
     Args.WaitTimeCheck        = 30;
     Args.Plot logical         = true;
     
-    Args.PrepMasterFlat logical = true;
+    Args.PrepMasterFlat logical = false;
     
     Args.AbortFile            = '~/stopFF';
     
@@ -97,13 +97,16 @@ while AttemptTakeFlat
         
     if (Sun.Alt*RAD)>Args.MinSunAlt && (Sun.Alt*RAD)<Args.MaxSunAlt
         % get sky position for flat fielding
-        [RA, Dec] = getCooForFlat(Lon, EastFromZenith);
+        [RA, Dec] = getCooForFlat(Lon, Lat, Args.EastFromZenith);
         
         % set telescope coordinates
-        M.Mount.goToTarget(RA,Dec);
+        UnitObj.Mount.goToTarget(RA,Dec);
         
         % estimate mean count rate in images
-        MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun);
+        MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun);
+        
+        % DEBUG
+        %MeanValPerSec = 670  
         
         MeanValAtMin = mean(MeanValPerSec) * min(Args.ExpTimeRange);
         MeanValAtMax = mean(MeanValPerSec) * max(Args.ExpTimeRange);
@@ -123,22 +126,22 @@ while AttemptTakeFlat
                 
                 RA  = RA  + (rand(1,1)-0.5).*2.*Args.RandomShift;
                 Dec = Dec + (rand(1,1)-0.5).*2.*Args.RandomShift;
-                M.Mount.goToTarget(RA,Dec);         
-                M.Mount.waitFinish;
+                UnitObj.Mount.goToTarget(RA,Dec);         
+                UnitObj.Mount.waitFinish;
                 
                 
                 % estimated xp time
-                EstimatedExpTime = Args.MaxFlatLimit/mean(MeanValPerSec);
+                EstimatedExpTime = min(Args.MaxFlatLimit/mean(MeanValPerSec), max(Args.ExpTimeRange));
 
                 % take images
                 UnitObj.takeExposure(Itel, EstimatedExpTime, 1);
                 UnitObj.readyToExpose(Itel, true);
                 
                 for Icam=1:1:Ncam
-                    ListOfFlatFiles(Icam).List{Counter} = UnitObj.Camera{Icam}.classCommand('LastFileName');
+                    ListOfFlatFiles(Icam).List{Counter} = UnitObj.Camera{Icam}.classCommand('LastImageName');
                 end
                 
-                MeanValPerSec = getMeanVal(UnitObj,  MeanFun, TestExpTime);
+                MeanValPerSec = getMeanVal(UnitObj, Ncam, Args.MeanFun, Args.TestExpTime);
                 MeanValAtMin = mean(MeanValPerSec) * min(Args.ExpTimeRange);
                 MeanValAtMax = mean(MeanValPerSec) * max(Args.ExpTimeRange);
                 
@@ -152,7 +155,8 @@ while AttemptTakeFlat
                 if MeanValAtMax>Args.MinFlatLimit && MeanValAtMin<Args.MaxFlatLimit
                     ContFlat = true;
                 else
-                    ContFlat = false;
+                    ContFlat         = false;
+                    AttemptTakeFlat  = false;
                 end
             end
         else
@@ -241,7 +245,7 @@ function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
     
     UnitObj.readyToExpose(Itel);
                     
-    MeanValPerSec = getMeanVal(UnitObj,  MeanFun, TestExpTime);
+    MeanValPerSec = getMeanVal(UnitObj,  Ncam, MeanFun, TestExpTime);
     
     % save on
     for icam=1:Ncam
@@ -253,8 +257,9 @@ function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
 end
 
 
-function MeanValPerSec = getMeanVal(UnitObj,  MeanFun, ExpTime)
+function MeanValPerSec = getMeanVal(UnitObj, Ncam, MeanFun, ExpTime)
     % get LastImages mean value per second
+    
     
     for icam=1:Ncam
         % compute mean of the image taken (remotely if the camera is remote)
@@ -266,7 +271,7 @@ function MeanValPerSec = getMeanVal(UnitObj,  MeanFun, ExpTime)
      
 end
 
-function [RA, Dec] = getCooForFlat(Lon, EastFromZenith)
+function [RA, Dec] = getCooForFlat(Lon, Lat, EastFromZenith)
     % get RA/Dec for good flat
     % some deg east of the Zenith and avoid galactic plane
 
@@ -277,11 +282,12 @@ function [RA, Dec] = getCooForFlat(Lon, EastFromZenith)
     RA  = LST - 0;  % RA at HA=0
     RA  = RA + EastFromZenith + [-20:5:20].';
     RA  = mod(RA,360);    
-    Dec = Lat;
+    Dec = Lat + zeros(size(RA));
     
     % check Galactic Lat
     [Lon,Lat] = celestial.coo.convert_coo(RA./RAD, Dec./RAD, 'J2000.0','g');
     [~,Ira] = max(abs(Lat));
-    RA = RA(Ira);
+    RA  = RA(Ira);
+    Dec = Dec(Ira);
     
 end

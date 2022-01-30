@@ -14,7 +14,7 @@ function takeDarks(C, Args)
 %   - 'SaveDir'        - Where to save the master dark. Default is pwd.
 %
 % Output: none from the method, but resulting images are saved on disk
-%   to a service directory, sprcified in the configuration (Config.DarkDBDir)
+%   to a service directory, specified in the configuration (Config.DarkDBDir)
 %
 % Since I don't think that this method should be called in parallel
 %  for all cameras of a unit, it stays a camera method. Therefore,
