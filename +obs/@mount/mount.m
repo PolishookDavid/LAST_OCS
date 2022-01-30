@@ -114,7 +114,7 @@ classdef mount < obs.LAST_Handle
             % load configuration
             MountObj.loadConfig(MountObj.configFileName('createsuper'))
             % pass geographical coordinates to the driver
-            MountObj.MountPos=[MountObj.ObsLat,MountObj.ObsLon,MountObj.ObsHeight];
+            MountObj.MountPos=[MountObj.Config.ObsLat, MountObj.Config.ObsLon, MountObj.Config.ObsHeight];
             
             % Open the logFile (what do we want to do here? Open a different log
             %  file for each device, or one for the whole unitCS?)
