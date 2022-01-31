@@ -1,48 +1,17 @@
-function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
-    % Take one or many exposures from one or many local or remote cameras,
-    %  using nonblocking calls to start exposing.
-    % If requested, wait till the mount has finished slewing, the focusers
-    %  moving and the camera shooting
-    %
-    % Package: +obs.@unitCS
-    % Input  : - a vector of camera indices [all cameras if omitted]
-    %          - Exposure time [s]. If provided this will override
-    %            the Camera.ExpTime, and the Camera.ExpTime
-    %            will be set to this value.
-    %          - Number of images to obtain. Default is 1.
-    %          * ...,key,val,... :
-    %            'WaitFinish' - default is false (to reduce delays)
-    %            'ImType'     - (passed along to write image file), default is 'sci'
-    %                       If empty, will not be changed.
-    %            'Object'     - (passed along to write image file), default is ''.
-    %            'MinExpTimeForSave' - default is 5 [sec]. .SaveOnDisk
-    %                                  will be temporarily turned off if
-    %                                  ExpTime is smaller than that.
-    %                                  (BUG - doesn't happen)
-    % TAKE CARE, Unit.Camera{i}.classCommand('waitFinish') may timeout
-    %  because of no reply, if the messenger timeout is shorter than
-    %  ExpTime. Consider using the method readyToExpose(...,true,timeout)
-    %  for finer control.
-    
-    % argument parsing
-    arguments
-        Unit
-        Cameras   = [];
-        ExpTime   = [];
-        Nimages   = 1;
-        InPar.WaitFinish logical   = false;
-        InPar.ImType               = 'sci';
-        InPar.Object               = [];
-        InPar.MinExpTimeForSave    = 5;
-        
+function takeDarks(Unit,Cameras,ExpTime,Nimages,varargin)
+% Take a sequence of dark images
+%
+% Same as takeExposure
+
+    if ~exist('Cameras','var') || isempty(Cameras)
+        Cameras=1:numel(Unit.Camera);
     end
-        
-    if isempty(Cameras)
-        Cameras = (1:numel(Unit.Camera));
-    end
-    Ncam  = numel(Cameras);
     
-    if isempty(ExpTime)
+    if ~exist('Nimages','var') || isempty(Nimages)
+        Nimages = 10;
+    end
+    
+    if ~exist('ExpTime','var') || isempty(ExpTime)
         ExpTime=zeros(size(Cameras));
         for i=1:numel(Cameras)
             ExpTime(i) = Unit.Camera{Cameras(i)}.classCommand('ExpTime');
@@ -55,24 +24,18 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
             Unit.Camera{Cameras(i)}.classCommand('ExpTime=%f;',ExpTime(i));
         end
     end
+    
+    InPar = inputParser;
+    addOptional(InPar,'WaitFinish',false);
+    addOptional(InPar,'ImType','dark');
+    addOptional(InPar,'Object','');
+    addOptional(InPar,'MinExpTimeForSave',5); % [s] Minimum ExpTime below which SaveOnDisk is disabled
+    parse(InPar,varargin{:});
+    InPar = InPar.Results;
 
-    if ~isempty(InPar.ImType)
-        % update ImType
-        for Icam=1:1:Ncam
-            Unit.Camera{Cameras(Icam)}.classCommand(sprintf('ImType=''%s'';',InPar.ImType));
-        end
-    end
     if ~isempty(InPar.Object)
-        % update Object
-        if isnan(InPar.Object)
-            % If Object is NaN then will set the object name to coordinates
-            Coo = Unit.Mount.j2000;
-            InPar.Object = sprintf('%03d%+02d',round(Coo(1)), round(Coo(2)));
-        end
-        
-        for Icam=1:1:Ncam
-            Unit.Camera{Cameras(Icam)}.classCommand(sprintf('Object=''%s'';',InPar.Object));
-        end
+        % update ImType
+        Unit.Camera{Cameras}.classCommand(['Object=' InPar.Object ';']);
     end
     
     if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave
@@ -106,25 +69,22 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
             Unit.Camera{i}.classCommand('waitFinish;');
         end
     end
-
+    
     % start acquisition on each of the local cameras, using nonblocking
     %  methods, and of the remote ones, using blind sends for maximum speed.
     %  This difference prevents the use of .classCommand() for both
+    
     for i=Cameras
         CamStatus=Unit.Camera{i}.classCommand('CamStatus;');
         if strcmp(CamStatus,'idle')
             if isa(Unit.Camera{i},'obs.remoteClass')
-                remotename=Unit.Camera{i}.RemoteName;
+                remotename=Unit.Camera{i}.RemoteName;                
                 if Nimages>1
-                    Unit.Camera{i}.Messenger.send(sprintf('%s.takeLive(%d)',remotename,Nimages));
-                else
-                    Unit.Camera{i}.Messenger.send(sprintf('%s.takeExposure',remotename));
+                    Unit.Camera{i}.Messenger.send(sprintf('%s.takeDarks(''Ndark'',%d,''ExpTime'',%d)',remotename,Nimages,ExpTime));
                 end
             else
                 if Nimages>1
-                    Unit.Camera{i}.takeLive(Nimages);
-                else
-                    Unit.Camera{i}.takeExposure;
+                    Unit.Camera{i}.takeDarks('Ndark',Nimages,'ExpTime',ExpTime);
                 end
             end
             % otherwise it would be just:

@@ -50,13 +50,19 @@ function saveCurImage(UnitObj,itel,Path)
 
             % Construct directory and file name to save image
             %  (format decided 11/2021)
-            [FileName,DefaultPath]=constructFilename(UnitObj,icam);
-
+            [FileName,DefaultPath] = constructFilename(UnitObj,icam);
+            
             if ~exist('Path','var')
                 Path=DefaultPath;
             end
+            
+            % override Path, if NewImagePath is available
+            if ~isempty(CameraObj.Config.DataDir)
+                IP_Parts = split(FileName, '_');
+                Path = [CameraObj.Config.BaseDir, filesep, IP_Parts{1}, filesep, CameraObj.Config.DataDir];
+            end
 
-            FullPath=fullfile(Path,FileName);
+            FullPath = fullfile(Path,FileName);
 
             HeaderCell=constructHeader(UnitObj,icam);
             UnitObj.report('Writing image %s to disk\n',FullPath);

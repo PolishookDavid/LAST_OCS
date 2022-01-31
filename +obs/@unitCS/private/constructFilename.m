@@ -23,7 +23,7 @@ function [FileName,Path]=constructFilename(Unit,icam)
                             CameraObj.classCommand('Config.CameraNumber;') );
         IP.ProjName= ProjName;
         IP.Filter = CameraObj.classCommand('Config.Filter;');
-        IP.FieldID = '';  % get this from unitCS - need to discuss this
+        IP.FieldID = CameraObj.classCommand('Object');
         IP.Counter =  CameraObj.classCommand('ProgressiveFrame;');
         IP.BasePath = fullfile(CameraObj.classCommand('Config.BaseDir;'),...
                                CameraObj.classCommand('Config.DataDir;'));
