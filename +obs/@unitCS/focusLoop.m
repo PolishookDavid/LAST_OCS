@@ -205,7 +205,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     end
     for Icam=1:Ncam
         FocObj{Icam}.classCommand('Pos=%d;', StartFocus(Icam));
-        % set ImType
+        % set ImType THIS IS USELESS - ImType should be set when calling
+        % takeExposure, otherwise it will default to sci
         CamObj{Icam}.classCommand('ImType=''focus'';');
     end
     if ~UnitObj.readyToExpose(itel,true)
@@ -229,7 +230,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         end
 
         % take one exposure with all cameras
-        UnitObj.takeExposure(itel,InPar.ExpTime);
+        UnitObj.takeExposure(itel,InPar.ExpTime, varargin{:}, 'ImType','focus');
         % wait for all cameras
         if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+20)
             break
@@ -358,6 +359,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     end
     
     % restore whatever was the previous ImType for the cameras
+    % This dosen't really do anything, ImType is determined by takeExposure
     for Icam=1:Ncam
         CamObj{Icam}.classCommand('ImType=''%s'';',previousImType{Icam});
     end
