@@ -1,9 +1,10 @@
-function [ok,report]=checkConnections(U,remediate)
+function [ok,report]=checkWholeUnit(U,full,remediate)
 % perform several sanity tests and checks on the objects of the unit,
 % check the connection status with the hardware,
 % and report and optionally attempt to solve problems
     arguments
         U obs.unitCS
+        full logical =false;
         remediate logical = false;
     end
     
@@ -18,7 +19,7 @@ function [ok,report]=checkConnections(U,remediate)
         try
             if ~U.MountPower               
                 if remediate
-                    U.CameraPower(i)=true;
+                    U.MountPower(i)=true;
                 end
             end
         catch
@@ -26,16 +27,7 @@ function [ok,report]=checkConnections(U,remediate)
         end
         
         for i=1:numel(U.Camera)
-            try
-                if ~U.CameraPower(i)
-                    if remediate
-                        U.CameraPower(i)=true;
-                    end
-                end
-            catch
-                % not enough elements in CameraPower or communication error
-                % abort
-            end
+           U.checkCamera(i,remediate)
         end
     
     % check communication with mount
