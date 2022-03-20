@@ -32,8 +32,8 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         Args.NCP_Dec    = 90.0;
         Args.PixScale   = 1.25;
         
-        Args.Lon        = 34.81694;
-        Args.Lat        = 31.91111;
+        Args.Lon        = 35.0407331;
+        Args.Lat        = 30.0529838;
         
         Args.Xalong     = 'ra';
         Args.Yalong     = 'dec';
@@ -106,8 +106,9 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
                                                                           'RA',AstRA,...
                                                                           'Dec',AstDec,...
                                                                           'Scale',1.25,...
+                                                                          'CatRadius',3600.*2.5,...
                                                                           'DistEdges',[30:3:900],...
-                                                                          'RefRangeMag',[7 15]);
+                                                                          'RefRangeMag',[8 14]);
             if Args.Verbose 
                 Result(Iha).Summary
             end

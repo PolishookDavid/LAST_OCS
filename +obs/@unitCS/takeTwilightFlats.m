@@ -134,7 +134,7 @@ while AttemptTakeFlat
                 EstimatedExpTime = min(Args.MaxFlatLimit/mean(MeanValPerSec), max(Args.ExpTimeRange));
 
                 % take images
-                UnitObj.takeExposure(Itel, EstimatedExpTime, 1);
+                UnitObj.takeExposure(Itel, EstimatedExpTime, 1, 'ImType','twflat');
                 UnitObj.readyToExpose(Itel, true);
                 
                 for Icam=1:1:Ncam
