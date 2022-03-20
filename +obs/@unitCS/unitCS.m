@@ -27,6 +27,7 @@ classdef unitCS < obs.LAST_Handle
         CameraPowerOutput double =[]; % switch output controlling each camera
         MountPowerUnit double =[];% switch controlling mount power
         MountPowerOutput double=[]; % switch output controlling the mount
+        MountNumber            = 99;  % Mount number 1..12 - 99=unknown (currently taken from Id)
     end
 
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle)
@@ -45,6 +46,7 @@ classdef unitCS < obs.LAST_Handle
         MountDriver % class name of the mount driver [configuration only]
         FocuserDriver % class names of the focuser drivers [configuration only]
         CameraDriver  % class names of the camera drivers [configuration only]
+        
     end
 
     methods
@@ -170,6 +172,17 @@ classdef unitCS < obs.LAST_Handle
                 IPoutput=UnitObj.CameraPowerOutput(i);
                 IPswitch.classCommand('OutputN(%d,%d);',IPoutput,power(i));
             end
+        end
+        
+        function Result = get.MountNumber(UnitObj)
+            % getter for MountNumber
+            % currently taken from 'Id' property
+           
+            Result = char2num(UnitObj.Id);
+            if isnan(Result)
+                Result = 99;
+            end
+             
         end
     end
 
