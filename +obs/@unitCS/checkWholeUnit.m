@@ -52,7 +52,8 @@ function [ok]=checkWholeUnit(U,full,remediate)
         end
     end
 
-    if ok && okm && all(okc) && all(okf)
+    ok = ok && okm && all(okc) && all(okf);
+    if ok
         U.report('all checks OK\n')
     else
          U.report('check failed!\n')
