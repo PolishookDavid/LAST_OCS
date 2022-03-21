@@ -1,6 +1,14 @@
 function ok=checkCamera(U,camnum,full,remediate)
 % check the functionality of a single camera, report problems and
-%  suggest remedies
+%  suggest remedies. This method is specifically designed to check
+%  one of the .Camera{} properties of unitCS, which can be either an
+%  instrument or a remote class; moreover it also checks .CameraPower: 
+%  it is therefore an ob.unitCS method, not a obs.camera method.
+%  It is mostly intended to be used in the
+%  session where the master unitCS object is defined. If the Camera{}
+%  is remote, the sanity of containing slave and messengers is tacitly
+%  assumed (it is checked elsewhere)
+% Arguments:
 % if full=true, try to acquire some images for a more comprehensive
 %   (longer) test
 % if remediate=true, try to apply some remedies like attempting to
@@ -11,7 +19,9 @@ function ok=checkCamera(U,camnum,full,remediate)
         if ~U.CameraPower(camnum)
             U.report('camera %d power is off\n',camnum)
             if remediate
+                U.report('turning on and trying to connect\n',camnum)
                 U.CameraPower(camnum)=true;
+                U.Camera{camnum}.classCommand('connect');
             end
         end
         ok=true;
@@ -21,28 +31,25 @@ function ok=checkCamera(U,camnum,full,remediate)
         U.report('cannot turn on power for camera %d\n',camnum)
     end
         
-% check status
+% check status:
     if ok
         try
-            status=U.Camera{camnum}.classCommand('CamStatus');
-            gain=U.Camera{camnum}.classCommand('Gain');
-            switch status
-                case 'idle'
-                    ok=true;
-                    U.report('camera %d is idle, good\n',camnum)
-                case 'unknown'
-                    ok=false;
-                    U.report('camera %d status is unknown, bad sign\n',camnum)
-                otherwise
-                    ok=false;
-                    U.report('camera %d is "%s", try perhaps later\n',camnum,status)
-            end
-            if gain>10000
-                % this is an indication of something fishy only for QHY
-                if contains(U.Camera{camnum}.classCommand('CameraModel'),'QHY')
+            U.report('checking status of camera %d\n',camnum)
+            ok=testCamera(U,camnum,full);
+            if ~ok && remediate
+                U.report('trying plain reconnect of camera %d\n',camnum)
+                U.Camera{camnum}.classCommand('connect');
+                ok=testCamera(U,camnum,full);
+                if ~ok
+                    U.report('trying power cycle and reconnect of camera %d\n',camnum)
+                    U.CameraPower(camnum)=false;
+                    pause(1)
+                    U.CameraPower(camnum)=true;
+                    U.Camera{camnum}.classCommand('connect');
+                    ok=testCamera(U,camnum,full);
                 end
-            end
-            % check U.Slave.Messenger.LastError for communication problems
+            end           
         catch
+            U.report('communication with the camera object failed or some other bad thing\n')
         end
     end

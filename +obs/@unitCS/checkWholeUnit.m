@@ -4,8 +4,8 @@ function [ok,report]=checkWholeUnit(U,full,remediate)
 % and report and optionally attempt to solve problems
     arguments
         U obs.unitCS
-        full logical =false;
-        remediate logical = false;
+        full logical =false; % test full operation, e.g. move focusers, take images
+        remediate logical = false; % attempt remediation actions
     end
     
     % check power switches
@@ -22,24 +22,38 @@ function [ok,report]=checkWholeUnit(U,full,remediate)
                     U.MountPower(i)=true;
                 end
             end
+            ok=true;
         catch
             % abort
+            ok=false;
         end
         
-        for i=1:numel(U.Camera)
-           U.checkCamera(i,remediate)
-        end
-    
     % check communication with mount
     % remediation: power cycle
     
     % check for mount faults
     % remediation: clearFaults
     
-    % possibility that there are local cameras and focusers: check them
-    % first
-    
     % check communication with slaves
     for i=1:numel(U.Slave)
-        % within them, check all owned cameras and focusers
+        status=U.Slave{i}.Status;
+        U.report('Slave %d status: "%s"\n',i,status)
+        ok=strcmp(status,'alive');
+        if ~ok && remediate
+            % attempt disconnection and reconnection            
+            U.Slave{i}.disconnect;
+            pause(15)
+            U.connectSlave(i)
+            ok=strcmp(U.Slave{i}.Status,'alive');
+        end
+    end
+    
+    for i=1:numel(U.Camera)
+        U.checkCamera(i,remediate,full)
+    end
+    
+    for i=1:numel(U.Focuser)
+        % check status
+        % check sane limits
+        % remediation: reconnect
     end
