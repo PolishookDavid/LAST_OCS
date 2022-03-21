@@ -1,6 +1,12 @@
 function ok=testCamera(U,camnum,full)
 % check the functionality of a camera. Ancillary of checkCamera().
 % This function may be called repeatedly if remediate
+    arguments
+        U obs.unitCS
+        camnum numeric;
+        full logical =false; % test full operation, e.g. move focusers, take images
+    end
+    
     status=U.Camera{camnum}.classCommand('CamStatus');
     gain=U.Camera{camnum}.classCommand('Gain');
     switch status

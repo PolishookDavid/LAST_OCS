@@ -1,59 +1,59 @@
-function [ok,report]=checkWholeUnit(U,full,remediate)
-% perform several sanity tests and checks on the objects of the unit,
-% check the connection status with the hardware,
-% and report and optionally attempt to solve problems
+function [ok]=checkWholeUnit(U,full,remediate)
+% Perform several sanity tests and checks on the objects of the unit,
+%  check the connection status with the hardware,
+%  report and optionally attempt to solve problems.
+% This method can be called after unitCS.connect, and is most useful when
+%  called in the Master unit session
     arguments
         U obs.unitCS
         full logical =false; % test full operation, e.g. move focusers, take images
         remediate logical = false; % attempt remediation actions
     end
-    
-    % check power switches
-        % potential errors:
-        %   no switches defined
-        %   no communication with switches
-        %   mount and camera power not defined on available units
-        % abort if any of the above happens
-        
-        % check power
-        try
-            if ~U.MountPower               
-                if remediate
-                    U.MountPower(i)=true;
-                end
-            end
-            ok=true;
-        catch
-            % abort
-            ok=false;
-        end
-        
-    % check communication with mount
-    % remediation: power cycle
-    
-    % check for mount faults
-    % remediation: clearFaults
-    
+
+    U.report('Checking definitions and connections of unit %s:\n',U.Id)
+
     % check communication with slaves
     for i=1:numel(U.Slave)
         status=U.Slave{i}.Status;
         U.report('Slave %d status: "%s"\n',i,status)
         ok=strcmp(status,'alive');
         if ~ok && remediate
-            % attempt disconnection and reconnection            
+            % attempt disconnection and reconnection
             U.Slave{i}.disconnect;
             pause(15)
             U.connectSlave(i)
             ok=strcmp(U.Slave{i}.Status,'alive');
         end
     end
-    
-    for i=1:numel(U.Camera)
-        U.checkCamera(i,remediate,full)
+
+    % check definition and reachability of the power switches
+    if ok
+        ok=U.checkSwitches(remediate);
+    end
+
+    % check mount
+    if ok
+        okm=U.checkMount(full,remediate);
     end
     
-    for i=1:numel(U.Focuser)
-        % check status
-        % check sane limits
-        % remediation: reconnect
+    % check cameras
+    okc=false(1,numel(U.Camera));
+    if ok
+        for i=1:numel(U.Camera)
+            okc(i)=U.checkCamera(i,remediate,full);
+        end
+    end
+
+    % check focusers
+    okf=false(1,numel(U.Focuser));
+    if ok
+        for i=1:numel(U.Focuser)
+            okf(i)=U.checkFocuser(i);
+        end
+    end
+
+    if ok && okm && all(okc) && all(okf)
+        U.report('all checks OK\n')
+    else
+         U.report('check failed!\n')
     end

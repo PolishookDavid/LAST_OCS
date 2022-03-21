@@ -3,7 +3,7 @@ function ok=checkCamera(U,camnum,full,remediate)
 %  suggest remedies. This method is specifically designed to check
 %  one of the .Camera{} properties of unitCS, which can be either an
 %  instrument or a remote class; moreover it also checks .CameraPower: 
-%  it is therefore an ob.unitCS method, not a obs.camera method.
+%  it is therefore an obs.unitCS method, not a obs.camera method.
 %  It is mostly intended to be used in the
 %  session where the master unitCS object is defined. If the Camera{}
 %  is remote, the sanity of containing slave and messengers is tacitly
@@ -13,6 +13,12 @@ function ok=checkCamera(U,camnum,full,remediate)
 %   (longer) test
 % if remediate=true, try to apply some remedies like attempting to
 %   reconnect or power cycle the camera
+    arguments
+        U obs.unitCS
+        camnum numeric;
+        full logical =false; % test full operation, e.g. move focusers, take images
+        remediate logical = false; % attempt remediation actions
+    end
 
 % check if powered on
     try
