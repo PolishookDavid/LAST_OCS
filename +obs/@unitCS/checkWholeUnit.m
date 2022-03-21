@@ -40,7 +40,7 @@ function [ok]=checkWholeUnit(U,full,remediate)
     okc=false(1,numel(U.Camera));
     if ok
         for i=1:numel(U.Camera)
-            okc(i)=U.checkCamera(i,remediate,full);
+            okc(i)=U.checkCamera(i,full,remediate);
         end
     end
 
@@ -48,7 +48,7 @@ function [ok]=checkWholeUnit(U,full,remediate)
     okf=false(1,numel(U.Focuser));
     if ok
         for i=1:numel(U.Focuser)
-            okf(i)=U.checkFocuser(i);
+            okf(i)=U.checkFocuser(i,full,remediate);
         end
     end
 

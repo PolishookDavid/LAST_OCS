@@ -15,7 +15,7 @@ function ok=checkCamera(U,camnum,full,remediate)
 %   reconnect or power cycle the camera
     arguments
         U obs.unitCS
-        camnum numeric;
+        camnum double;
         full logical =false; % test full operation, e.g. move focusers, take images
         remediate logical = false; % attempt remediation actions
     end

@@ -14,7 +14,7 @@ function ok=checkFocuser(U,focnum,full,remediate)
 % if remediate=true, try to apply some remedies
     arguments
         U obs.unitCS
-        focnum numeric;
+        focnum double;
         full logical =false; % test full operation, e.g. move focusers
         remediate logical = false; % attempt remediation actions
     end
