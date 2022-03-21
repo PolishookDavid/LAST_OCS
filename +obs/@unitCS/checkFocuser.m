@@ -18,9 +18,9 @@ function ok=checkFocuser(U,focnum,full,remediate)
         full logical =false; % test full operation, e.g. move focusers
         remediate logical = false; % attempt remediation actions
     end
-    
+
     ok=true;
-    
+
     % check status
     status=U.Focuser{focnum}.classCommand('Status');
     if ~isempty(U.Focuser{focnum}.classCommand('LastError'))
@@ -32,8 +32,13 @@ function ok=checkFocuser(U,focnum,full,remediate)
             ok=isempty(U.Focuser{focnum}.classCommand('LastError'));
         end
     end
+
+    if isempty(status) % happens e.g. for uninitialized remote class
+        U.report('Focuser %d status not retrieved\n',focnum)
+        ok=false;
+    end
     
-    if ok && ~isempty(status)
+    if ok
         switch status
             case 'idle'
                 ok=true;
@@ -45,18 +50,17 @@ function ok=checkFocuser(U,focnum,full,remediate)
                 U.report('focuser %d is %s, try again later\n',focnum,status)
         end
     end
-    
+
     % check sane limits
     if ok
          l=U.Focuser{focnum}.classCommand('Limits');
          if isempty(l) || l(1)==l(2)
              ok=false;
              U.report(['inconsistent focuser limits: perhaps focuser %d',...
-                       'needs calibration?\n'],focnum)
+                       ' needs calibration?\n'],focnum)
          end
     end
-    
-    
+
     if ok && full
         % nudge the focuser
         nudge=100;
