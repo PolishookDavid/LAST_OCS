@@ -19,7 +19,7 @@ function [ok]=checkSwitches(U,remediate)
     %   no communication with the switches
     if ok
         for i=1:numel(U.PowerSwitch)
-            if isempty(U.PowerSwitch{i}.classCommand('Output'))
+            if isempty(U.PowerSwitch{i}.classCommand('Outputs'))
                 U.report('cannot retrieve the output status of switch %d\n',i)
                 ok=false;
                 if ~ok && remediate
