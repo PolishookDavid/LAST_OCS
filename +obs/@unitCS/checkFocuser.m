@@ -33,7 +33,7 @@ function ok=checkFocuser(U,focnum,full,remediate)
         end
     end
     
-    if ok
+    if ok && ~isempty(status)
         switch status
             case 'idle'
                 ok=true;
