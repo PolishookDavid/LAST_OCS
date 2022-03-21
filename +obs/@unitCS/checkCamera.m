@@ -22,9 +22,9 @@ function ok=checkCamera(U,camnum,full,remediate)
 
 % check if powered on
     try
-        if ~U.CameraPower(camnum)
+        ok=U.CameraPower(camnum);
+        if ~ok
             U.report('camera %d power is off\n',camnum)
-            ok=false;
             if remediate
                 U.report('turning on and trying to connect\n',camnum)
                 U.CameraPower(camnum)=true;
