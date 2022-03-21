@@ -18,20 +18,60 @@ function ok=checkMount(U,full,remediate)
     
     % check mount power
     try
-        if ~U.MountPower
-            if remediate
+        ok=U.MountPower;
+        if ~ok && remediate
+                U.report('mount power is off, trying to turn on\n')
                 U.MountPower=true;
-            end
         end
         ok=true;
+        U.report('mount is powered\n')
     catch
         % abort
         ok=false;
+        U.report('cannot turn on the mount\n')
     end
 
     % check communication with mount
-    % remediation: power cycle
+    if ok
+        U.Mount.HA;
+        ok=isempty(U.Mount.LastError);
+        % remediation: reconnect
+        if ~ok && remediate
+            U.Mount.connect;
+            ok=isempty(U.Mount.LastError);
+        end
+    end
     
-    % check for mount faults
-    % remediation: clearFaults
- 
+    if ok
+        % check for mount faults
+        try
+            F=U.Mount.LatchedFaults;
+            nha=fieldnames(F.HA);
+            ndec=fieldnames(F.Dec);
+            for i=1:length(nha)
+                if F.HA.(nha{i})
+                    ok=false;
+                    U.report('HA fault: %s\n',nha{i})
+                end
+            end
+            for i=1:length(ndec)
+                if F.HA.(ndec{i})
+                    ok=false;
+                    U.report('Dec fault: %s\n',ndec{i})
+                end
+            end
+            % remediation: clearFaults
+            if ~ok && remediate
+                U.report('attempting to clear mount faults\n')
+                U.Mount.clearFaults
+                ok=true; % hopefully, might better to recheck
+            end
+        catch
+            ok=false;
+            U.report('error while reading mount fault state\n')
+        end
+    end
+
+    if ok && full
+        % nudge the mount, perhaps? really?
+    end
