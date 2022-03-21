@@ -42,18 +42,18 @@ function ok=checkCamera(U,camnum,full,remediate)
     if ok
         try
             U.report('checking status of camera %d\n',camnum)
-            ok=testCamera(U,camnum,full);
+            ok=U.testCamera(camnum,full);
             if ~ok && remediate
                 U.report('trying plain reconnect of camera %d\n',camnum)
                 U.Camera{camnum}.classCommand('connect');
-                ok=testCamera(U,camnum,full);
+                ok=U.testCamera(camnum,full);
                 if ~ok
                     U.report('trying power cycle and reconnect of camera %d\n',camnum)
                     U.CameraPower(camnum)=false;
                     pause(1)
                     U.CameraPower(camnum)=true;
                     U.Camera{camnum}.classCommand('connect');
-                    ok=testCamera(U,camnum,full);
+                    ok=U.testCamera(camnum,full);
                 end
             end           
         catch

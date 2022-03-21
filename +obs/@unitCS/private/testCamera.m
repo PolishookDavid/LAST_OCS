@@ -3,25 +3,34 @@ function ok=testCamera(U,camnum,full)
 % This function may be called repeatedly if remediate
     arguments
         U obs.unitCS
-        camnum numeric;
+        camnum double;
         full logical =false; % test full operation, e.g. move focusers, take images
     end
     
     status=U.Camera{camnum}.classCommand('CamStatus');
+    if isempty(status)
+        U.report('retrieved no camera %d status\n',camnum)
+        ok=false;
+    end
+    
     gain=U.Camera{camnum}.classCommand('Gain');
-    switch status
-        case 'idle'
-            ok=true;
-            U.report('camera %d is idle, good\n',camnum)
-        case 'unknown'
-            ok=false;
-            U.report('camera %d status is unknown, bad sign\n',camnum)
-        otherwise
-            ok=false;
-            U.report('camera %d is "%s", try perhaps later\n',camnum,status)
+
+    if ~isempty(status)
+        switch status
+            case 'idle'
+                ok=true;
+                U.report('camera %d is idle, good\n',camnum)
+            case 'unknown'
+                ok=false;
+                U.report('camera %d status is unknown, bad sign\n',camnum)
+            otherwise
+                ok=false;
+                U.report('camera %d is "%s", try perhaps later\n',camnum,status)
+        end
     end
     % specific tests for QHY
-    if contains(U.Camera{camnum}.classCommand('CameraModel'),'QHY')
+    model=U.Camera{camnum}.classCommand('CameraModel');
+    if ~isempty(model) && contains(model,'QHY')
         allcameras=U.Camera{camnum}.classCommand('allQHYCameraNames');
         physicalid=U.Camera{camnum}.classCommand('PhysicalId');
         if ~contains(allcameras,physicalid)
