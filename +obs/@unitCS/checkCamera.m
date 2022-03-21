@@ -24,13 +24,14 @@ function ok=checkCamera(U,camnum,full,remediate)
     try
         if ~U.CameraPower(camnum)
             U.report('camera %d power is off\n',camnum)
+            ok=false;
             if remediate
                 U.report('turning on and trying to connect\n',camnum)
                 U.CameraPower(camnum)=true;
                 U.Camera{camnum}.classCommand('connect');
+                ok=true; % not really guaranteed ok, just a flag to go on
             end
         end
-        ok=true;
     catch
         ok=false;
         % not enough elements in CameraPower or communication error

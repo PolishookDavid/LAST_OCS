@@ -19,6 +19,8 @@ function ok=checkFocuser(U,focnum,full,remediate)
         remediate logical = false; % attempt remediation actions
     end
     
+    ok=true;
+    
     % check status
     status=U.Focuser{focnum}.classCommand('Status');
     if ~isempty(U.Focuser{focnum}.classCommand('LastError'))
