@@ -7,8 +7,8 @@ function ok=checkMount(U,full,remediate)
 %  It is mostly intended to be used in the
 %  session where the master unitCS object is defined.
 % Arguments:
-% if full=true, try to nudge the focuser for a more comprehensive
-%   (longer) test
+% if full=true, try to nudge the mount for a more comprehensive
+%   (longer) test [not implemented yet]
 % if remediate=true, try to apply some remedies
     arguments
         U obs.unitCS
@@ -22,6 +22,9 @@ function ok=checkMount(U,full,remediate)
         if ~ok && remediate
                 U.report('mount power is off, trying to turn on\n')
                 U.MountPower=true;
+                pause(4)
+                U.report('attempting to connect the mount\n')
+                U.Mount.connect(U.Mount.PhysicalPort);
         end
         ok=true;
         U.report('mount is powered\n')
@@ -40,7 +43,7 @@ function ok=checkMount(U,full,remediate)
             U.report('cannot read HA from the mount\n')
             if remediate
                 U.report('attempting to reconnect the mount\n')
-                U.Mount.connect;
+                U.Mount.connect(U.Mount.PhysicalPort);
                 ok=isempty(U.Mount.LastError);
             end
         end

@@ -10,6 +10,7 @@ function connectSlave(Unit,islaves)
     end
     
     for i=islaves
+        Unit.report('spawning slave %d\n',i)
         S=Unit.Slave{i};
         S.MessengerLocalPort = 8000+i; % arbitrary port numbers, but for definiteness
         S.MessengerRemotePort= 8500+i;

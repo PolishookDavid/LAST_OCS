@@ -14,6 +14,8 @@ function [ok]=checkWholeUnit(U,full,remediate)
         remediate logical = false; % attempt remediation actions
     end
 
+    ok=true;
+
     U.report('Checking definitions and connections of unit %s:\n',U.Id)
 
     % check communication with slaves
@@ -23,9 +25,11 @@ function [ok]=checkWholeUnit(U,full,remediate)
         ok=strcmp(status,'alive');
         if ~ok && remediate
             % attempt disconnection and reconnection
-            U.report('attempting disconnection of slave %d\n',i)
-            U.Slave{i}.disconnect;
-            pause(5)
+            if ~strcmp(status,'disconnected')
+                U.report('attempting disconnection of slave %d\n',i)
+                U.Slave{i}.disconnect;
+                pause(5)
+            end
             % this IS tricky, because connectSlave uses inputname()
             U.report('creation of the slave %d anew\n',i)
             evalin('caller',sprintf('%s.connectSlave(%d)',inputname(1),i));
