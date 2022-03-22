@@ -36,9 +36,13 @@ function ok=checkMount(U,full,remediate)
         U.Mount.HA;
         ok=isempty(U.Mount.LastError);
         % remediation: reconnect
-        if ~ok && remediate
-            U.Mount.connect;
-            ok=isempty(U.Mount.LastError);
+        if ~ok
+            U.report('cannot read HA from the mount\n')
+            if remediate
+                U.report('attempting to reconnect the mount\n')
+                U.Mount.connect;
+                ok=isempty(U.Mount.LastError);
+            end
         end
     end
     

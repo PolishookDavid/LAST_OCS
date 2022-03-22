@@ -28,6 +28,7 @@ function ok=checkFocuser(U,focnum,full,remediate)
         ok=false;
         if remediate
     % remediation: attempt reconnect
+            U.report('attempting reconnection of focuser %d\n',focnum)
             U.Focuser{focnum}.classCommand('connect')
             ok=isempty(U.Focuser{focnum}.classCommand('LastError'));
         end
@@ -82,4 +83,8 @@ function ok=checkFocuser(U,focnum,full,remediate)
         else
             ok=true;
         end
+    end
+    
+    if ok
+        U.report('focuser %d check passed\n',focnum)
     end
