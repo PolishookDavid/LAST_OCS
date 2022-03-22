@@ -4,7 +4,7 @@ function [ok]=checkWholeUnit(U,full,remediate)
 %  report and optionally attempt to solve problems.
 % This method can be called after unitCS.connect, and is most useful when
 %  called in the Master unit session
-% Optional rguments:
+% Optional arguments:
 % -full [default false], try some operative tests (nudge focusers, take images);
 %   takes longer
 % -remediate [default false], try to apply some remedies
@@ -67,5 +67,5 @@ function [ok]=checkWholeUnit(U,full,remediate)
     if ok
         U.report('all checks OK\n')
     else
-         U.report('check failed!\n')
+        U.report('check failed!\n')
     end
