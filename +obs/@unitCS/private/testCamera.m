@@ -47,9 +47,9 @@ function ok=testCamera(U,camnum,full)
         end
     end
     if ok && full
-        U.report('attempting to take one single image\n',camnum)
+        U.report('attempting to take a single image with camera %d\n',camnum)
         U.takeExposure(camnum,1);
-        pause(10) % should be sufficient for switching mode, readout
+        pause(13) % should be sufficient for switching mode, readout
         ok=U.Camera{camnum}.classCommand('ProgressiveFrame')==1;
         if isempty(U.Camera{camnum}.classCommand('LastImageName')) && ...
            U.Camera{camnum}.classCommand('SaveOnDisk')
@@ -57,11 +57,14 @@ function ok=testCamera(U,camnum,full)
             U.report('or if paths in obs.camera config file are correct\n')
         end
         if ok
-            U.report('attempting to take three contiguous images\n',camnum)
+            U.report('acquisition of a single image with camera %d successful\n',camnum)
+            U.report('attempting to take three contiguous images with camera %d\n',camnum)
             U.takeExposure(camnum,5,3);
             pause(30) % should be sufficient for switching mode, readout
             ok=U.Camera{camnum}.classCommand('ProgressiveFrame')==3;
-            if ~ok
+            if ok
+                U.report('acquisition of 3 images with camera %d successful\n',camnum)
+            else
                 U.report('continuous exposure taking too long\n',camnum)
             end
         else

@@ -176,10 +176,11 @@ classdef unitCS < obs.LAST_Handle
         
         function Result = get.MountNumber(UnitObj)
             % getter for MountNumber
-            % currently taken from 'Id' property
+            % currently taken from 'Id' property, which is fragile,
+            %  in anticipation of a better handling
            
-            Result = char2num(UnitObj.Id);
-            if isnan(Result)
+            Result = sscanf(UnitObj.Id,'%d');
+            if isempty(Result)
                 Result = 99;
             end
              

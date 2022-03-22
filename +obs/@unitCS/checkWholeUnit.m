@@ -23,9 +23,12 @@ function [ok]=checkWholeUnit(U,full,remediate)
         ok=strcmp(status,'alive');
         if ~ok && remediate
             % attempt disconnection and reconnection
+            U.report('attempting disconnection of slave\n')
             U.Slave{i}.disconnect;
-            pause(15)
-            U.connectSlave(i)
+            pause(5)
+            % this IS tricky, because connectSlave uses inputname()
+            U.report('creation of the slave %d anew\n',i)
+            evalin('caller',sprintf('%s.connectSlave(%d)',inputname(1),i));
             ok=strcmp(U.Slave{i}.Status,'alive');
         end
     end

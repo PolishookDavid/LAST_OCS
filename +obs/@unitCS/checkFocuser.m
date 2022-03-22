@@ -68,9 +68,11 @@ function ok=checkFocuser(U,focnum,full,remediate)
         if (p+nudge)>l(2)
             nudge=-nudge;
         end
-        U.Focuser{focnum}.classCommand('RelPos=%d',nudge)
+        U.report('trying to move focuser %d of %d steps\n',focnum,nudge)
+        U.Focuser{focnum}.classCommand('RelPos=%d;',nudge);
         pause(3)
-        U.Focuser{focnum}.classCommand('RelPos=%d',-nudge)
+        U.report('trying to move focuser %d of %d steps\n',focnum,-nudge)
+        U.Focuser{focnum}.classCommand('RelPos=%d;',-nudge);
         pause(3)
         status=U.Focuser{focnum}.classCommand('Status');
         if ~strcmp(status,'idle') || ...
