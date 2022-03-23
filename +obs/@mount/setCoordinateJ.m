@@ -14,16 +14,17 @@ function setCoordinateJ(MountObj, NewRA,NewDec,RA,Dec, InputEquinox)
         InputEquinox     = 'J2000.0';
     end
     
+    RAD = 180./pi;
+    
     % convert coordinates from InputEquinox to Jdate
     JD = celestial.time.julday;
-    ObsCoo
-    [NewRA_t,NewDec_t] = celestial.coo.convert_coo(NewRA, NewDec, InputEquinox, 'tdate' , JD);
+    [NewRA_t,NewDec_t] = celestial.coo.convert_coo(NewRA./RAD, NewDec./RAD, InputEquinox, 'tdate' , JD);
     
     if isempty(RA) && isempty(Dec)
-        MountObj.setCoordinate(NewRA_t,NewDec_t);
+        MountObj.setCoordinate(NewRA_t.*RAD, NewDec_t.*RAD);
     else
-        [RA_t,Dec_t] = celestial.coo.convert_coo(RA, Dec, InputEquinox, 'tdate' , JD);
-        MountObj.setCoordinate(NewRA_t,NewDec_t,RA_t,Dec_t);
+        [RA_t,Dec_t] = celestial.coo.convert_coo(RA./RAD, Dec./RAD, InputEquinox, 'tdate' , JD);
+        MountObj.setCoordinate(NewRA_t.*RAD, NewDec_t.*RAD, RA_t.*RAD, Dec_t.*RAD);
     end
     
 end
