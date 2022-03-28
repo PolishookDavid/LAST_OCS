@@ -29,7 +29,7 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         Args.PolarisRA  = celestial.coo.convertdms([2 31 49.09],'H','d');      % deg
         Args.PolarisDec = celestial.coo.convertdms([1 89 15 50.8],'D','d');    % deg
         Args.NCP_RA     = 0;
-        Args.NCP_Dec    = 90.0;
+        Args.NCP_Dec    = 89.999999;
         Args.PixScale   = 1.25;
         
         Args.Lon        = 35.0407331;
@@ -136,7 +136,7 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         ds9(Result(Iha0).Image, 1)
         pause(1);
 
-        ds9.plot([Result(Iha).NCPX, Result(Iha).NCPY], Args.MarkerNCP,     'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','CP');
+        ds9.plot([Result(Iha0).NCPX, Result(Iha0).NCPY], Args.MarkerNCP,     'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','CP');
         ds9.plot([[Result.PolarisX].', [Result.PolarisY].'],   Args.MarkerPolaris, 'Width',Args.MarkerWidth, 'Size',Args.MarkerSize, 'Text','Polaris');
         
         ds9.plot(BestCen(1),BestCen(2), Args.MarkerMount,'Size',Args.MarkerSize.*[1 1 0], 'Text','Mount');
