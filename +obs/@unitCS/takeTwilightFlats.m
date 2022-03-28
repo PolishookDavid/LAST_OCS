@@ -77,8 +77,8 @@ for icam=1:Ncam
     UnitObj.Camera{icam}.classCommand(['ImType =''' Args.ImType ''';']);
 end
 
-Lon = M.classCommand('MountPos(1)');
-Lat = M.classCommand('MountPos(2)');
+Lon = M.classCommand('MountPos(2)');
+Lat = M.classCommand('MountPos(1)');
 
 % get Sun Altitude
 
@@ -160,8 +160,8 @@ while AttemptTakeFlat
                 end
             end
         else
-            UnitObj.report('Estimated exposure time > %g sec, aborting \n',...
-                               max(Args.ExpTimeRange));
+            UnitObj.report('Estimated exposure time < %g sec, waiting \n',...
+                               min(Args.ExpTimeRange));
         end
     else
         UnitObj.report('Not ready to start flat - SunAlt is not in range\n');
