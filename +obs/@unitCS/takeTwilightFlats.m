@@ -97,6 +97,7 @@ while AttemptTakeFlat
         
     if (Sun.Alt*RAD)>Args.MinSunAlt && (Sun.Alt*RAD)<Args.MaxSunAlt
         % get sky position for flat fielding
+        pause(3);
         [RA, Dec] = getCooForFlat(Lon, Lat, Args.EastFromZenith);
         
         % set telescope coordinates
@@ -140,8 +141,8 @@ while AttemptTakeFlat
                 for Icam=1:1:Ncam
                     ListOfFlatFiles(Icam).List{Counter} = UnitObj.Camera{Icam}.classCommand('LastImageName');
                 end
-                
-                MeanValPerSec = getMeanVal(UnitObj, Ncam, Args.MeanFun, Args.TestExpTime);
+                        
+                MeanValPerSec = getMeanVal(UnitObj, Itel, Args.MeanFun, EstimatedExpTime);
                 MeanValAtMin = mean(MeanValPerSec) * min(Args.ExpTimeRange);
                 MeanValAtMax = mean(MeanValPerSec) * max(Args.ExpTimeRange);
                 
