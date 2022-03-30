@@ -150,7 +150,7 @@ while AttemptTakeFlat
                 UnitObj.report('    SunAlt              : %6.2f\n',Sun.Alt.*RAD)
                 UnitObj.report('    Az                  : %6.2f\n',M.classCommand('Az'))
                 UnitObj.report('    Alt                 : %6.2f\n',M.classCommand('Alt'))
-                UnitObj.report('    Image ExpTime       : %6.2f\n',Args.TestExpTime)
+                UnitObj.report('    Image ExpTime       : %6.2f\n',EstimatedExpTime)
                 UnitObj.report('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec))
                
                 if MeanValAtMax>Args.MinFlatLimit && MeanValAtMin<Args.MaxFlatLimit

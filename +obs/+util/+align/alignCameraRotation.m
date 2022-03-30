@@ -1,4 +1,4 @@
-function Summary = alignCameraRotation(UnitCS, Args)
+function [Summary,CAI] = alignCameraRotation(UnitCS, Args)
     % An aux function for camera rotation alignment and telescope alignment
     %       Take images along several HA on the Equator. For each image,
     %       solve astrometry and calculate field rotation.
@@ -36,6 +36,7 @@ function Summary = alignCameraRotation(UnitCS, Args)
     %                   and camera position for each [Ha, Cam]. [deg]
     %            .OffsetPA - Matrix of PA between mount J2000 position
     %                   and camera position for each [Ha, Cam]. [deg]
+    %          - AstroImage of solved images
     % Author : Eran Ofek (Dec 2021)
     % Example: Summary = obs.util.align.alignCameraRotation(UnitCS);
     %          Summary = obs.util.align.alignCameraRotation(P, 'TelOffsets',zeros(4,2),'Cameras',1,'HA',[]);
@@ -52,6 +53,10 @@ function Summary = alignCameraRotation(UnitCS, Args)
     end
    
     RAD = 180./pi;
+    
+    if isempty(Args.Cameras)
+        Args.Cameras = (1:1:4);
+    end
     
     if isempty(Args.TelOffsets)
         %% read telescope offset relative to mount from properties
@@ -109,12 +114,13 @@ function Summary = alignCameraRotation(UnitCS, Args)
             try
 % instead of this, which is good only for local slaves
                 FileNames{Icam} = UnitCS.Camera{IndCam}.classCommand('LastImageName');
-                [RR, CAI, S(Iha,Icam)] = ...
-                    imProc.astrometry.astrometryCropped(FileNames{Icam});
-%                 ,...
-%                                                        'RA',RA+Args.TelOffsets(IndCam,1),...
-%                                                        'Dec',Dec+Args.TelOffsets(IndCam,2),...
-%                                                        'CatRadius',3600.*2.5,...
+                [RR, CAI(Iha,Icam), S(Iha,Icam)] = ...
+                    imProc.astrometry.astrometryCropped(FileNames{Icam},...
+                                                        'RA',RA+Args.TelOffsets(IndCam,1),...
+                                                        'Dec',Dec+Args.TelOffsets(IndCam,2),...
+                                                        'CatRadius',3600.*3.0,...
+                                                        'RangeX',[-6000 6000],...
+                                                        'RangeY',[-6000 6000]);
 %                                                        'RefRangeMag',[8 14],...
 %                                                        'DistEdges',(12:3:900));
 

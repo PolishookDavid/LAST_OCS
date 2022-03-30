@@ -14,7 +14,10 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     %            'WaitFinish' - default is false (to reduce delays)
     %            'ImType'     - (passed along to write image file), default is 'sci'
     %                       If empty, will not be changed.
-    %            'Object'     - (passed along to write image file), default is ''.
+    %            'Object'     - (passed along to write image file), default is NaN.
+    %                       If NaN will insert field name based on
+    %                       coordinate name.
+    %                       If empty, will insert empty object.
     %            'MinExpTimeForSave' - default is 5 [sec]. .SaveOnDisk
     %                                  will be temporarily turned off if
     %                                  ExpTime is smaller than that.
@@ -32,7 +35,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
         Nimages   = 1;
         InPar.WaitFinish logical   = false;
         InPar.ImType               = 'sci';
-        InPar.Object               = [];
+        InPar.Object               = NaN;
         InPar.MinExpTimeForSave    = 5;
         
     end
@@ -62,17 +65,15 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
             Unit.Camera{Cameras(Icam)}.classCommand(sprintf('ImType=''%s'';',InPar.ImType));
         end
     end
-    if ~isempty(InPar.Object)
-        % update Object
-        if isnan(InPar.Object)
-            % If Object is NaN then will set the object name to coordinates
-            Coo = Unit.Mount.j2000;
-            InPar.Object = sprintf('%03d%+02d',round(Coo(1)), round(Coo(2)));
-        end
-        
-        for Icam=1:1:Ncam
-            Unit.Camera{Cameras(Icam)}.classCommand(sprintf('Object=''%s'';',InPar.Object));
-        end
+    % update Object
+    if isnan(InPar.Object)
+        % If Object is NaN then will set the object name to coordinates
+        Coo = Unit.Mount.j2000;
+        InPar.Object = sprintf('%03d%+02d',round(Coo(1)), round(Coo(2)));
+    end
+
+    for Icam=1:1:Ncam
+        Unit.Camera{Cameras(Icam)}.classCommand(sprintf('Object=''%s'';',InPar.Object));
     end
     
     if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave

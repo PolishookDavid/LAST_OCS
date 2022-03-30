@@ -39,5 +39,5 @@ end
 
 % end of Mathia's code
     
-Unit.takeExposure(Cameras, ExpTime, Nimages, Args.takeExposureArgs{:}, 'ImType','dark');
+Unit.takeExposure(Cameras, ExpTime, Nimages, Args.takeExposureArgs{:}, 'ImType','dark', 'Object',[]);
 
