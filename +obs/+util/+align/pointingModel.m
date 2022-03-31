@@ -38,8 +38,14 @@ function pointingModel(Unit, Args)
         Unit.takeExposure([],1,1);
         
         pause(1);
+        counter=0;
         while ~Unit.readyToExpose
             pause(1);
+            counter = counter+1;
+            if counter>300
+                disp('cameras not ready')
+                break;
+            end
         end
     end
         

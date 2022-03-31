@@ -134,20 +134,23 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         %   ? what about CameraConfig.TelescopeOffset' ?
         %     Besides, shouldn't this be moved to
         %     camera.imageHeader ?
-        ConfigKeyName = 'MountCameraDist';
+	ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';
         if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
-            CamDist = CameraConfig.(ConfigKeyName);
+	    TelOffset = CameraConfig.(ConfigKeyName)
+            %CamDist = CameraConfig.(ConfigKeyName);
         else
-            CamDist = 0;
+	    TelOffset = [0 0];
+            %CamDist = 0;
         end
-        ConfigKeyName = 'MountCameraPA';
-        if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
-            CamPA = CameraConfig.(ConfigKeyName);
-        else
-            CamPA = 0;
-        end
-        
-        [RA, Dec] = reckon(M_JRA, M_JDec, CamDist, CamPA, 'degrees');
+        %ConfigKeyName = 'MountCameraPA';
+        %if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
+        %    CamPA = CameraConfig.(ConfigKeyName);
+        %else
+        %    CamPA = 0;
+        %end
+	
+        [RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
+        %[RA, Dec] = reckon(M_JRA, M_JDec, CamDist, CamPA, 'degrees');
                 
         I = I + 1;
         Info(I).Key = 'RA';
