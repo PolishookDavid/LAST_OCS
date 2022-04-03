@@ -1,4 +1,4 @@
-function ok=checkCamera(U,camnum,full,remediate)
+function [ok,remedy]=checkCamera(U,camnum,full,remediate)
 % check the functionality of a single camera, report problems and
 %  suggest remedies. This method is specifically designed to check
 %  one of the .Camera{} properties of unitCS, which can be either an
@@ -20,12 +20,15 @@ function ok=checkCamera(U,camnum,full,remediate)
         remediate logical = false; % attempt remediation actions
     end
 
+    remedy=false;
+
 % check if powered on
     try
         ok=U.CameraPower(camnum);
         if ~ok
             U.report('camera %d power is off\n',camnum)
             if remediate
+                remedy=true;
                 U.report('turning on camera %d and trying to connect\n',camnum)
                 U.CameraPower(camnum)=true;
                 U.Camera{camnum}.classCommand('connect');
@@ -44,6 +47,7 @@ function ok=checkCamera(U,camnum,full,remediate)
             U.report('checking status of camera %d\n',camnum)
             ok=U.testCamera(camnum,full);
             if ~ok && remediate
+                remedy=true;
                 U.report('trying plain reconnect of camera %d\n',camnum)
                 U.Camera{camnum}.classCommand('connect');
                 ok=U.testCamera(camnum,full);

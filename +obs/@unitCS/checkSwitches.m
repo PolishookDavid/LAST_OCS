@@ -1,4 +1,4 @@
-function [ok]=checkSwitches(U,remediate)
+function [ok,remedy]=checkSwitches(U,remediate)
     % check power switches (note: some of these tests take in consideration
     %  only tinycontrol IP power sockets, e.g. assuming that there are 6
     %  outputs
@@ -8,6 +8,7 @@ function [ok]=checkSwitches(U,remediate)
     end
 
     ok=true;
+    remedy=false;
 
     % potential errors:
     %   no switches defined
@@ -23,6 +24,7 @@ function [ok]=checkSwitches(U,remediate)
                 U.report('cannot retrieve the output status of switch %d\n',i)
                 ok=false;
                 if ~ok && remediate
+                    remedy=true;
                     U.report('attempting reconnection of switch %d\n',i)
                     U.PowerSwitch{i}.classCommand('connect')
                     ok=isempty(U.PowerSwitch{i}.classCommand('LastError'));

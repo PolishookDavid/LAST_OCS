@@ -1,4 +1,4 @@
-function [ok]=checkWholeUnit(U,full,remediate)
+function [ok,remedy]=checkWholeUnit(U,full,remediate)
 % Perform several sanity tests and checks on the objects of the unit,
 %  check the connection status with the hardware,
 %  report and optionally attempt to solve problems.
@@ -15,6 +15,7 @@ function [ok]=checkWholeUnit(U,full,remediate)
     end
 
     ok=true;
+    remedy=false;
 
     U.report('Checking definitions and connections of unit %s:\n',U.Id)
 
@@ -24,6 +25,7 @@ function [ok]=checkWholeUnit(U,full,remediate)
         U.report('Slave %d status: "%s"\n',i,status)
         ok=strcmp(status,'alive');
         if ~ok && remediate
+            remedy=true;
             % attempt disconnection and reconnection
             if ~strcmp(status,'disconnected')
                 U.report('attempting disconnection of slave %d\n',i)
@@ -39,33 +41,44 @@ function [ok]=checkWholeUnit(U,full,remediate)
 
     % check definition and reachability of the power switches
     if ok
-        ok=U.checkSwitches(remediate);
+        [ok,remedyS]=U.checkSwitches(remediate);
     end
 
     % check mount
     if ok
-        okm=U.checkMount(full,remediate);
+        [okm,remedyM]=U.checkMount(full,remediate);
     end
     
     % check cameras
     okc=false(1,numel(U.Camera));
+    remedyC=okc;
     if ok
         for i=1:numel(U.Camera)
-            okc(i)=U.checkCamera(i,full,remediate);
+            [okc(i),remedyC(i)]=U.checkCamera(i,full,remediate);
         end
     end
 
     % check focusers
     okf=false(1,numel(U.Focuser));
+    remedyF=okf;
     if ok
         for i=1:numel(U.Focuser)
-            okf(i)=U.checkFocuser(i,full,remediate);
+            [okf(i),remedyF(i)]=U.checkFocuser(i,full,remediate);
         end
     end
 
     ok = ok && okm && all(okc) && all(okf);
+    remedy = remedy || remedyS || remedyM || any(remedyC) || any(remedyF);
     if ok
-        U.report('all checks OK\n')
+        if ~remedy
+            U.report('all checks OK\n')
+        else
+            U.report('all checks ok, but after remediation\n')
+        end
     else
-        U.report('check failed!\n')
+        if ~remedy
+            U.report('check failed!\n')
+        else
+            U.report('check failed, even after remediation!\n')
+        end
     end

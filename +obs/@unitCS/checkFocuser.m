@@ -1,4 +1,4 @@
-function ok=checkFocuser(U,focnum,full,remediate)
+function [ok,remedy]=checkFocuser(U,focnum,full,remediate)
 % check the functionality of a single focuser, report problems and
 %  suggest remedies. This method is specifically designed to check
 %  one of the .Focuser{} properties of unitCS, which can be either an
@@ -20,6 +20,7 @@ function ok=checkFocuser(U,focnum,full,remediate)
     end
 
     ok=true;
+    remedy=false;
 
     % check status
     status=U.Focuser{focnum}.classCommand('Status');
@@ -28,6 +29,7 @@ function ok=checkFocuser(U,focnum,full,remediate)
         ok=false;
         if remediate
     % remediation: attempt reconnect
+            remedy=true;
             U.report('attempting reconnection of focuser %d\n',focnum)
             U.Focuser{focnum}.classCommand('connect')
             ok=isempty(U.Focuser{focnum}.classCommand('LastError'));

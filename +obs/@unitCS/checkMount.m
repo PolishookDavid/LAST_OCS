@@ -1,4 +1,4 @@
-function ok=checkMount(U,full,remediate)
+function [ok,remedy]=checkMount(U,full,remediate)
 % check the functionality of the mount, report problems and
 %  suggest remedies. This method is specifically designed to check
 %  mount related properties of unitCS, which can be either an
@@ -9,22 +9,25 @@ function ok=checkMount(U,full,remediate)
 % Arguments:
 % if full=true, try to nudge the mount for a more comprehensive
 %   (longer) test [not implemented yet]
-% if remediate=true, try to apply some remedies
+% if remediate=true, try to apply some remedies    
     arguments
         U obs.unitCS
         full logical =false; % test full operation, e.g. move focusers
         remediate logical = false; % attempt remediation actions
     end
     
+    remedy=false;
+
     % check mount power
     try
         ok=U.MountPower;
         if ~ok && remediate
-                U.report('mount power is off, trying to turn on\n')
-                U.MountPower=true;
-                pause(4)
-                U.report('attempting to connect the mount\n')
-                U.Mount.connect(U.Mount.PhysicalPort);
+            remedy=true;
+            U.report('mount power is off, trying to turn on\n')
+            U.MountPower=true;
+            pause(4)
+            U.report('attempting to connect the mount\n')
+            U.Mount.connect(U.Mount.PhysicalPort);
         end
         ok=true;
         U.report('mount is powered\n')
@@ -42,6 +45,7 @@ function ok=checkMount(U,full,remediate)
         if ~ok
             U.report('cannot read HA from the mount\n')
             if remediate
+                remedy=true;
                 U.report('attempting to reconnect the mount\n')
                 U.Mount.connect(U.Mount.PhysicalPort);
                 ok=isempty(U.Mount.LastError);
@@ -69,6 +73,7 @@ function ok=checkMount(U,full,remediate)
             end
             % remediation: clearFaults
             if ~ok && remediate
+                remedy=true;
                 U.report('attempting to clear mount faults\n')
                 U.Mount.clearFaults
                 ok=true; % hopefully, might better to recheck
