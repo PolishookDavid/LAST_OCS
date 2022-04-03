@@ -136,7 +136,7 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         %     camera.imageHeader ?
 	ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';
         if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
-	    TelOffset = CameraConfig.(ConfigKeyName)
+	    TelOffset = CameraConfig.(ConfigKeyName);
             %CamDist = CameraConfig.(ConfigKeyName);
         else
 	    TelOffset = [0 0];
