@@ -40,11 +40,13 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate)
     end
 
     % check definition and reachability of the power switches
+    remedyS=false;
     if ok
         [ok,remedyS]=U.checkSwitches(remediate);
     end
 
     % check mount
+    remedyM=false;
     if ok
         [okm,remedyM]=U.checkMount(full,remediate);
     end
