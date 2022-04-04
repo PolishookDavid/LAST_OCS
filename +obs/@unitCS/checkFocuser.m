@@ -66,17 +66,21 @@ function [ok,remedy]=checkFocuser(U,focnum,full,remediate)
 
     if ok && full
         % nudge the focuser
-        nudge=100;
         p=U.Focuser{focnum}.classCommand('Pos');
+        nudge=200;
         if (p+nudge)>l(2)
             nudge=-nudge;
         end
         U.report('trying to move focuser %d of %d steps\n',focnum,nudge)
         U.Focuser{focnum}.classCommand('RelPos=%d;',nudge);
-        pause(3)
+        pause(5)
+        p1=U.Focuser{focnum}.classCommand('Pos');
+        U.report('  focuser moved of %d steps\n',p1-p)
         U.report('trying to move focuser %d of %d steps\n',focnum,-nudge)
         U.Focuser{focnum}.classCommand('RelPos=%d;',-nudge);
-        pause(3)
+        pause(5)
+        p2=U.Focuser{focnum}.classCommand('Pos');
+        U.report('  focuser moved of %d steps\n',p2-p1)
         status=U.Focuser{focnum}.classCommand('Status');
         if ~strcmp(status,'idle') || ...
            ~isempty(U.Focuser{focnum}.classCommand('LastError'))
