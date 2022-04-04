@@ -56,7 +56,7 @@ function ok=testCamera(U,camnum,full)
             U.report('image was not saved on disk. Check if disks are mounted\n')
             U.report('or if paths in obs.camera config file are correct\n')
         end
-        if ok
+        if ~isempty(ok) && ok
             U.report('acquisition of a single image with camera %d successful\n',camnum)
             U.report('attempting to take three contiguous images with camera %d\n',camnum)
             U.takeExposure(camnum,5,3);
@@ -69,6 +69,7 @@ function ok=testCamera(U,camnum,full)
             end
         else
             U.report('no image taken, apparently\n',camnum)
+            ok=false;
         end
     end
 end

@@ -25,6 +25,10 @@ function [ok,remedy]=checkCamera(U,camnum,full,remediate)
 % check if powered on
     try
         ok=U.CameraPower(camnum);
+        if isempty(ok)
+            U.report('cannot read camera %d power status; switch communication problem?\n',camnum)
+            ok=false;
+        end
         if ~ok
             U.report('camera %d power is off\n',camnum)
             if remediate
@@ -64,3 +68,4 @@ function [ok,remedy]=checkCamera(U,camnum,full,remediate)
             U.report('communication with the camera object failed or some other bad thing\n')
         end
     end
+    
