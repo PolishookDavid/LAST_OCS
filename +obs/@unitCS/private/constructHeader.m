@@ -149,7 +149,12 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         %    CamPA = 0;
         %end
 	
-        [RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
+        % buggy!
+        %[RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
+        % quick fix:
+        RA=M_JRA;
+        Dec=M_JDec;
+        
         %[RA, Dec] = reckon(M_JRA, M_JDec, CamDist, CamPA, 'degrees');
                 
         I = I + 1;
