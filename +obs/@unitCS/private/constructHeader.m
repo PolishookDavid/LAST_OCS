@@ -134,7 +134,7 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         %   ? what about CameraConfig.TelescopeOffset' ?
         %     Besides, shouldn't this be moved to
         %     camera.imageHeader ?
-	ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';
+        ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';
         if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
 	    TelOffset = CameraConfig.(ConfigKeyName);
             %CamDist = CameraConfig.(ConfigKeyName);

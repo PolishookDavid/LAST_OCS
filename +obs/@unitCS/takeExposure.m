@@ -68,7 +68,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     % update Object
     if isnan(InPar.Object)
         % If Object is NaN then will set the object name to coordinates
-        Coo = Unit.Mount.j2000;
+        Coo = Unit.Mount.classCommand('j2000;');
         InPar.Object = sprintf('%03d%+03d',round(Coo(1)), round(Coo(2)));
     end
 
