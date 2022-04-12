@@ -7,6 +7,7 @@ function pointingModel(Unit, Args)
         Args.Nha      = 20;
         Args.Ndec     = 10;
         Args.MinAlt   = 30; % [deg]
+        Args.ExpTime  = 1;
         Args.ObsCoo   = [35, 30]
     end
     
@@ -35,14 +36,14 @@ function pointingModel(Unit, Args)
         Unit.Mount.track;
         pause(2);
         
-        Unit.takeExposure([],1,1);
+        Unit.takeExposure([],Args.ExpTime,1);
         
-        pause(1);
+        pause(Args.ExpTime+4);
         counter=0;
         while ~Unit.readyToExpose
-            pause(1);
+            pause(10);
             counter = counter+1;
-            if counter>300
+            if counter>30
                 disp('cameras not ready')
                 break;
             end
