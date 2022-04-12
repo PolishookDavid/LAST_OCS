@@ -136,11 +136,12 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         %     camera.imageHeader ?
         ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';
         if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
-	    TelOffset = CameraConfig.(ConfigKeyName);
-            %CamDist = CameraConfig.(ConfigKeyName);
+            TelOffset = CameraConfig.(ConfigKeyName);
+            if numel(TelOffset)<2
+                TelOffset = [0 0];
+            end
         else
-	    TelOffset = [0 0];
-            %CamDist = 0;
+            TelOffset = [0 0];
         end
         %ConfigKeyName = 'MountCameraPA';
         %if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
@@ -150,10 +151,10 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         %end
 	
         % buggy!
-        %[RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
+        [RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
         % quick fix:
-        RA=M_JRA;
-        Dec=M_JDec;
+        %RA=M_JRA;
+        %Dec=M_JDec;
         
         %[RA, Dec] = reckon(M_JRA, M_JDec, CamDist, CamPA, 'degrees');
                 
