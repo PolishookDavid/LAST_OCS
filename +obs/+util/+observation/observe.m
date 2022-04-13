@@ -34,7 +34,7 @@ function [Target, I]= observe(Unit, Target, Args)
     
     
     arguments
-        Unit UnitCS
+        Unit unitCS
         Target celestial.Targets
         Args.Cameras               = [];
         Args.ExpTime               = 20;

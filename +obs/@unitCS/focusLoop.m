@@ -232,7 +232,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         % take one exposure with all cameras
         UnitObj.takeExposure(itel,InPar.ExpTime, varargin{:}, 'ImType','focus');
         % wait for all cameras
-        if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+20)
+        if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+40)  % increased from 20 to 40
             break
         end
 
