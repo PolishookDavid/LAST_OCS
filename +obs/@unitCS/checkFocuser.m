@@ -31,8 +31,9 @@ function [ok,remedy]=checkFocuser(U,focnum,full,remediate)
     % remediation: attempt reconnect
             remedy=true;
             U.report('attempting reconnection of focuser %d\n',focnum)
-            U.Focuser{focnum}.classCommand('connect')
+            U.Focuser{focnum}.classCommand('connect');
             ok=isempty(U.Focuser{focnum}.classCommand('LastError'));
+            status=U.Focuser{focnum}.classCommand('Status');
         end
     end
 
