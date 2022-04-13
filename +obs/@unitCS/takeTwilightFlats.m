@@ -136,7 +136,7 @@ while AttemptTakeFlat
 
                 % take images
                 UnitObj.takeExposure(Itel, EstimatedExpTime, 1, 'ImType','twflat');
-                UnitObj.readyToExpose(Itel, true);
+                UnitObj.readyToExpose('Itel',Itel, 'Wait',true, 'Timeout',EstimatedExpTime+20);
                 
                 for Icam=1:1:Ncam
                     ListOfFlatFiles(Icam).List{Counter} = UnitObj.Camera{Icam}.classCommand('LastImageName');
@@ -246,7 +246,7 @@ function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
     
     UnitObj.takeExposure(Itel, TestExpTime, 1);
     
-    UnitObj.readyToExpose(Itel);
+    UnitObj.readyToExpose('Itel',Itel, 'Wait',true);
                     
     MeanValPerSec = getMeanVal(UnitObj,  Ncam, MeanFun, TestExpTime);
     

@@ -200,7 +200,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     end
 
     % go to focus start position (which accounts for backlash)
-    if ~UnitObj.readyToExpose(itel,true)
+    if ~UnitObj.readyToExpose('Itel',itel, 'Wait',true)
         return
     end
     for Icam=1:Ncam
@@ -209,7 +209,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         % takeExposure, otherwise it will default to sci
         CamObj{Icam}.classCommand('ImType=''focus'';');
     end
-    if ~UnitObj.readyToExpose(itel,true)
+    if ~UnitObj.readyToExpose('Itel',itel,'Wait',true)
         return
     end
 
@@ -225,14 +225,14 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
             FocObj{Icam}.classCommand('Pos=%d;',FocusPosCam(Ifocus,Icam));
         end
         % wait for all focusers
-        if ~UnitObj.readyToExpose(itel,true)
+        if ~UnitObj.readyToExpose('Itel',itel,'Wait',true)
             break
         end
 
         % take one exposure with all cameras
         UnitObj.takeExposure(itel,InPar.ExpTime, varargin{:}, 'ImType','focus');
         % wait for all cameras
-        if ~UnitObj.readyToExpose(itel,true,InPar.ExpTime+40)  % increased from 20 to 40
+        if ~UnitObj.readyToExpose('Itel',itel, 'Wait',true, 'Timeout',InPar.ExpTime+40)  % increased from 20 to 40
             break
         end
 
@@ -350,7 +350,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
             FocObj{Icam}.classCommand('Pos = %d;',...
                 BestFocusPos(Icam)+InPar.BacklashFocus);
         end
-        UnitObj.readyToExpose(itel,true); % here we could check only focusers
+        UnitObj.readyToExpose('Itel',itel, 'Wait',true); % here we could check only focusers
         
         % go to best focus
         for Icam=1:1:Ncam

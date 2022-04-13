@@ -35,7 +35,7 @@ function moveMountPoleWhileImage(UnitCS, MountPoleXY, Args)
         Ind = Ind + 1;
         % take an image
         UnitCS.takeExposure(Args.Cameras, Args.ExpTime, 1);
-        UnitCS.readyToExpose(Args.Cameras, true, Args.ExpTime+10);
+        UnitCS.readyToExpose('Itel',Args.Cameras, 'Wait',true, 'Timeout',Args.ExpTime+10);
          
         % solve astrometry
         

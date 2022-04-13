@@ -99,7 +99,7 @@ function [Summary,CAI] = alignCameraRotation(UnitCS, Args)
         
         % take exposure and wait till finish
         UnitCS.takeExposure(Args.Cameras, Args.ExpTime, 1);
-        UnitCS.readyToExpose(Args.Cameras, true, Args.ExpTime+10);
+        UnitCS.readyToExpose('Itel',Args.Cameras, 'Wait',true, 'Timeout',Args.ExpTime+20);
          
         % get image names
         % Image full names are stored in a cell array FileNames{1..4}

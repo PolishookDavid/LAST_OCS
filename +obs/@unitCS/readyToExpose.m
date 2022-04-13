@@ -51,17 +51,28 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     WaitCounter = 0;
     while (Args.Wait || WaitCounter==0) && ~Ready && ((now-T0).*SEC_IN_DAY)<Args.Timeout
         WaitCounter = WaitCounter + 1;
-        
+        WaitCounter
         for It=1:Ncam
-            TmpID = Unit.Camera{Args.Itel(It)}.classCommand('Id');
-            % e.g., '82-1-3'
-            SpID = split(TmpID, '_');
-            if numel(SpID)==3
-                CameraId(It) = str2double(SpID{3});
-            else
-                % Assume no communication with slave
+            SlaveID = Unit.Slave{Args.Itel(It)}.classCommand('Id');
+            if isempty(SlaveID)
                 CameraId(It) = NaN;
                 Fault = true;
+            else
+                TmpID = Unit.Camera{Args.Itel(It)}.classCommand('Id');
+                % e.g., '82-1-3'
+                if isempty(TmpID)
+                    CameraId(It) = NaN;
+                    Fault = true;
+                else
+                    SpID = split(TmpID, '_');
+                    if numel(SpID)==3
+                        CameraId(It) = str2double(SpID{3});
+                    else
+                        % Assume no communication with slave
+                        CameraId(It) = NaN;
+                        Fault = true;
+                    end
+                end
             end
         end
 

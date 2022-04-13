@@ -1,4 +1,5 @@
 function observe_targets(C,M,varargin)
+% DO NOT USE - use observe.m instead
 % *** Mastrolindo status: not reworked yet
 % *** Might still work with mastrolindo classes
 % *** First two arguments are the handles to a camera and a mount object

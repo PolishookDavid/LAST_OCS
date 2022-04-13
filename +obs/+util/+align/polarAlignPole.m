@@ -87,7 +87,7 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         
         % take exposure and wait till finish
         UnitCS.takeExposure(Args.Camera, Args.ExpTime, 1);
-        UnitCS.readyToExpose(Args.Camera, true, Args.ExpTime+10);
+        UnitCS.readyToExpose('Itel',Args.Camera, 'Wait',true, 'Timeout',Args.ExpTime+10);
          
         % get image names
         % Image full names are stored in a cell array FileNames{1..4}
