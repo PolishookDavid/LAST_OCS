@@ -30,6 +30,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
         Args.ClearMountFaults logical    = true;
         Args.Test                        = [true, true, true];  % test: mount, focuser, camera
         Args.GetCoolingPower logical     = false;
+        ARgs.Verbose logical             = false;
     end
     SEC_IN_DAY = 86400;
 
@@ -51,7 +52,9 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     WaitCounter = 0;
     while (Args.Wait || WaitCounter==0) && ~Ready && ((now-T0).*SEC_IN_DAY)<Args.Timeout
         WaitCounter = WaitCounter + 1;
-        WaitCounter
+        if Args.Verbose
+            WaitCounter
+        end
         for It=1:Ncam
             SlaveID = Unit.Slave{Args.Itel(It)}.classCommand('Id');
             if isempty(SlaveID)
