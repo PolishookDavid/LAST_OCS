@@ -62,7 +62,7 @@ function [Target, I]= observe(Unit, Target, Args)
         if isempty(Ind)
             Cont = false;
             if Args.Verbose
-                fprintf('Run out of targets\n',RA,Dec);
+                fprintf('Run out of targets\n') %,RA,Dec); # RA not defined
             end
         else
             Ready = Unit.readyToExpose('Itel',[], 'Wait',true, 'Timeout',60);
