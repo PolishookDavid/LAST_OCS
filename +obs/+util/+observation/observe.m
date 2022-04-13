@@ -54,6 +54,7 @@ function [Target, I]= observe(Unit, Target, Args)
     [Target,PP,Ind] = Target.calcPriority(JD, Args.CadenceMethod);
     
     I = 0;
+    Cont = true;
     while Cont
         I = I + 1; 
        
@@ -79,6 +80,7 @@ function [Target, I]= observe(Unit, Target, Args)
             
             Unit.takeExposure(Args.Cameras, Args.ExpTime, Args.Nimages, 'ImType',Args.ImType);
             pause(SeqTime);
+            Unit.readyToExpose('Itel',Args.Cameras, 'Wait',true, 'Timeout',SeqTime);
             
             JD = celestial.time.julday;
             [Target,PP,Ind] = Target.calcPriority(JD, Args.CadenceMethod);

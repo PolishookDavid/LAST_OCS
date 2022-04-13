@@ -30,7 +30,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
         Args.ClearMountFaults logical    = true;
         Args.Test                        = [true, true, true];  % test: mount, focuser, camera
         Args.GetCoolingPower logical     = false;
-        ARgs.Verbose logical             = false;
+        Args.Verbose logical             = false;
     end
     SEC_IN_DAY = 86400;
 
