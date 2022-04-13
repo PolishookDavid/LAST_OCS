@@ -76,8 +76,8 @@ function [Target, I]= observe(Unit, Target, Args)
             Dec = Target.RA(Ind(1));
             
             % for debuging during day time
-            RA = Unit.Mount.LST + rand(1,1).*10;
-            Dec = 30 + rand(1,1).*10;
+            %RA = Unit.Mount.LST + rand(1,1).*10;
+            %Dec = 30 + rand(1,1).*10;
             
             if Args.Verbose
                 fprintf('goToTarget: RA=%f, Dec=%f [deg]\n',RA,Dec);
