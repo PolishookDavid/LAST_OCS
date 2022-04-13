@@ -46,6 +46,7 @@ function [Target, I]= observe(Unit, Target, Args)
         Args.CadenceMethod         = 'cycle';
         Args.AbortFile             = '/home/ocs/abort';
         
+        Args.Verbose logical       = true;
     end
    
     SeqTime =  Args.ExpTime.*Args.Nimages;
@@ -60,29 +61,43 @@ function [Target, I]= observe(Unit, Target, Args)
        
         if isempty(Ind)
             Cont = false;
+            if Args.Verbose
+                fprintf('Run out of targets\n',RA,Dec);
+            end
         else
+            Ready = Unit.readyToExpose('Itel',[], 'Wait',true, 'Timeout',60);
+            if exist(Args.AbortFile,'file')
+                delete(Args.AbortFile);
+                Ready = false;
+                Cont  = false;
+            end
+
             RA  = Target.RA(Ind(1));
             Dec = Target.RA(Ind(1));
+            
+            % for debuging during day time
+            RA = Unit.Mount.LST + rand(1,1).*10;
+            Dec = 30 + rand(1,1).*10;
+            
+            if Args.Verbose
+                fprintf('goToTarget: RA=%f, Dec=%f [deg]\n',RA,Dec);
+            end
             
             Unit.Mount.goToTarget(RA, Dec);
             %  Unit.Mount.waitFinish; % no need because we are loosing
             %  first exposure
             
-            Ready = Unit.readyToExpose('Itel',[], 'Wait',false);
-            while ~Ready
-                if exist(Args.AbortFile,'file')
-                    delete(Args.AbortFile);
-                    Ready = false;
-                    Cont  = false;
-                end
-                pause(2);
+            if Args.Verbose
+                fprintf('takeExposure: %d images of %d seconds\n',Args.Nimages, Args.ExpTime);
             end
             
             Unit.takeExposure(Args.Cameras, Args.ExpTime, Args.Nimages, 'ImType',Args.ImType);
             pause(SeqTime);
             Unit.readyToExpose('Itel',Args.Cameras, 'Wait',true, 'Timeout',SeqTime);
             
+            %JD = JD;  % for debuging during day time
             JD = celestial.time.julday;
+            Target.GlobalCounter(Ind(1)) = Target.GlobalCounter(Ind(1)) + 1;
             [Target,PP,Ind] = Target.calcPriority(JD, Args.CadenceMethod);
             
         end
