@@ -153,7 +153,9 @@ while AttemptTakeFlat
                 UnitObj.report('    Image ExpTime       : %6.2f\n',EstimatedExpTime)
                 UnitObj.report('    Image MeanValPerSec : %5.1f\n',mean(MeanValPerSec))
                
-                if MeanValAtMax>Args.MinFlatLimit && MeanValAtMin<Args.MaxFlatLimit
+                Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
+                if MeanValAtMax>Args.MinFlatLimit && MeanValAtMin<Args.MaxFlatLimit && ...
+                                    (Sun.Alt*RAD)>Args.MinSunAlt && (Sun.Alt*RAD)<Args.MaxSunAlt
                     ContFlat = true;
                 else
                     ContFlat         = false;
