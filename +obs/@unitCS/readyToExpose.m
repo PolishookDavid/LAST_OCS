@@ -1,120 +1,128 @@
-function [ready,status]=readyToExpose(Unit,itel,wait,timeout)
-% Check whether a set of telescopes of the unit is ready to start an exposure,
-%  which means:
-%
-%  * Mount.Status           = idle | tracking | home | aborted
-%  * Camera{itel}.CamStatus = idle
-%  * CameraPower[itel]      = true
-%  * Focuser{itel}.Status   = idle
-%
-% If the status of one of the devices becomes bad, abort and report an 
-%  error. Bad means:
-%
-%  * Mount.Status           = disabled | unknown
-%  * Camera{itel}.CamStatus = unknown
-%  * CameraPower[itel]      = false
-%  * Focuser{itel}.Status   = unknown | stuck
-%
-% Syntax : [ready,status]=readyToExpose(Unit,itel,wait,timeout)
-%
-% Inputs:
-%  - itel    : indices of the telescopes to monitor. All of them, if empty
-%  - wait    : [false|true] block and keep polling till all stati are ok
-%                           (before timeout). Default, false
-%  - timeout : in seconds before giving up. Default, 20
-%
-% Outputs:
-%  - ready  : true or false
-%  - status : a structure with the status of all devices checked
-%
-%  Note: in case of one of the faults above, the function exits as soon
-%         as the first bad status is detected, without checking
-%         all the other devices. The status structure will therefore
-%         contain incomplete information
-%
-% Author: Enrico, August 2021
+function [Ready,Status]=readyToExpose(Unit, Args)
+    % readyToExpose1
+    % Input  : - An obs.unitCS object
+    %          * ...,key,val,...
+    %            'Itel' - List of telescopes to check. If empty use (1:1:4).
+    %                   Default is [].
+    %            'Wait' - A logical indicating if to wait till the system is
+    %                   ready. Default is false.
+    %            'Timeout' - Time out for waiting. Default is 20 [s].
+    %            'ClearMountFaults' - A logical indicating if to clear mount
+    %                   faults. Default is true.
+    %            'Test - A vector of 3 logicals indicating if to test [mount,
+    %                   focusers, cameras].
+    %                   Default is true(1,3).
+    %            'GetCoolingPower' - A logical indicating if to get the
+    %                   camera cooling power. Default is false.
+    % Output : - A logical indicating if the requested components are ready.
+    %          - A status structure.
+    % Author : Eran Ofek (Apr 2022)
+    % Example: [ready,stat]=P.readyToExpose('Test',[0 0 1])
+    %          [ready,stat]=P.readyToExpose('Test',[1 0 1],'GetCoolingPower',true);
+    %          [ready,stat]=P.readyToExpose('Test',[1 0 1],'GetCoolingPower',true, 'ClearMountFaults',false);
 
-if ~exist('itel','var') || isempty(itel)
-    itel=1:numel(Unit.Camera);
-end
-if ~exist('wait','var')
-    wait=false;
-end
-if ~exist('timeout','var')
-    timeout=20;
-end
 
-ready=false;
-fault=false;
-t0=now;
-
-status=struct('mount','','camera',{cell(size(itel))},...
-              'power',false(size(itel)),'focuser',{cell(size(itel))});
-
-cameraId=cell(size(itel));
-focuserId=cell(size(itel));
-for i=1:numel(itel)
-    cameraId{i}=Unit.Camera{itel(i)}.classCommand('Id');
-    if isempty(cameraId{i})
-        cameraId{i}=num2str(i);
+    arguments
+        Unit
+        Args.Itel                        = [];
+        Args.Wait logical                = false; 
+        Args.Timeout                     = 20;
+        Args.ClearMountFaults logical    = true;
+        Args.Test                        = [true, true, true];  % test: mount, focuser, camera
+        Args.GetCoolingPower logical     = false;
     end
-    focuserId{i}=Unit.Focuser{itel(i)}.classCommand('Id');
-    if isempty(focuserId{i})
-        focuserId{i}=num2str(i);
-    end
-end
+    SEC_IN_DAY = 86400;
 
-while ~ready && (now-t0)*86400 < timeout
-    status.mount=Unit.Mount.classCommand('Status');
-    ready = any(strcmp(status.mount,{'idle','tracking','home','aborted'}));
-    fault = any(strcmp(status.mount,{'disabled','unknown',''}));
-    if fault
-        faultcause=sprintf('Mount %s status is: %s',...
-                            Unit.Mount.classCommand('Id'),status.mount);
-        break
+    if isempty(Args.Itel)
+        Args.Itel = (1:1:4);
     end
-    status.power=Unit.classCommand('CameraPower;');
-    for i=1:numel(itel)
-        status.camera{i}=Unit.Camera{itel(i)}.classCommand('CamStatus;');
-        status.focuser{i}=Unit.Focuser{itel(i)}.classCommand('Status;');
-        ready = ready && strcmp(status.camera{i},'idle') && status.power(i) ...
-                      && strcmp(status.focuser{i},'idle');
-        fault = fault || any(strcmp(status.camera{i},{'unknown',''}));        
-        if fault
-            faultcause=sprintf('Camera %s status is: %s',cameraId{i},status.camera{i});
-            break
+    Ncam = numel(Args.Itel);
+
+
+    Ready = false;
+    Fault = false;
+    T0    = now;
+
+    Status=struct('mount','','camera',{cell(1,Ncam)},...
+                  'power',nan(1,Ncam),'focuser',{cell(1,Ncam)});
+
+    CameraId = nan(1,Ncam);
+
+    WaitCounter = 0;
+    while (Args.Wait || WaitCounter==0) && ~Ready && ((now-T0).*SEC_IN_DAY)<Args.Timeout
+        WaitCounter = WaitCounter + 1;
+        
+        for It=1:Ncam
+            TmpID = Unit.Camera{Args.Itel(It)}.classCommand('Id');
+            % e.g., '82-1-3'
+            SpID = split(TmpID, '_');
+            if numel(SpID)==3
+                CameraId(It) = str2double(SpID{3});
+            else
+                % Assume no communication with slave
+                CameraId(It) = NaN;
+                Fault = true;
+            end
         end
-        fault = fault || ~status.power(i);
-        if fault
-            faultcause=sprintf('Camera %s power is OFF',cameraId{i});
-            break
-        end
-        fault = fault || any(strcmp(status.focuser{i},{'stuck','unknown',''}));
-        if fault
-            faultcause=sprintf('Focuser %s status is: %s',...
-                                focuserId{i},status.focuser{i});
-            break
-        end
-    end
-    if ~wait
-        break
-    end
-    if ~ready && wait
-        % report why we are still waiting
-        msg=sprintf('mount: %s; ',status.mount);
-        for i=1:numel(itel)
-            msg=horzcat(msg,sprintf('cam. %s: %s, foc. %s: %s; ',...
-                            cameraId{i},status.camera{i},...
-                            focuserId{i},status.focuser{i} ));
-        end
-        Unit.report(horzcat(msg,'waiting...\n'))
-    end
-    % status query commands take already some time, hence don't add pauses
-end
 
-if fault
-    Unit.reportError(faultcause);
-elseif wait && ~ready
-    Unit.report('unit still not ready to shoot after %.1f seconds\n',...
-                        (now-t0)*86400)
+        CommSlavesOK = ~any(isnan(CameraId));
+
+        if CommSlavesOK
+            % Slavs are responsive - check mount
+
+            if Args.Test(1)
+                MountOK = false;
+                Counter = 0;
+                while ~MountOK && Counter<2
+                    Counter = Counter + 1;
+                    Status.mount = Unit.Mount.classCommand('Status');
+                    switch lower(Status.mount)
+                        case {'idle','tracking','home','aborted'}
+                            MountOK = true;
+                        otherwise
+                            MountOK = false;
+
+                            % try to clear faults
+                            if Args.ClearMountFaults
+                                Unit.Mount.clearFaults;
+                            end
+                    end
+                end
+            else
+                MountOK = true;
+            end
+
+            if MountOK
+                % Mount is ok - check the focusers
+                if Args.Test(2)
+                    FocuserReady = false(1, Ncam);
+                    for Icam=1:1:Ncam
+                        Status.focuser{Icam} = Unit.Focuser{Args.Itel(Icam)}.classCommand('Status;');
+                        FocuserReady(Icam)   = strcmp(Status.focuser{Icam}, 'idle');
+                    end
+                else
+                    FocuserReady = true(1, Ncam);
+                end
+
+                if all(FocuserReady)
+                    % focusrer are ready - check camera
+                    CameraReady = false(1, Ncam);
+                    if Args.Test(3)
+                        for Icam=1:1:Ncam
+                            Status.camera{Icam} = Unit.Camera{Args.Itel(Icam)}.classCommand('CamStatus;');
+                            CameraReady(Icam)   = strcmp(Status.camera{Icam}, 'idle');
+                            if CameraReady(Icam) && Args.GetCoolingPower
+                                Status.power(Icam) = Unit.Camera{Args.Itel(Icam)}.classCommand('CoolingPower;');
+                            end
+                        end
+                    else
+                        CameraReady = true(1, Ncam);
+                    end
+                end
+            end
+
+            Ready = CommSlavesOK && MountOK && all(FocuserReady) && all(CameraReady);
+        end
+    end
 end
+    
