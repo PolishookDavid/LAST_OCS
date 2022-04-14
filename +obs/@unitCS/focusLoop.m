@@ -235,6 +235,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
         if ~UnitObj.readyToExpose('Itel',itel, 'Wait',true, 'Timeout',InPar.ExpTime+40)  % increased from 20 to 40
             break
         end
+        
+        pause(60)
 
         for Icam=1:Ncam
             % check real focuser position (commanded position might have been
