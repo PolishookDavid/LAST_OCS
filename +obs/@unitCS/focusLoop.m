@@ -320,7 +320,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     % for many focus points, take as best global focus the mean
     BestFocusPos=mean(Res.BestFocusPos,1);
 
-    if InPar.Plot
+    if InPar.Plot && ~all(isnan(FocVal(:)))
         for Icam=1:Ncam
             subplot(nxplot,nyplot,Icam)
             plot(Res.BestFocusPos(:,Icam),Res.BestFocusFWHM(:,Icam),...
