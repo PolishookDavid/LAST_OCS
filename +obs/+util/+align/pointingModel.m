@@ -7,7 +7,7 @@ function pointingModel(Unit, Args)
         Args.Nha      = 20;
         Args.Ndec     = 10;
         Args.MinAlt   = 30; % [deg]
-        Args.ExpTime  = 1;
+        Args.ExpTime  = 1;     % if empty - only move without exposing
         Args.ObsCoo   = [35, 30]
     end
     
@@ -36,7 +36,9 @@ function pointingModel(Unit, Args)
         Unit.Mount.track;
         pause(2);
         
-        Unit.takeExposure([],Args.ExpTime,1);
+        if ~isempty(Args.ExpTime)
+            Unit.takeExposure([],Args.ExpTime,1);
+        end
         
         pause(Args.ExpTime+4);
         counter=0;
