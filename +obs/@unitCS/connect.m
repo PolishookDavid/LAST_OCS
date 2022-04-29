@@ -10,11 +10,20 @@ function Unit=connect(Unit)
     %  its copies in eventual slaves.
     
     % for powering on, we could rely only on the right states being written
-    %  in the power switches configuration files. Let's assume that the
-    %  power switches are always controlled by the Master
+    %  in the power switches configuration files. But it is wise
+    %  to do it only once, not to have it repeated by each
+    %  slave which is made aware of the switch. Let's assume that the
+    %  power switches are always controlled by the Master, where the
+    %   object is local. When Unit connect is called in a slave,
+    %   this would be skipped. A better handling would be to have
+    %   some own property of Unit which differentiates masters and slaves
     for i=1:numel(Unit.PowerSwitch)
         if ~isa(Unit.PowerSwitch{i},'obs.remoteClass')
-            Unit.PowerSwitch{i}.classCommand('connect');
+            % classCommand should be universal, but I suspect an improbable
+            %  matlab bug of eval(), because of which sometimes the
+            %  configuration file is not found
+            % Unit.PowerSwitch{i}.classCommand('connect');
+            Unit.PowerSwitch{i}.connect;
         end
     end
     
