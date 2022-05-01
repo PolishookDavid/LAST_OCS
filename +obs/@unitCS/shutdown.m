@@ -6,6 +6,9 @@ function UnitObj=shutdown(UnitObj)
     %  - power off cameras and mount
     
     UnitObj.report('  parking the mount...\n')
+    % restore default slew speed (workaround for slew speed remaining
+    %  equal to tracking speed in some anomalous circumstances)
+    UnitObj.Mount.SlewSpeed=UnitObj.Mount.DefaultSlewSpeed;
     UnitObj.Mount.park; % this one is blocking
     
     UnitObj.report('  disconnecting devices and slave sessions...\n')

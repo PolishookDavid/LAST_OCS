@@ -24,6 +24,11 @@ function Unit=connect(Unit)
             %  configuration file is not found
             % Unit.PowerSwitch{i}.classCommand('connect');
             Unit.PowerSwitch{i}.connect;
+            % maybe this is still not enough, investigating. As an
+            %  overriding workaround, explicitely turn the relevant
+            %  sockets on
+            Unit.MountPower=1;
+            Unit.CameraPower=ones(1,numel(Unit.LocalTelescopes));
         end
     end
     
