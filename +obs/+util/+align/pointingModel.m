@@ -36,7 +36,7 @@ function pointingModel(Unit, Args)
             delete('~/abort');
             error('user abort file found');
         end
-        if HADec(Itarget,2)>40
+        if HADec(Itarget,2)>-50
             
             Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
             Unit.Mount.waitFinish;
