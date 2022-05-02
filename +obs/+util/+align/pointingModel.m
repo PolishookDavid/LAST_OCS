@@ -31,23 +31,31 @@ function pointingModel(Unit, Args)
     disp('Will observe '+string(Ntarget)+' fields.')
     
     for Itarget=1:1:Ntarget
-        Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
-        Unit.Mount.waitFinish;
-        Unit.Mount.track;
-        pause(2);
-        
-        if ~isempty(Args.ExpTime)
-            Unit.takeExposure([],Args.ExpTime,1);
+        fprintf('Observe field %d out of %d - HA=%f, Dec=%f\n',Itarget,Ntarget,HADec(Itarget,1), HADec(Itarget,2));
+        if exist('~/abort','file')>0
+            delete('~/abort');
+            error('user abort file found');
         end
+        if HADec(Itarget,2)>40
+            
+            Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
+            Unit.Mount.waitFinish;
+            Unit.Mount.track;
+            pause(2);
+
+            if ~isempty(Args.ExpTime)
+                Unit.takeExposure([],Args.ExpTime,1);
+            end
         
-        pause(Args.ExpTime+4);
-        counter=0;
-        while ~Unit.readyToExpose
-            pause(10);
-            counter = counter+1;
-            if counter>30
-                disp('cameras not ready')
-                break;
+            pause(Args.ExpTime+4);
+            counter=0;
+            while ~Unit.readyToExpose
+                pause(10);
+                counter = counter+1;
+                if counter>30
+                    disp('cameras not ready after 30 trials - abort')
+                    break;
+                end
             end
         end
     end
