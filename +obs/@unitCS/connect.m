@@ -28,7 +28,8 @@ function Unit=connect(Unit)
             %  overriding workaround, explicitely turn the relevant
             %  sockets on
             Unit.MountPower=1;
-            Unit.CameraPower=ones(1,numel(Unit.LocalTelescopes));
+            Unit.CameraPower=ones(1,numel(Unit.LocalTelescopes)+...
+                                    numel(cell2mat(Unit.RemoteTelescopes)));
         end
     end
     
