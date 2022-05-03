@@ -1,5 +1,5 @@
 function pointingModel(Unit, Args)
-    %
+    % Collect images for a simple pointing model
     % Example: obs.util.align.pointingModel
    
     arguments
