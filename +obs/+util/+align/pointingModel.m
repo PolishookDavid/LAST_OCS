@@ -9,6 +9,7 @@ function pointingModel(Unit, Args)
         Args.MinAlt   = 30; % [deg]
         Args.ExpTime  = 1;     % if empty - only move without exposing
         Args.ObsCoo   = [35, 30]
+        Args.Tracking logical   = true;
     end
     
     RAD = 180./pi;
@@ -40,7 +41,7 @@ function pointingModel(Unit, Args)
             
             Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
             Unit.Mount.waitFinish;
-            Unit.Mount.track;
+            Unit.Mount.track(Args.Tracking);
             pause(2);
 
             if ~isempty(Args.ExpTime)
