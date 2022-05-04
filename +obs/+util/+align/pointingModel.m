@@ -45,7 +45,9 @@ function pointingModel(Unit, Args)
             pause(2);
 
             if ~isempty(Args.ExpTime)
+                fprintf('call takeExposure\n');
                 Unit.takeExposure([],Args.ExpTime,1);
+                fprintf('Wait for exposure to finish\n');
             end
         
             pause(Args.ExpTime+4);
