@@ -51,14 +51,9 @@ function pointingModel(Unit, Args)
             end
         
             pause(Args.ExpTime+4);
-            counter=0;
-            while ~Unit.readyToExpose
-                pause(10);
-                counter = counter+1;
-                if counter>30
-                    disp('cameras not ready after 30 trials - abort')
-                    break;
-                end
+            if ~Unit.readyToExpose('Wait',true)
+                disp('cameras not ready after timeout - abort')
+                break;
             end
         end
     end
