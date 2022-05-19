@@ -17,11 +17,24 @@ function randomMotion(Unit, Args)
     HA  = HA.*RAD;
     Dec = Dec.*RAD;
     for Ipt=1:1:Args.Npt
-        fprintf('Movig to HA=%f, Dec=%f\n',HA(Ipt), Dec(Ipt));
+        fprintf('%d Moving to HA=%f, Dec=%f\n', Ipt, HA(Ipt), Dec(Ipt));
         
         Unit.Mount.goTo(HA(Ipt), Dec(Ipt), 'ha');
         Unit.Mount.waitFinish;
         pause(2);
+        if mod(Ipt,10) == 1
+            Unit.Mount.home
+            fprintf('home\n')
+            pause(12)
+        end
+        if mod(Ipt,10) == 6
+            Unit.Mount.park
+            fprintf('park\n')
+            pause(12)
+            Unit.Mount.home
+            fprintf('home\n')
+            pause(2)
+        end
     end
     
         
