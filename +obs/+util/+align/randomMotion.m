@@ -1,6 +1,6 @@
 function randomMotion(Unit, Args)
     % Test random motion
-    % Example: obs.util.align.randomMotion
+    % Example: obs.util.align.randomMotion(P, 'Npt', 10)
    
     arguments
         Unit
