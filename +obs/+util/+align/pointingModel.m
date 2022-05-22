@@ -10,6 +10,7 @@ function pointingModel(Unit, Args)
         Args.ExpTime  = 1;     % if empty - only move without exposing
         Args.ObsCoo   = [35, 30]
         Args.Tracking logical   = true;
+        Args.ClearFaults logical = false;
     end
     
     RAD = 180./pi;
@@ -39,6 +40,9 @@ function pointingModel(Unit, Args)
         end
         if HADec(Itarget,2)>-50
             
+            if Args.ClearFaults
+                Unit.Mount.clearFaults;
+            end
             Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
             Unit.Mount.waitFinish;
             Unit.Mount.track(Args.Tracking);
@@ -51,7 +55,7 @@ function pointingModel(Unit, Args)
             end
         
             pause(Args.ExpTime+4);
-            if ~Unit.readyToExpose('Wait',true)
+            if ~Unit.readyToExpose('Wait',true, 'Timeout',Args.ExpTime+60)
                 disp('cameras not ready after timeout - abort')
                 break;
             end
