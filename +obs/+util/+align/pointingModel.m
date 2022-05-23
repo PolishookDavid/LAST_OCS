@@ -45,8 +45,12 @@ function pointingModel(Unit, Args)
             end
             Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
             Unit.Mount.waitFinish;
-            Unit.Mount.track(Args.Tracking);
+            if Args.Tracking
+                Unit.Mount.track
+            end
             pause(2);
+            
+            fprintf('Actual pointing: HA=%f, Dec=%f\n',Unit.Mount.HA, Unit.Mount.Dec);
 
             if ~isempty(Args.ExpTime)
                 fprintf('call takeExposure\n');
@@ -55,7 +59,12 @@ function pointingModel(Unit, Args)
             end
         
             pause(Args.ExpTime+4);
-            if ~Unit.readyToExpose('Wait',true, 'Timeout',Args.ExpTime+60)
+            if isempty(Args.ExpTime)
+                Timeout = 60;
+            else
+                Timeout = Args.ExpTime+60;
+            end
+            if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
                 disp('cameras not ready after timeout - abort')
                 break;
             end

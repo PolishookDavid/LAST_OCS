@@ -26,7 +26,7 @@ function Flag=waitFinish(MountObj)
                 Flag=true;
                 break
             case 'slewing'
-                % MountObj.report('.');
+                %MountObj.report('.');
             otherwise
                 MountObj.reportError('Mount status: %s',Status);
                 break
