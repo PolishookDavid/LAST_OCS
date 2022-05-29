@@ -38,8 +38,8 @@ arguments
     UnitObj
     Itel       = [];
     Args.MaxFlatLimit         = 40000;
-    Args.MinFlatLimit         = 2000;
-    Args.MinSunAlt            = -10;
+    Args.MinFlatLimit         = 5000;
+    Args.MinSunAlt            = -8;
     Args.MaxSunAlt            = -4;  % for DEBUG use 90
     Args.ExpTimeRange         = [3 20];
     Args.TestExpTime          = 1;
@@ -92,6 +92,7 @@ while AttemptTakeFlat
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 
     if exist(Args.AbortFile,'file') 
+        delete(Args.AbortFile);
         break
     end
         
