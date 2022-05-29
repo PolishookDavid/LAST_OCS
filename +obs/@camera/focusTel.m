@@ -52,7 +52,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     %            .BestFWHM
     %            .Counter
     % Author : Eran Ofek (Apr 2022)
-    % Example: 
+    % Example: P.Camera{4}.focusTel(P.Focuser{4});
     
     arguments
         CameraObj
@@ -77,11 +77,19 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
        
         Args.MinNstars           = 10;
         Args.FitMethod           = 'out1';
+       
+        Args.Verbose logical     = true;
+        Args.Plot logical        = true;
     end
     
     %--- get Limits and current position of focuser
     Limits     = FocuserObj.Limits;
     CurrentPos = FocuserObj.Pos;
+    
+    if Args.Verbose
+        fprintf('Current/Starting focus position: %d\n',CurrentPos);
+        fprintf('Limits: %d %d\n',Limits);
+    end
     
     % motion direction
     MoveDir    = -sign(Args.BacklashOffset);
@@ -103,6 +111,9 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     Result.BestFWHM   = NaN;
     Result.Counter    = NaN;
     
+    if Args.Plot
+        figure;
+    end
     
     if Args.FocByTemp
         % focus only based on temperature
@@ -136,7 +147,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         
         FocPos = StartPos;
         
-        ResTable = nan(30,2);  % % [FocPos, FWHM]
+        ResTable = nan(30,3);  % % [FocPos, FWHM, Nstars]
         Cont     = true;
         Counter  = 0;
         while Cont
@@ -144,11 +155,11 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
             Result.Counter = Counter;
             
             % take exposure
-            for Iim=1:1:Nim
+            for Iim=1:1:Args.Nim
                 %--- wait till camera is ready
                 
                 % take exposure
-                CameraObj.takeExposure(Args.ExpTime, 1);
+                CameraObj.takeExposure(Args.ExpTime);
             
                 % wait till camera is ready
                 CameraObj.waitFinish;
@@ -169,6 +180,16 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
             
             ResTable(Counter,:) = [FocPos, FWHM, Nstars];
             
+            if Args.Verbose
+                fprintf('   FocPos=%d    FWHM=%4.1f    Nstars=%d\n',FocPos, FWHM, Nstars);
+            end
+            if Args.Plot
+                plot(FocPos, FWHM, 'bo', 'MarkerFaceColor','b');
+                hold on;
+                H = gca;
+                H.YLim = [0 15];
+            end
+            
             % look for focus
             if Counter>4
                 
@@ -179,7 +200,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
                     
                 else
 
-                    FocStatus = checkForMinimum(ResTable(1:Counter,2));
+                    FocStatus = checkForMinimum(ResTable(1:Counter,:));
 
                     switch lower(FocStatus)
                         case 'rising'
