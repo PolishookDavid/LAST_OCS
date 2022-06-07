@@ -44,7 +44,7 @@ arguments
     Args.ExpTimeRange         = [3 20];
     Args.TestExpTime          = 1;
     Args.MeanFun              = 'nanmedian';
-    Args.EastFromZenith       = 20;
+    Args.EastFromZenith       = 30;
     Args.RandomShift          = 3;
     
     Args.ImType               = 'twflat';
@@ -278,15 +278,27 @@ end
 function [RA, Dec] = getCooForFlat(Lon, Lat, EastFromZenith)
     % get RA/Dec for good flat
     % some deg east of the Zenith and avoid galactic plane
+    % and avoid Moon
 
+    MinMoonDist = 20;  % deg
     RAD = 180./pi;
     
     JD  = celestial.time.julday;  % current UTC JD
+    
+    [MoonRA,MoonDec] = celestial.SolarSys.mooncool(JD,[]);
+    
+    
     LST = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
     RA  = LST - 0;  % RA at HA=0
     RA  = RA + EastFromZenith + [-20:5:20].';
     RA  = mod(RA,360);    
     Dec = Lat + zeros(size(RA));
+    
+    % remove pointings close to the Moon
+    MoonDist = celestial.coo.sphere_dist_fast(MoonRA, MoonDec, RA./RAD, Dec./RAD).*RAD;  % [deg]
+    Flag = MoonDist>MinMoonDist;
+    RA   = RA(Flag);
+    Dec  = Dec(Flag);
     
     % check Galactic Lat
     [Lon,Lat] = celestial.coo.convert_coo(RA./RAD, Dec./RAD, 'J2000.0','g');
