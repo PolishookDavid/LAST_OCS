@@ -7,7 +7,7 @@ function [Summary,CAI] = alignCameraRotation(UnitCS, Args)
     %          * ...,key,val,...
     %            'HA' - Vector of H.A. in which to take images [deg].
     %                   If empty, dont move.
-    %                   Default is [-60, -30, 0, 30, 60].
+    %                   Default is [].
     %                   
     %            'Dec' - Vector of Dec [deg]. Default is 0.
     %            'ExpTime' - Default is 3 s.
@@ -43,7 +43,7 @@ function [Summary,CAI] = alignCameraRotation(UnitCS, Args)
     
     arguments
         UnitCS    % UnitCS class
-        Args.HA      = [-60, -30, 0, 30, 60];
+        Args.HA      = []; %[-60, -30, 0, 30, 60];
         Args.Dec     = 0;
         
         Args.ExpTime = 3;
