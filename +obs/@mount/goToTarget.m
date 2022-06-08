@@ -26,6 +26,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
     %                           Equatorial coordinates with true equinox of
     %                           date.
     %                           Default is 'J2000.0'
+    %             
     %            'NameServer' - ['simbad'] | 'ned' | 'jpl'.
     %            'DistFun'    - Distortion function handle.
     %                           The function is of the form:
@@ -55,8 +56,16 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
     if nargin<3
         Lat = [];
     end
-
-
+    
+    
+%     FFU
+%     InCam = [];
+%     if ~isempty(InCam)
+%         % set coordinate such that center will be in camera #
+%         
+%     end
+%     
+%     
     JD = celestial.time.julday;
 
     Flag = false;
