@@ -11,8 +11,9 @@ function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
     %            'Move' - A logical indicating if to move the mount or only
     %                   calculate the DeltaRA, DeltaDec of the move.
     %            'Scale' - Default is 1.25"/pix.
-    %            'DirRA' - RA direction on image. Default is '+x'.
-    %            'DirDec' - Dec direction on image. Default is '+y'.
+    %            'DirRA' - RA direction on image. Default is '-x'.
+    %                   This default is good for camera 1.
+    %            'DirDec' - Dec direction on image. Default is '-y'.
     %            'ImageSize' - Image size. Default is [6388 9600].
     % Output : - DeltaRA [deg].
     %          - DeltaDec [deg].
@@ -25,8 +26,8 @@ function [DRA,DDec]=moveToXY(UnitCS, FromXY, ToXY, Args)
         ToXY                  = [];  % if empty use center
         Args.Move logical     = true;
         Args.Scale            = 1.25;    % arcsec/pix
-        Args.DirRA            = '+x';
-        Args.DirDec           = '+y';
+        Args.DirRA            = '-x';
+        Args.DirDec           = '-y';
         Args.ImageSize        = [6388 9600];
     end
     ARCSEC_DEG = 3600;
