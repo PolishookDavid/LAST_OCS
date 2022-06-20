@@ -4,9 +4,9 @@ function pointingModel(Unit, Args)
    
     arguments
         Unit
-        Args.Nha      = 20;
-        Args.Ndec     = 10;
-        Args.MinAlt   = 30; % [deg]
+        Args.Nha      = 30;
+        Args.Ndec     = 15;
+        Args.MinAlt   = 25; % [deg]
         Args.ExpTime  = 1;     % if empty - only move without exposing
         Args.ObsCoo   = [35, 30]
         Args.Tracking logical   = true;
