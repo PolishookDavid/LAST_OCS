@@ -2,7 +2,7 @@ classdef pointingModel < obs.LAST_Handle
     % class for interpolation data for the mount pointing model
     properties
         PointingData (:,4) double
-        InterpHa (1,1) scatteredInterpolant
+        InterpHA (1,1) scatteredInterpolant
         InterpDec (1,1) scatteredInterpolant
     end
     
@@ -15,7 +15,7 @@ classdef pointingModel < obs.LAST_Handle
             P.loadConfig(P.configFileName('create'));
             if ~isempty(P.PointingData)
                 % note: set a different extrapolation method if so desired
-                P.InterpHa=scatteredInterpolant(P.PointingData(:,1:2),...
+                P.InterpHA=scatteredInterpolant(P.PointingData(:,1:2),...
                                   P.PointingData(:,3),'linear','nearest');
                 P.InterpDec=scatteredInterpolant(P.PointingData(:,1:2),...
                                   P.PointingData(:,4),'linear','nearest');
