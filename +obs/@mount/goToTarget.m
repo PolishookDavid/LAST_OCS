@@ -88,7 +88,12 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                 OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
             end
             
-            [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType);
+            [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
+                                                              'DistFunHA',MountObj.PointingModel.InterpHA,...
+                                                              'DistFunDec',MountObj.PointingModel.InterpDec,...
+                                                              'DistIsDelta',true);
+            
+            
             
             if isnan(RA) || isnan(Dec)
                 MountObj.LogFile.write('Error: RA or Dec are NaN');
