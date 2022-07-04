@@ -1,7 +1,7 @@
 classdef pointingModel < obs.LAST_Handle
     % class for interpolation data for the mount pointing model
     properties
-        PointingData
+        PointingData (:,4) double
         InterpHa (1,1) scatteredInterpolant
         InterpDec (1,1) scatteredInterpolant
     end

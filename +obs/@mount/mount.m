@@ -56,7 +56,7 @@ classdef mount < obs.LAST_Handle
         ObsLon(1,1) double      = NaN;
         ObsLat(1,1) double      = NaN;
         ObsHeight(1,1) double   = NaN;
-        PointingModel obs.pointingModel = obs.pointingModel;
+        PointingModel obs.pointingModel;
     end
     
     % safety 
@@ -102,10 +102,12 @@ classdef mount < obs.LAST_Handle
             % Input  : .Id to set,
             if exist('id','var') && ~isempty(id)
                 MountObj.Id=id;
-                MountObj.PointingModel=obs.pointingModel(id);
             end
             % load configuration
             MountObj.loadConfig(MountObj.configFileName('createsuper'))
+            if ~isempty(MountObj.Id)
+                MountObj.PointingModel=obs.pointingModel(MountObj.Id);
+            end
             % pass geographical coordinates to the driver
             if ~isempty(MountObj.Config) && ...
                ~isempty(MountObj.Config.ObsLat) && ...
