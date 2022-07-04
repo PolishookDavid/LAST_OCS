@@ -56,6 +56,7 @@ classdef mount < obs.LAST_Handle
         ObsLon(1,1) double      = NaN;
         ObsLat(1,1) double      = NaN;
         ObsHeight(1,1) double   = NaN;
+        PointingModel obs.pointingModel = obs.pointingModel;
     end
     
     % safety 
@@ -71,14 +72,9 @@ classdef mount < obs.LAST_Handle
         
     % utils
     properties(Hidden)
-        TimeFromGPS logical     = false;        
+        TimeFromGPS logical     = false;      
     end
         
-        
-%         IPaddress = '';
-%         Port = '';
-%         SerialResource % the serial object corresponding to Port
-% 
 %         % Mount and telescopes names and models
 %         MountUniqueName = '';
 %         MountGeoName = '';
@@ -104,13 +100,21 @@ classdef mount < obs.LAST_Handle
             % mount class constructor
             % Package: +obs/@mount
             % Input  : .Id to set,
-            if exist('id','var')
+            if exist('id','var') && ~isempty(id)
                 MountObj.Id=id;
+                MountObj.PointingModel=obs.pointingModel(id);
             end
             % load configuration
             MountObj.loadConfig(MountObj.configFileName('createsuper'))
             % pass geographical coordinates to the driver
-            MountObj.MountPos=[MountObj.Config.ObsLat, MountObj.Config.ObsLon, MountObj.Config.ObsHeight];
+            if ~isempty(MountObj.Config) && ...
+               ~isempty(MountObj.Config.ObsLat) && ...
+               ~isempty(MountObj.Config.ObsLon) && ...
+               ~isempty(MountObj.Config.ObsHeight)
+                MountObj.MountPos=[MountObj.Config.ObsLat,...
+                                   MountObj.Config.ObsLon,...
+                                   MountObj.Config.ObsHeight];
+            end
             
             % Open the logFile (what do we want to do here? Open a different log
             %  file for each device, or one for the whole unitCS?)
