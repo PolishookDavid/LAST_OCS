@@ -34,8 +34,6 @@
 %     M.park(false);                  % Release telescope from park position.
 %     M.waitFinish;                   % Wait for mount to complete slewing
 %
-%     M.Handle;             % Direct excess to the driver object
-%
 % Author: Enrico Segre, Jun 2021
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -46,7 +44,6 @@ classdef mount < obs.LAST_Handle
     end
     
     properties(Hidden)
-        Handle   obs.LAST_Handle     % Mount driver handle
         %LastRC    = '';
         LogFile            = LogFile;
         LogFileDir char    = '';
@@ -74,7 +71,6 @@ classdef mount < obs.LAST_Handle
         
     % utils
     properties(Hidden)
-        SlewingTimer;        
         TimeFromGPS logical     = false;        
     end
         
@@ -136,11 +132,9 @@ classdef mount < obs.LAST_Handle
         
         function delete(MountObj)
             % delete mount object and related sub objects (if they were
-            % defined)
+            % defined) (formely: Handle, SlewingTimer - all making no
+            %  sense)
             try
-                MountObj.Handle.delete;
-                % Delete the timer
-                delete(MountObj.SlewingTimer);
             catch
             end
         end

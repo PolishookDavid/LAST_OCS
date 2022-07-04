@@ -70,83 +70,70 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
 
     Flag = false;
 
-    %if MountObj.IsConnected && obs.mount.ismountDriver(MountObj.Handle)
-
-        switch lower(MountObj.Status)
-            case 'park'
-
-                MountObj.LogFile.write('Error: Attempt to slew telescope while parking');
-                error('Can not slew telescope while parking');
-            otherwise
-                % Convert input into RA/Dec [input deg, output deg]
-                try
-                    OutputCooType=MountObj.CoordType;
-                    if strcmp(OutputCooType,'tdate')
-                        % why not 'tdate' altogether?
-                        OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
-                    end
-                catch
-                    warning('mount coordinate system not known - assuming Equinox of date');
+    switch lower(MountObj.Status)
+        case 'park'
+            
+            MountObj.LogFile.write('Error: Attempt to slew telescope while parking');
+            error('Can not slew telescope while parking');
+        otherwise
+            % Convert input into RA/Dec [input deg, output deg]
+            try
+                OutputCooType=MountObj.CoordType;
+                if strcmp(OutputCooType,'tdate')
+                    % why not 'tdate' altogether?
                     OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
                 end
+            catch
+                warning('mount coordinate system not known - assuming Equinox of date');
+                OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
+            end
+            
+            [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType);
+            
+            if isnan(RA) || isnan(Dec)
+                MountObj.LogFile.write('Error: RA or Dec are NaN');
+                error('RA or Dec are NaN');
+            end
+            
+            % validate coordinates
+            % note that input is in [rad]
+            
+            if isnan(MountObj.ObsLon) || isnan(MountObj.ObsLat)
+                % attempting to move mount when ObsLon/ObsLat
+                % are unknown
+                MountObj.LogFile.write('Attempting to move mount when ObsLon/ObsLat are unknown');
+                error('Attempting to move mount when ObsLon/ObsLat are unknown');
+            end
+            
+            [Flag,FlagRes] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
+                'Lon', MountObj.ObsLon./RAD, ...
+                'Lat', MountObj.ObsLat./RAD, ...
+                'AltMinConst', MountObj.MinAlt./RAD,...
+                'AzAltConst', MountObj.AzAltLimit./RAD);
+            
+            
+            if Flag
                 
-                [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType);
-
-                if isnan(RA) || isnan(Dec)
-                    MountObj.LogFile.write('Error: RA or Dec are NaN');
-                    error('RA or Dec are NaN');
+                % Start slewing
+                MountObj.goTo(RA, Dec, 'eq');
+                
+            else
+                % coordinates are not ok
+                MountObj.LogFile.write('Coordinates are not valid - not slewing to requested target');
+                
+                if ~FlagRes.Alt
+                    MountObj.LastError = 'Target Alt too low';
+                    MountObj.LogFile.write('Target Alt too low');
                 end
-
-                % validate coordinates
-                % note that input is in [rad]
-
-                if isnan(MountObj.ObsLon) || isnan(MountObj.ObsLat)
-                    % attempting to move mount when ObsLon/ObsLat
-                    % are unknown
-                    MountObj.LogFile.write('Attempting to move mount when ObsLon/ObsLat are unknown');
-                    error('Attempting to move mount when ObsLon/ObsLat are unknown');
+                if ~FlagRes.AzAlt
+                    MountObj.LastError = 'Target Alt too low for local Az';
+                    MountObj.LogFile.write('Target Alt too low for local Az');
                 end
-
-                [Flag,FlagRes] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
-                                                                      'Lon', MountObj.ObsLon./RAD, ...
-                                                                      'Lat', MountObj.ObsLat./RAD, ...
-                                                                      'AltMinConst', MountObj.MinAlt./RAD,...
-                                                                      'AzAltConst', MountObj.AzAltLimit./RAD);
-
-
-                if Flag
-
-                    % Start slewing
-                    MountObj.goTo(RA, Dec, 'eq');
-
-                    % compare coordinates to requested coordinates
-
-                    % No NO NO
-                    % What is 'notify'? Get rid of timers. If it has to be
-                    %  blocking, block.
-                    % Start timer (iOptron only) to notify when slewing is complete
-%                     switch lower(MountObj.MountType)
-%                         case 'ioptron'
-%                             MountObj.SlewingTimer = timer('BusyMode', 'queue', 'ExecutionMode', 'fixedRate', 'Name', 'mount-timer', 'Period', 1, 'StartDelay', 1, 'TimerFcn', @MountObj.callback_timer, 'ErrorFcn', 'beep');
-%                             start(MountObj.SlewingTimer);
-%                     end
-                else
-                    % coordinates are not ok
-                    MountObj.LogFile.write('Coordinates are not valid - not slewing to requested target');
-
-                    if ~FlagRes.Alt
-                        MountObj.LastError = 'Target Alt too low';
-                        MountObj.LogFile.write('Target Alt too low');
-                    end
-                    if ~FlagRes.AzAlt
-                        MountObj.LastError = 'Target Alt too low for local Az';
-                        MountObj.LogFile.write('Target Alt too low for local Az');
-                    end
-                    if ~FlagRes.HA
-                        MountObj.LastError = 'Target HA is out of range';
-                        MountObj.LogFile.write('Target HA is out of range');
-                    end
+                if ~FlagRes.HA
+                    MountObj.LastError = 'Target HA is out of range';
+                    MountObj.LogFile.write('Target HA is out of range');
                 end
-        end
-    %end
+            end
+    end
+    
 end
