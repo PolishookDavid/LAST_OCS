@@ -87,14 +87,20 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                 warning('mount coordinate system not known - assuming Equinox of date');
                 OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
             end
-            
+
             [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
                                                               'DistFunHA',MountObj.PointingModel.InterpHA,...
                                                               'DistFunDec',MountObj.PointingModel.InterpDec,...
                                                               'DistIsDelta',true);
             
-            
-            
+            if isempty(RA) || isempty(Dec)
+                MountObj.report('The computed RA and Dec are empty. That''s Eran''s fault.\n')
+                MountObj.report('Probably this is because there is no pointing model.\n')
+                MountObj.report('I''ll use the provided RA and Dec then\n')
+                RA=Long;
+                Dec=Lat;
+            end
+
             if isnan(RA) || isnan(Dec)
                 MountObj.LogFile.write('Error: RA or Dec are NaN');
                 error('RA or Dec are NaN');
