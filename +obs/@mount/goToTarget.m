@@ -96,9 +96,9 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
             if isempty(RA) || isempty(Dec)
                 MountObj.report('The computed RA and Dec are empty. That''s Eran''s fault.\n')
                 MountObj.report('Probably this is because there is no pointing model.\n')
-                MountObj.report('I''ll use the provided RA and Dec then\n')
-                RA=Long;
-                Dec=Lat;
+                MountObj.report('I''ll try the conversion without pointing model\n')
+                [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, ...
+                             Lat, varargin{:},'OutCooType',OutputCooType);
             end
 
             if isnan(RA) || isnan(Dec)
@@ -133,15 +133,15 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                 MountObj.LogFile.write('Coordinates are not valid - not slewing to requested target');
                 
                 if ~FlagRes.Alt
-                    MountObj.LastError = 'Target Alt too low';
+                    MountObj.reportError('Target Alt too low')
                     MountObj.LogFile.write('Target Alt too low');
                 end
                 if ~FlagRes.AzAlt
-                    MountObj.LastError = 'Target Alt too low for local Az';
+                    MountObj.reportError('Target Alt too low for local Az')
                     MountObj.LogFile.write('Target Alt too low for local Az');
                 end
                 if ~FlagRes.HA
-                    MountObj.LastError = 'Target HA is out of range';
+                    MountObj.reportError('Target HA is out of range')
                     MountObj.LogFile.write('Target HA is out of range');
                 end
             end
