@@ -21,10 +21,11 @@ function saveCurImage(CameraObj,Path)
     % default values for fields which may be a bit too fragile to store
     %  only in config files: Filter, DataDir, BaseDir
     
-
-    if ~exist('Path','var')
-        Path=DefaultPath;
-    end
+% DefaultPath not constructed here like it is in unitCS.saveCurImage.
+%  Let it error if Path is not provided
+%     if ~exist('Path','var')
+%         Path=DefaultPath;
+%     end
 
     % create the header locally, even from remote objects, because
     %  round-trip queries fail
