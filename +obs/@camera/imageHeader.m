@@ -106,7 +106,8 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
 
     I = I + 1;
     Info(I).Name = 'CAMMODE';
-    Info(I).Val  = CameraObj.classCommand('ReadMode');
+     % matlab.io.fits.writeKey doesn't handle uint32
+    Info(I).Val  = int32(CameraObj.classCommand('ReadMode'));
 
     I = I + 1;
     Info(I).Name = 'CAMGAIN';
