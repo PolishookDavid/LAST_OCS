@@ -82,7 +82,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
         CommSlavesOK = ~any(isnan(CameraId));
 
         if CommSlavesOK
-            % Slavs are responsive - check mount
+            % Slaves are responsive - check mount
 
             if Args.Test(1)
                 MountOK = false;
@@ -119,7 +119,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
                 end
 
                 if all(FocuserReady)
-                    % focusrer are ready - check camera
+                    % focusers are ready - check camera
                     CameraReady = false(1, Ncam);
                     if Args.Test(3)
                         for Icam=1:1:Ncam

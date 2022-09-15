@@ -23,7 +23,7 @@ else
     for i=1:Nimages
         Unit.takeExposure(Cameras, ExpTime, 1, Args.takeExposureArgs{:},...
                           'ImType','dark', 'Object',[]);
-        Unit.readyToExpose(Cameras,'Wait',true,'Timeout',ExpTime+7);
+        Unit.readyToExpose('Itel',Cameras,'Wait',true,'Timeout',ExpTime+7);
     end
 end
     
