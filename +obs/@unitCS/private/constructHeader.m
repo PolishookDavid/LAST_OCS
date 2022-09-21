@@ -195,7 +195,7 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'AIRMASS';
-        Info(I).Val = celestial.coo.hardie( (90 - Alt)./RAD).*RAD;
+        Info(I).Val = celestial.coo.hardie( (90 - Alt)./RAD);
                 
         TrackingSpeed = UnitObj.Mount.classCommand('TrackingSpeed');
         
