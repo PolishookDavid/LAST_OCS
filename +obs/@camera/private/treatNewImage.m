@@ -14,4 +14,11 @@ function treatNewImage(CameraObj,Source,EventData)
             CameraObj.ProgressiveFrame,CameraObj.SequenceLength,...
             CameraObj.Id)
         CameraObj.displayImage;
+        
+        if CameraObj.LastSeqFlag
+            % add image to buffer of images
+            Iim = CameraObj.ProgressiveFrame;
+            CameraObj.LastSeq(Iim).Image = CameraObj.LastImage;
+            CameraObj.LastSeq(Iim).JD    = CameraObj.TimeStartLastImage + 1721058.5;
+        end
     end

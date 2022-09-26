@@ -68,7 +68,13 @@ classdef camera < obs.LAST_Handle
         %DisplayReducedIm = true;   % Remove the dark and flat field before display
     end
     
-
+    % for saving all the images in a sequence in a buffer
+    properties(Hidden) % sequence buffering
+        LastSeq = struct('Image',cell(0,1), 'JD', cell(0,1));
+        LastSeqFlag logical = false;
+    end
+    
+    
     % constructor and destructor
     methods
                 
