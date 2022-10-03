@@ -11,8 +11,8 @@ function debugging(P,tof)
     end
     P.connect
     for i=1:4
-        P.Camera{i}.DebugOutput=tof;
-        P.Camera{i}.DebugLogLevel=5;
+        P.Camera{i}.classCommand('DebugOutput=tof');
+        P.Camera{i}.classCommand('DebugLogLevel=5');
     end
 
     
