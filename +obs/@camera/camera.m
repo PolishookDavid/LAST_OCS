@@ -58,7 +58,7 @@ classdef camera < obs.LAST_Handle
     
     % display
     properties(Hidden)
-        Display              = 'ds9';   % 'ds9' | 'matlab' | ''
+        Display              = '';   % 'ds9' | 'matlab' | ''
         Frame double         = [];      % frame number to be passed to ds9
         DisplayZoom double   = 0.08;    % ds9 zoom
         DivideByFlat logical = false;    % subtract dark and divide by flat before display
