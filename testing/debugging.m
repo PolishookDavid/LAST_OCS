@@ -7,7 +7,7 @@ function debugging(P,tof)
     end
     for i=1:4
         P.Slave{i}.Logging=tof;
-        P.Slave{i}.LoggingDir=fullfile('/',P.Slave{i}.Host,'data','Logs');
+        P.Slave{i}.LoggingDir=fullfile('/',P.Slave{i}.Host,'data1','archive','Logs');
     end
     P.connect
     for i=1:4
