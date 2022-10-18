@@ -1,38 +1,6 @@
 % Mount control superclass
 % Package: +obs/@mount
 % Description: operate mount drivers.
-%              Intended for working with Xerxes, iOptron and Celestron mounts
-% Input  : none.
-% Output : A mount class
-%     By :
-% Example:  M = obs.mount;   % default is 'Xerxes'
-%           M = obs.mount('Xerxes');
-%           % connect without configuration file, will require setting the
-%           ObsLon, ObsLat
-%           M.connect; 
-%           M.ObsLon = 35; M.ObsLat=32;
-%           M.goToTarget(0,0,'ha')
-%           
-%           % connect with configuration file _1_1
-%           M.connect([1 1])
-%           M.goToTarget(10,10,'ha')
-%
-%           M.stopMotors % dis-engage motors (mount in neutral)
-%
-% Settings parameters options:
-%     M.connect;      % Connect to the driver and mount controller
-%     M.goToTarget(10,50)   % Send telescope to RA & Dec in degrees
-%     M.goToTarget(10,50,'InCooType','a');  % Send telescope to Az & Alt in degrees
-%     M.goToTarget('10:00:00','+50:00:00'); % Send telescope to RA & Dec in hours and degrees
-%     M.goToTarget('M31');                  % Send to known target in SIMBAD catalog
-%     M.goToTarget('9804;',[],'NameServer','jpl'); % Send to known moving target in JPL catalog
-%     M.abort;                        % Abort telescope motion
-%     M.track;                        % Operate tracking in sidereal rate
-%     M.track(val);                   % Operate tracking in rate val in units of degrees/sec
-%     M.home;                         % Send telescope home position.
-%     M.park;                         % Send telescope to park position.
-%     M.park(false);                  % Release telescope from park position.
-%     M.waitFinish;                   % Wait for mount to complete slewing
 %
 % Author: Enrico Segre, Jun 2021
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
