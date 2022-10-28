@@ -22,7 +22,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     %            'SearchHalfRange' - focus search upper half range.
     %                       Default is 600.
     %            'FWHM_Step' - [FWHM, step_size] two column matrix.
-    %                       This sill define an adaptive step size based on
+    %                       This will define an adaptive step size based on
     %                       the FWHM.
     %                       Default is [3 40; 20 80; 30 120]
     %            'PosGuess' - Guess focus position. If empty, use
@@ -37,7 +37,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     %                   to pass to imUtil.psf.fwhm_fromBank
     %                   Default is {}.
     %            'MaxIter' - Maximum number of iterations. Default is 15.
-    %            'MaxFWHM' - When estimating the FWHM min, use only balues
+    %            'MaxFWHM' - When estimating the FWHM min, use only values
     %                   with FWHM better than this vale. Default is 6 [arcsec].
     %            'MinNstars' - Min. required number of stars.
     %                   Default is 10.
@@ -105,7 +105,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     end
     
     % 
-    Sucess = false;
+    Success = false;
     Result.Status     = '';
     Result.BestPos    = NaN;
     Result.BestFWHM   = NaN;
@@ -125,7 +125,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
             Result.BestVal  = BestPos;
             Result.TempOnly = true;
             Result.Status   = 'Focus based on temperature';
-            Sucess          = true;
+            Success          = true;
         end
     else
         % search for best focus
