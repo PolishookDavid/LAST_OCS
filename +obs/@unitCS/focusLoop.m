@@ -294,8 +294,10 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                     'Marker',PlotMarker','MarkerFaceColor',Colors(Icam,:));
                 xlim([min(FocusPosCam(:,Icam)),max(FocusPosCam(:,Icam))]);
                 hold on
-                xlabel('Focus position','FontSize',14);
-                ylabel('FWHM [arcsec]','FontSize',14);
+                grid on
+                set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
+                xlabel('Focus position','FontSize',12);
+                ylabel('FWHM [arcsec]','FontSize',12);
                 title(leg{Icam},'Interpreter','none')
             end
             drawnow
@@ -330,6 +332,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                 'MarkerFaceColor',Colors(Icam,:));
         end
         hold off
+        grid on
+        set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
         title(leg{Icam},'Interpreter','none')
         drawnow
     end
