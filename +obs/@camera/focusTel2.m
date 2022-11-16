@@ -51,8 +51,8 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
     %            .BestPos
     %            .BestFWHM
     %            .Counter
-    % Author : Eran Ofek (Apr 2022)
-    % Example: P.Camera{4}.focusTel(P.Focuser{4});
+    % Author : Eran Ofek (Apr 2022) Nora (Oct. 2022)
+    % Example: P.Camera{4}.focusTel2(P.Focuser{4});
     
     arguments
         CameraObj
@@ -63,7 +63,7 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         
         Args.BacklashOffset      = +1000;  % sign signify the backlash diection
         Args.SearchHalfRange     = 300;
-        Args.FWHM_Step           = [5 25; 10 50; 20 100]; % [FWHM, step size]
+        Args.FWHM_Step           = [5 25; 12 50; 25 100]; % [FWHM, step size]
         Args.PosGuess            = [];  % empty - use current position, 36000;
         
         Args.ExpTime             = 3;
@@ -165,8 +165,6 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
 
 
         actualFocPos = FocuserObj.Pos;
-
-        
         ResTable(Counter,:) = [actualFocPos, FWHM, Nstars];
             
         if Args.Verbose
@@ -192,7 +190,9 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
                     fprintf('\nRising');
                     fprintf('\nFocus likely larger than %d', StartPos);
                     Cont = false;
-
+                    Success       = false;
+                    Result.BestPos = Args.PosGuess   % moving back to initial position
+        
                 case 'found'
                     fprintf('\nFocus found');
                     % focus likely found
@@ -216,10 +216,6 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         end
     end
      
-    if Counter>=Args.MaxIter
-        % focus not found
-        Result.Status = 'Max iter reached';
-    end
                 
     % truncate not used pre allocated matrix
     ResTable = ResTable(1:Counter,:);
@@ -232,6 +228,11 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         Result.Status = 'Max iter reached';
         Success       = false;
         fprintf('\nMax iter reached.')
+        Result.BestPos = Args.PosGuess   % moving back to initial position
+        
+    elseif lower(FocStatus)        
+        Result.Status = 'Rising. Focus out of search range.';
+        Success       = false;
         Result.BestPos = Args.PosGuess   % moving back to initial position
         
     elseif sum(FlagGood)<3
@@ -251,7 +252,7 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         %fprintf('\nMin? %d', Ismin)
         plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
 
-        % current fit routine does not return whether it is a minimum
+        % current fit routine does not check whether it is a minimum
         if false %~IsMin
             Success = false;
             Result.Status = 'Minimum not found';
@@ -292,7 +293,7 @@ function Status = checkForMinimum(FocFWHM)
     %fprintf('\nfound? %d (%d > %d)', any(FWHM(3:end-2)<mean(FWHM(end-1:end))), FWHM(3:end-2), mean(FWHM(end-1:end)))
 
             
-    if FWHM(3:end-2)>mean(FWHM(1:2))
+    if FWHM(3:end-2)>mean(FWHM(1:2)+5)
         % focus FWHM is rising near starting point - focus is not there
         Status = 'rising';
     else
