@@ -20,14 +20,15 @@ function loopOverTargets(Unit, Args)
     
     RAD = 180./pi;
     
-    if isempty(Args.ExpTime)
-        Timeout = 60;
-    else
-        Timeout = Args.ExpTime+60;
-    end
+    %if isempty(Args.ExpTime)
+    %    Timeout = 60;
+    %else
+    %    Timeout = Args.ExpTime+60;
+    %end
+    Timeout=60;
 
     % reading target coordinates from file with format name,ra,dec
-    [name, RA, Dec] = textread(Args.CoordFileName, '%s %f %f', 'delimiter',',')
+    [name, RA, Dec] = textread(Args.CoordFileName, '%s %f %f', 'delimiter',',');
     
     Nloops = Args.NLoops;
     fprintf('%i fields in target list.\n\n',length(RA))
@@ -63,13 +64,18 @@ function loopOverTargets(Unit, Args)
             pause(2);
             
             fprintf('Actual pointing: RA=%f, Dec=%f\n',Unit.Mount.RA, Unit.Mount.Dec);
+            
+            if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
+                fprintf('Cameras not ready after timeout - abort.\n\n')
+                break;
+            end    
 
             if ~isempty(Args.ExpTime)
                 Unit.takeExposure([],Args.ExpTime,Args.Nimages);
                 fprintf('Waiting for exposures to finish\n\n');
             end
         
-            pause(Args.ExpTime+4);
+            pause(Args.ExpTime*(Args.Nimages+1)+4);
 
             if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
                 fprintf('Cameras not ready after timeout - abort.\n\n')
