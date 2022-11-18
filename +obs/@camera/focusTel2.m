@@ -60,22 +60,22 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         
         Args.BacklashOffset      = +1000;  % sign signify the backlash diection
         Args.SearchHalfRange     = 300;
-        Args.FWHM_Step           = [5 25; 12 50; 25 100]; % [FWHM, step size]
+        Args.FWHM_Step           = [5 30; 15 50; 25 100]; % [FWHM, step size]
         Args.PosGuess            = [];  % empty - use current position
         
         Args.ExpTime             = 3;
         Args.Nim                 = 1;
         Args.PixScale            = 1.25;
         
-        Args.HalfSize            = 300;
-        Args.fwhm_fromBankArgs cell = {'SigmaVec',logspace(-0.5,2,25)};
+        Args.ImageHalfSize       = 1000;
+        Args.fwhm_fromBankArgs cell = {'SigmaVec',[0.1, logspace(0,1,25)].'}; %logspace(-0.5,2,25)};
         Args.MaxIter             = 15;
         Args.MaxFWHM             = 8;   % max FWHM to use for min estimation
        
         Args.MinNstars           = 10;
         Args.FitMethod           = 'out1';
        
-        Args.Verbose logical     = false;
+        Args.Verbose logical     = true;
         Args.Plot logical        = true;
     end
     
@@ -145,8 +145,9 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
             Image = CameraObj.LastImage;
                 
             % measure focus value
-            [VecFWHM(Iim), VecNstars(Iim)] = imUtil.psf.fwhm_fromBank(Image, Args.fwhm_fromBankArgs{:}, 'HalfSize',Args.HalfSize, 'PixScale',Args.PixScale);
-                
+            %[VecFWHM(Iim), VecNstars(Iim)] = imUtil.psf.fwhm_fromBank(Image, Args.fwhm_fromBankArgs{:}, 'HalfSize',Args.HalfSize, 'PixScale',Args.PixScale);
+            [VecFWHM(Iim), VecNstars(Iim)] = imUtil.psf.fwhm_fromBank(Image, 'HalfSize',Args.ImageHalfSize);
+
         end
         FWHM  = min(25, median(VecFWHM, 'all', 'omitnan')); % very large values not reliable, as fwhm_fromBank doesn't work for donuts
         Nstars = median(VecNstars, 'all', 'omitnan');
@@ -184,8 +185,8 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         end
 
         % look for focus
-        % consider only FWHM under 15
-        if sum(ResTable(:,2)<15)>4      
+        % consider only FWHM under 23
+        if sum(ResTable(:,2)<23)>4      
 
             FocStatus = checkForMinimum(ResTable(1:Counter,:));
 
@@ -293,8 +294,8 @@ function Status = checkForMinimum(FocFWHM)
    
     FWHM = FocFWHM(:,2);
 
-            
-    if FWHM(3:end-2)>mean(FWHM(1:2)+5)
+    %%%%% rising case not yet tested %%%%%%%
+    if min(FWHM(end-2:end))>max(FWHM(1:2)+5)
         % focus FWHM is rising near starting point - focus is not there
         Status = 'rising';
     else
