@@ -57,28 +57,25 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
     arguments
         CameraObj
         FocuserObj
-        %Args.TempFocTable        = [];  % [Temp, Focus]
-        %Args.Temp                = [];
-        %Args.FocByTemp logical   = false;
         
         Args.BacklashOffset      = +1000;  % sign signify the backlash diection
         Args.SearchHalfRange     = 300;
         Args.FWHM_Step           = [5 25; 12 50; 25 100]; % [FWHM, step size]
-        Args.PosGuess            = [];  % empty - use current position, 36000;
+        Args.PosGuess            = [];  % empty - use current position
         
         Args.ExpTime             = 3;
         Args.Nim                 = 1;
         Args.PixScale            = 1.25;
         
-        Args.HalfSize            = 1000;
+        Args.HalfSize            = 300;
         Args.fwhm_fromBankArgs cell = {'SigmaVec',logspace(-0.5,2,25)};
         Args.MaxIter             = 15;
-        Args.MaxFWHM             = 6;   % max FWHM to use for min estimation
+        Args.MaxFWHM             = 8;   % max FWHM to use for min estimation
        
         Args.MinNstars           = 10;
         Args.FitMethod           = 'out1';
        
-        Args.Verbose logical     = true;
+        Args.Verbose logical     = false;
         Args.Plot logical        = true;
     end
     
@@ -127,7 +124,7 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         
     FocPos = StartPos;
         
-    ResTable = nan(Args.MaxIter,3);  % % [FocPos, FWHM, Nstars]
+    ResTable = nan(Args.MaxIter,4);  % % [FocPos, FWHM, Nstars, FlagGood]
     Cont     = true;
     Counter  = 0;
     while Cont & Counter<Args.MaxIter
@@ -158,19 +155,20 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
         %fprintf('\n%d', VecNstars)
         
         actualFocPos = FocuserObj.Pos;
-        ResTable(Counter,:) = [actualFocPos, FWHM, Nstars];
+        FlagGood = ~isnan(actualFocPos) & FWHM>0 & FWHM<Args.MaxFWHM & Nstars>Args.MinNstars;
+        ResTable(Counter,:) = [actualFocPos, FWHM, Nstars, FlagGood];
             
         if Args.Verbose
-            fprintf('Sent focuser to: %d. Actual position: %d.\n', FocPos, actualFocPos)
+            fprintf('Sent focuser to: %d. Actual position: %d.\n', FocPos, actualFocPos);
             fprintf('   FocPos=%d    FWHM=%4.1f    Nstars=%d\n',FocPos, FWHM, Nstars);
         end
 
 
         if Args.Plot
-            if FWHM<15
-                plot(FocPos, FWHM, 'bo', 'MarkerFaceColor','b');
+            if FlagGood
+                plot(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','b');
             else
-                plot(FocPos, FWHM, 'bo', 'MarkerFaceColor','w');
+                plot(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','w');
             end
             
             hold on;
@@ -223,18 +221,17 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
                 
     % truncate not used pre allocated matrix
     ResTable = ResTable(1:Counter,:);
-    Result.ResTable = ResTable;
+    Result.ResTable = ResTable
         
-    % search for global minimum
-    FlagGood = ~isnan(ResTable(:,1)) & ResTable(:,2)>0 & ResTable(:,2)<Args.MaxFWHM & all(ResTable(:,3)>Args.MinNstars);
-
+    
+    % search for global minimum    
     if Counter>=Args.MaxIter
         % focus not found
         Result.Status = 'Max iter reached';
         Success       = false;
         fprintf('\nMax iter reached.')
         Result.BestPos = Args.PosGuess   % moving back to initial position
-	elseif sum(FlagGood)<3
+	elseif sum(ResTable(:,4))<3
         Result.Status = 'Number of good FWHM points is smaller than 3';
         Success       = false;
         fprintf('\nFewer than 3 good points.')
@@ -245,34 +242,29 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
             case 'rising'        
                 Result.Status = 'Rising. Focus out of search range.';
                 Success       = false;
-                Result.BestPos = Args.PosGuess   % moving back to initial position
+                Result.BestPos = Args.PosGuess;   % moving back to initial position
         
             case 'found'
-            
-                Foc  = ResTable(FlagGood,1);
-                FWHM = ResTable(FlagGood,2);
-                fprintf('fit these values')
-                Foc
-                FWHM
+                            
+                % using only good points
+                Foc  = ResTable(ResTable(:,4)==1,1);
+                FWHM = ResTable(ResTable(:,4)==1,2);
         
                 % Estimate minimum FWHM
-                % want to use more points in fit
-                [Result.BestPos, Result.BestFWHM] = obs.util.tools.minimum123(Foc, FWHM);
+                
+                % previous fit function using only 3 points
+                %[Result.BestPos, Result.BestFWHM] = obs.util.tools.minimum123(Foc, FWHM);
+                %fprintf('\nMin? %d', Ismin)
+        
+                [Result.BestPos, Result.BestFWHM] = fitParabola(Foc,FWHM);
+                plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
+
                 fprintf('\nbest pos %d', Result.BestPos)
                 fprintf('\nbest FWHM %d', Result.BestFWHM)
-                %fprintf('\nMin? %d', Ismin)
-                plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
-        
-                ParabolicFitRes = fitParabola(Foc,FWHM)
+                
+                Result.Status = 'Found.'
+                Success       = true;
 
-                % current fit routine does not check whether it is a minimum
-                if false %~IsMin
-                    Success = false;
-                    Result.Status = 'Minimum not found';
-                else
-                    Result.Status = 'Best focus found';
-                    Success = true;
-                end
         end
            
     end
@@ -299,12 +291,7 @@ function Status = checkForMinimum(FocFWHM)
     %
     % requires minimum of 5 points
    
-    %Foc  = FocFWHM(:,1);
-    FWHM = FocFWHM(:,2)
-
-    %fprintf('\n %d', FocFWHM)
-    %fprintf('\nrising? %d (%d > %d)', (FWHM(3:end-2)>mean(FWHM(1:2))), FWHM(3:end-2), mean(FWHM(1:2)))
-    %fprintf('\nfound? %d (%d > %d)', any(FWHM(3:end-2)<mean(FWHM(end-1:end))), FWHM(3:end-2), mean(FWHM(end-1:end)))
+    FWHM = FocFWHM(:,2);
 
             
     if FWHM(3:end-2)>mean(FWHM(1:2)+5)
@@ -313,7 +300,6 @@ function Status = checkForMinimum(FocFWHM)
     else
         % focus FWHM is decreasing near starting point - ok
         
-        %if any(FWHM(3:end-2)<mean(FWHM(end-1:end))-2) & min(FWHM(3:end-2))<6
         lowestPoint = min(FWHM(3:end-2));
         fprintf('lowestPoint: %f min beginning: %f min end: %f', lowestPoint,min(FWHM(1:2)),min(FWHM(end-1:end)))
 
@@ -329,42 +315,31 @@ function Status = checkForMinimum(FocFWHM)
 end
         
 
-function Bestfit = fitParabola(Foc,FWHM)
+function [BestPos, BestFWHM] = fitParabola(Foc,FWHM)
 
-    plot = true;
+    makePlot = true;
 
     % transform x-values to get small numbers
     x = (Foc-median(Foc))/100;
-    x
-    FWHM
     
     % find starting point
-    [value, ind] = min(FWHM)
-    x0 = [value 2.5 x(ind)] 
+    [value, ind] = min(FWHM);
+    x0 = [value 2.5 x(ind)];
 
     % define parabola and fit
     fitfun = fittype( @(a,b,c,x) a+b*(x-c).^2);
     [fitted_curve,gof] = fit(x,FWHM,fitfun,'StartPoint',x0)
-    res = coeffvalues(fitted_curve)
-    Bestfit = (res(3)*100)+median(Foc);
-    
+    res = coeffvalues(fitted_curve);
+    BestPos = (res(3)*100)+median(Foc);
+    BestFWHM = fitted_curve(res(3));
     
     % Plot results
-    if plot
-        fprintf('Plotting parabolic fit results')
-        x_new = linspace(-2.5, 2.5, 20);
-        y_new = fitted_curve(x_new)
-        Foc
-        FWHM
-        x_new2 = (x_new*100)+median(Foc)
-        fitted_curve(x_new)
-        
-        %figure
-        scatter(Foc, FWHM, 'og')
-        %hold on
-        plot(x_new2, y_new, 'r')
-        %hold off
-    else
-        fprintf('Not plotting parabolic fit results.')
+    if makePlot
+        x_new = linspace(min(Foc)-50, max(Foc)+50,20)';
+        x_new2 = (x_new-median(Foc))/100;
+
+        plot(x_new, fitted_curve(x_new2), 'r');
+        %scatter(Foc, FWHM, 'og');
+        %scatter(BestPos, BestFWHM, 'ok');
     end
 end
