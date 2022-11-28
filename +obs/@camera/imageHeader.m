@@ -50,6 +50,10 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     Info(I).Val  = CameraObj.classCommand('Object');
     
     I = I + 1;
+    Info(I).Name = 'Counter';
+    Info(I).Val  = CameraObj.classCommand('ProgressiveFrame');
+    
+    I = I + 1;
     Info(I).Name = 'EXPTIME';
     Info(I).Val  = CameraObj.classCommand('ExpTime');
     
@@ -61,19 +65,13 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     Info(I).Name = 'JD';
     Info(I).Val  = 1721058.5 + CameraObj.classCommand('TimeStartLastImage');
 
-    Keys={'GAIN','DARKCUR','READNOI','SATURVAL','NONLIN'};
-    % get the camera Config structure once
-    CameraConfig = CameraObj.classCommand('Config');
-    for i=1:numel(Keys)
-        Field = Keys{i};
+    % Keys={'GAIN','DARKCUR','READNOI','SATURVAL','NONLIN'};
+    % Read additional fixed keys from camera Config.FITSHeader
+    ExtraKeys = CameraObj.classCommand('Config.FITSHeader');
+    for i=1:numel(ExtraKeys)
         I= I + 1;
-        Info(I).Name = Keys{i};
-        %if isfield(CameraObj.classCommand('Config'),Field)
-        if isfield(CameraConfig, Field)
-            Info(I).Val  = CameraConfig.(Field);  %CameraObj.classCommand('Config').(Field);
-        else
-            Info(I).Val  = NaN;
-        end
+        Info(I).Name = ExtraKeys{i}{1};
+        Info(I).Val  = ExtraKeys{i}{2};
     end
 
     I = I + 1;
