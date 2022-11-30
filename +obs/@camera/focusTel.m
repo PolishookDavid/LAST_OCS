@@ -1,4 +1,4 @@
-function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
+function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     % Focus a single telescope
     %   This routine can adaptively focus a single telescope, or set its
     %   focus position by a temperature-focus relation.
@@ -52,7 +52,7 @@ function [Success, Result] = focusTel2(CameraObj, FocuserObj, Args)
     %            .BestFWHM
     %            .Counter
     % Author : Eran Ofek (Apr 2022) Nora (Oct. 2022)
-    % Example: P.Camera{4}.focusTel2(P.Focuser{4});
+    % Example: P.Camera{4}.focusTel(P.Focuser{4});
     
     arguments
         CameraObj
