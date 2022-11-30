@@ -134,27 +134,8 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         title('Focuser '+string(CameraObj.classCommand('CameraNumber')));
     end
     
-<<<<<<< HEAD
-    if Args.FocByTemp
-        % focus only based on temperature
-        
-        if ~isempty(Args.TempFocTable) && ~isempty(Args.Temp)
-            % FocusTable and Temp are given
-            BestPos         = Args.PosGuess;
-            BacklashPos     = BestPos + Args.BacklashOffset;
-            Result.BestVal  = BestPos;
-            Result.TempOnly = true;
-            Result.Status   = 'Focus based on temperature';
-            Success          = true;
-        end
-    else
-        % search for best focus
-        
-        BacklashPos = Args.PosGuess + Args.BacklashOffset;
-=======
     % move to backlash position
     BacklashPos = Args.PosGuess + Args.BacklashOffset;
->>>>>>> c2e1f2a9e3eb00f0ccef627d86354e9c2748ff21
         
     if BacklashPos>max(Limits)
         error('BacklashPos is above upper focuser limit');
