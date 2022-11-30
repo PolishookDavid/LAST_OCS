@@ -48,17 +48,17 @@ function pointingModel(Unit, Args)
             if Args.Tracking
                 Unit.Mount.track
             end
-            pause(2);
+            pause(3);
             
             fprintf('Actual pointing: HA=%f, Dec=%f\n',Unit.Mount.HA, Unit.Mount.Dec);
 
             if ~isempty(Args.ExpTime)
                 fprintf('call takeExposure\n');
-                Unit.takeExposure([],Args.ExpTime,1);
+                Unit.takeExposure([],Args.ExpTime,1,'Object','PointingModel');
                 fprintf('Wait for exposure to finish\n');
             end
         
-            pause(Args.ExpTime+4);
+            pause(Args.ExpTime+6);
             if isempty(Args.ExpTime)
                 Timeout = 60;
             else
