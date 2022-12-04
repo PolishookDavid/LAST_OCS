@@ -8,7 +8,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 % Input  : - indices of cameras to operate ([]=all)
 %          - optional key - values:
 %               'MaxFlatLimit'   [40000]
-%               'MinFlatLimit'   [2000]
+%               'MinFlatLimit'   [6000]
 %               'MinSunAlt'      [-10]
 %               'MaxSunAlt'      [-4]
 %               'ExpTimeRange    [3 15]
@@ -38,7 +38,7 @@ arguments
     UnitObj
     Itel       = [];
     Args.MaxFlatLimit         = 40000;
-    Args.MinFlatLimit         = 5000;
+    Args.MinFlatLimit         = 6000;
     Args.MinSunAlt            = -8;
     Args.MaxSunAlt            = -4;  % for DEBUG use 90
     Args.ExpTimeRange         = [3 20];
