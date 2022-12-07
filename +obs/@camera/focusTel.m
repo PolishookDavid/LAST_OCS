@@ -79,10 +79,17 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         Args.Plot logical        = true;
     end
     
+    %CameraObj  = UnitObj.Camera{itel};
+    %FocuserObj = UnitObj.Focuser{itel};
+    
+    
     %--- get Limits and current position of focuser
     Limits     = FocuserObj.Limits;
     CurrentPos = FocuserObj.Pos;
     
+    % set ImgType to focus
+    previousImgType = CameraObj.ImType;
+    CameraObj.ImType = 'focus';
     
     % take exposure
     CameraObj.takeExposure(Args.ExpTime);
@@ -98,9 +105,9 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     % don't move far away if focus already good
     if isempty(Args.SearchHalfRange)
         if (InitialFWHM<5) & isempty(Args.PosGuess)
-            Args.SearchHalfRange=250
+            Args.SearchHalfRange=250;
         else
-            Args.SearchHalfRange=500
+            Args.SearchHalfRange=500;
         end
     else
     end
@@ -247,6 +254,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         end
     end
      
+    
                 
     % truncate not used pre allocated matrix
     ResTable = ResTable(1:Counter,:);
@@ -294,6 +302,8 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
            
     end
     
+    % go back to previous imgtype
+    CameraObj.ImType = previousImgType;
     
     %--- move focuser to: BacklashPos
     FocuserObj.Pos = BacklashPos;
