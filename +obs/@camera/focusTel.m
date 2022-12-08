@@ -314,13 +314,12 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
             
     if Args.Verbose
         fprintf('\nMoving to best position %d\n', Result.BestPos);
-        fprintf('\nFinished at %s\n', datestr(now,'HH:MM:SS.FFF'));
     end
     
     FocuserObj.Pos = Result.BestPos;
     FocuserObj.waitFinish;
     
-    text(Result.BestPos, Result.BestFWHM+4,string(Result.BestFWHM)+' arcsec at '+string(Result.BestPos)+' '+datestr(now,'HH:MM:SS.FFF')) 
+    text(Result.BestPos, Result.BestFWHM+4, '%.2d arcsec at %.0d', Result.BestFWHM, Result.BestPos) 
     saveas(gcf,'~/Desktop/Nora/focus_figs/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'HH:MM:SS')+'.png') 
 
 end
