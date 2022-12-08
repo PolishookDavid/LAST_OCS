@@ -138,7 +138,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         figure;
         plot(CurrentPos, min(25, InitialFWHM), 'co', 'MarkerFaceColor','c');
         hold on;
-        title('Focuser '+string(CameraObj.classCommand('CameraNumber')));
+        title('Focuser '+string(CameraObj.classCommand('CameraNumber'))+' - '+datestr(now,'HH:MM:SS'));
     end
     
     % move to backlash position
@@ -290,6 +290,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
                 % Estimate minimum FWHM
                 [Result.BestPos, Result.BestFWHM] = fitParabola(Foc,FWHM);
                 %ransacLinear([Foc,FWHM], Args)
+                [~,~] = fitRansacParabola(Foc,FWHM)
                 plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
 
                 fprintf('\nbest pos %d', Result.BestPos)
@@ -313,12 +314,15 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
             
     if Args.Verbose
         fprintf('\nMoving to best position %d\n', Result.BestPos);
+        fprintf('\nFinished at %s\n', datestr(now,'HH:MM:SS.FFF'));
     end
     
     FocuserObj.Pos = Result.BestPos;
     FocuserObj.waitFinish;
     
-    
+    text(Result.BestPos, Result.BestFWHM+4,string(Result.BestFWHM)+' arcsec at '+string(Result.BestPos)+' '+datestr(now,'HH:MM:SS.FFF')) 
+    saveas(gcf,'~/Desktop/Nora/focus_figs/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'HH:MM:SS')+'.png') 
+
 end
 
 % util funs
@@ -350,6 +354,31 @@ function Status = checkForMinimum(FocFWHM)
 end
         
 
+
+% not yet working
+function [BestPos, BestFWHM] = fitRansacParabola(Foc,FWHM)
+
+    % transform x-values to get small numbers
+    Foc_small = (Foc-median(Foc))/100;
+        
+    H = [ones(length(Foc),1), Foc_small, Foc_small.^2];
+
+    [FlagGood, BestPar, BestStd] = tools.math.fit.ransacLinearModel(H, FWHM, 'Nsim',200, 'FracPoints',0.7, 'NsigmaClip', [5,5])
+
+    
+    x_new = linspace(min(Foc)-50, max(Foc)+50,20)';
+    x_new_small = (x_new-median(Foc))/100;
+
+    plot(Foc(FlagGood), FWHM(FlagGood), 'xk')
+    plot(x_new, BestPar(1)+BestPar(2)*x_new+BestPar(3)*x_new.^2,'k')
+
+    
+    %BestPos = (BestPar(1)*100)+median(Foc);
+    BestPos = 34080;
+    BestFWHM = BestPar(1);
+end
+  
+
 function [BestPos, BestFWHM] = fitParabola(Foc,FWHM)
 
     makePlot = true;
@@ -376,5 +405,6 @@ function [BestPos, BestFWHM] = fitParabola(Foc,FWHM)
         plot(x_new, fitted_curve(x_new2), 'r');
         %scatter(Foc, FWHM, 'og');
         %scatter(BestPos, BestFWHM, 'ok');
+        
     end
 end
