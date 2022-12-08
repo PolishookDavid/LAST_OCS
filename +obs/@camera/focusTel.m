@@ -79,8 +79,8 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         Args.Plot logical        = true;
     end
     
-    %CameraObj  = UnitObj.Camera{itel};
-    %FocuserObj = UnitObj.Focuser{itel};
+
+    %FocuserObj = P.Focuser{itel};
     
     
     %--- get Limits and current position of focuser
@@ -191,7 +191,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         %fprintf('\n%d', VecNstars)
         
         actualFocPos = FocuserObj.Pos;
-        FlagGood = ~isnan(actualFocPos) & FWHM>0.5 & FWHM<Args.MaxFWHM & Nstars>Args.MinNstars;
+        FlagGood = ~isnan(actualFocPos) & FWHM>0.9 & FWHM<Args.MaxFWHM & Nstars>Args.MinNstars;
         ResTable(Counter,:) = [actualFocPos, FWHM, Nstars, FlagGood];
             
         if Args.Verbose
@@ -218,19 +218,15 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         if Args.Verbose
             fprintf('   Step=%d\n',Step);
         end
-
+        
+        
         % look for focus
         % consider only FWHM under 23
         if sum(ResTable(:,2)<23)>4      
 
-            FocStatus = checkForMinimum(ResTable(1:Counter,:));
+            FocStatus = checkForMinimum(ResTable(ResTable(:,4)==1,2));
 
             switch lower(FocStatus)
-                case 'rising'
-                    % problem
-                    fprintf('\nRising');
-                    fprintf('\nFocus likely larger than %d', StartPos);
-                    Cont = false;
         
                 case 'found'
                     fprintf('\nFocus found');
@@ -276,11 +272,7 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
         
     else
         switch lower(FocStatus)
-            case 'rising'        
-                Result.Status = 'Rising. Focus out of search range.';
-                Success       = false;
-                Result.BestPos = Args.PosGuess;   % moving back to initial position
-        
+
             case 'found'
                             
                 % using only good points
@@ -322,34 +314,26 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);
     
     text(Result.BestPos, 20, info) 
-    saveas(gcf,'~/Desktop/Nora/focus_figs/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'HH:MM:SS')+'.png') 
+    saveas(gcf,'~/log/focus_plots/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'HH:MM:SS')+'.png') 
 
 end
 
 % util funs
-function Status = checkForMinimum(FocFWHM)
+function Status = checkForMinimum(FWHM)
     %
     % requires minimum of 5 points
-   
-    FWHM = FocFWHM(:,2);
 
     %%%%% rising case not yet tested %%%%%%%
-    if min(FWHM(end-2:end))>max(FWHM(1:2)+5)
-        % focus FWHM is rising near starting point - focus is not there
-        Status = 'rising';
-    else
-        % focus FWHM is decreasing near starting point - ok
-        
-        lowestPoint = min(FWHM(3:end-2));
-        fprintf('lowestPoint: %f min beginning: %f min end: %f', lowestPoint,min(FWHM(1:2)),min(FWHM(end-1:end)))
+    
+    lowestPoint = min(FWHM(3:end-2));
+    fprintf('lowestPoint: %f min beginning: %f min end: %f', lowestPoint,min(FWHM(1:2)),min(FWHM(end-1:end)))
 
-        if lowestPoint<min(FWHM(end-1:end)-1) & lowestPoint<min(FWHM(1:3)-1) & min(FWHM(3:end-2))<6       
-            % minimum likely found
-            Status = 'found';
-        else
-            % minium not found - continue
-            Status = 'cont';
-        end
+    if lowestPoint<min(FWHM(end-1:end)-1) & lowestPoint<min(FWHM(1:2)-1) & min(FWHM(3:end-2))<6       
+        % minimum likely found
+        Status = 'found';
+    else
+        % minium not found - continue
+        Status = 'cont';
     end
     
 end
