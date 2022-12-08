@@ -319,7 +319,9 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     FocuserObj.Pos = Result.BestPos;
     FocuserObj.waitFinish;
     
-    text(Result.BestPos, Result.BestFWHM+4, '%.2d arcsec at %.0d', Result.BestFWHM, Result.BestPos) 
+    info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);
+    
+    text(Result.BestPos, Result.BestFWHM+4, info) 
     saveas(gcf,'~/Desktop/Nora/focus_figs/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'HH:MM:SS')+'.png') 
 
 end
