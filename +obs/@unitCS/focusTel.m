@@ -93,11 +93,19 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     previousImgType = CameraObj.ImType;
     CameraObj.ImType = 'focus';
     
+    % disable automatic saving (won't work in callback)
+    CameraObj.SaveOnDisk=false;
+    % TODO restore it at the end
+    
     % take exposure
-    CameraObj.takeExposure(Args.ExpTime);
+    UnitObj.takeExposure(itel,Args.ExpTime);
             
     % wait till camera is ready
     CameraObj.waitFinish;
+    
+    %save image explicitely, not via callback (in order to work also
+    %  when the command is received from a messenger)
+    UnitObj.saveCurImage(itel)
                 
     % get image
     Image = CameraObj.LastImage;
@@ -106,7 +114,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     
     % don't move far away if focus already good
     if isempty(Args.SearchHalfRange)
-        if (InitialFWHM<5) & isempty(Args.PosGuess)
+        if (InitialFWHM<5) && isempty(Args.PosGuess)
             Args.SearchHalfRange=250;
         else
             Args.SearchHalfRange=500;
@@ -115,10 +123,10 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     end
 
     if Args.Verbose
-        fprintf('Current/Starting focus position: %d\n',CurrentPos);
-        fprintf('Focuser limits: %d %d\n',Limits);
-        fprintf('Initial Focus %d\n',InitialFWHM);
-        %fprintf('SearchHalfRange set to %d\n', SearchHalfRange);
+        UnitObj.report('Current/Starting focus position: %d\n',CurrentPos);
+        UnitObj.report('Focuser limits: %d %d\n',Limits);
+        UnitObj.report('Initial Focus %d\n',InitialFWHM);
+        %UnitObj.report('SearchHalfRange set to %d\n', SearchHalfRange);
     end
     
     
@@ -164,9 +172,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     ResTable = nan(Args.MaxIter,4);  % % [FocPos, FWHM, Nstars, FlagGood]
     Cont     = true;
     Counter  = 0;
-    while Cont & Counter<Args.MaxIter
+    while Cont && Counter<Args.MaxIter
         Counter        = Counter + 1;
-        fprintf('\n\n %d\n', Counter)
+        UnitObj.report('\n\n %d\n', Counter)
         Result.Counter = Counter;
 
         % take exposure
@@ -189,16 +197,16 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         FWHM  = min(25, median(VecFWHM, 'all', 'omitnan')); % very large values not reliable, as fwhm_fromBank doesn't work for donuts
         Nstars = median(VecNstars, 'all', 'omitnan');
         
-        %fprintf('\n%d', VecFWHM)
-        %fprintf('\n%d', VecNstars)
+        %UnitObj.report('\n%d', VecFWHM)
+        %UnitObj.report('\n%d', VecNstars)
         
         actualFocPos = FocuserObj.Pos;
         FlagGood = ~isnan(actualFocPos) & FWHM>0.5 & FWHM<Args.MaxFWHM & Nstars>Args.MinNstars;
         ResTable(Counter,:) = [actualFocPos, FWHM, Nstars, FlagGood];
             
         if Args.Verbose
-            fprintf('Sent focuser to: %d. Actual position: %d.\n', FocPos, actualFocPos);
-            fprintf('   FocPos=%d    FWHM=%4.1f    Nstars=%d\n',FocPos, FWHM, Nstars);
+            UnitObj.report('Sent focuser to: %d. Actual position: %d.\n', FocPos, actualFocPos);
+            UnitObj.report('   FocPos=%d    FWHM=%4.1f    Nstars=%d\n',FocPos, FWHM, Nstars);
         end
 
 
@@ -218,7 +226,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         Step   = MoveDir .* interp1(Args.FWHM_Step(:,1), Args.FWHM_Step(:,2), FWHM, 'nearest', 'extrap');
         FocPos = FocPos + Step;
         if Args.Verbose
-            fprintf('   Step=%d\n',Step);
+            UnitObj.report('   Step=%d\n',Step);
         end
 
         % look for focus
@@ -230,18 +238,18 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             switch lower(FocStatus)
                 case 'rising'
                     % problem
-                    fprintf('\nRising');
-                    fprintf('\nFocus likely larger than %d', StartPos);
+                    UnitObj.report('\nRising');
+                    UnitObj.report('\nFocus likely larger than %d', StartPos);
                     Cont = false;
         
                 case 'found'
-                    fprintf('\nFocus found');
+                    UnitObj.report('\nFocus found');
                     % focus likely found
                     Cont = false;
                             
                 case 'cont'
                     % focus not found
-                    fprintf('\nFocus yet not found');
+                    UnitObj.report('\nFocus yet not found');
                     Cont = true;
                 otherwise
                     error('Unknown checkForMinimum status');
@@ -260,7 +268,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                 
     % truncate not used pre allocated matrix
     ResTable = ResTable(1:Counter,:);
-    Result.ResTable = ResTable
+    Result.ResTable = ResTable;
         
     
     % search for global minimum    
@@ -268,13 +276,13 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         % focus not found
         Result.Status = 'Max iter reached';
         Success       = false;
-        fprintf('\nMax iter reached.')
-        Result.BestPos = Args.PosGuess   % moving back to initial position
+        UnitObj.report('\nMax iter reached.')
+        Result.BestPos = Args.PosGuess;   % moving back to initial position
 	elseif sum(ResTable(:,4))<3
         Result.Status = 'Number of good FWHM points is smaller than 3';
         Success       = false;
-        fprintf('\nFewer than 3 good points.')
-        Result.BestPos = Args.PosGuess   % moving back to initial position
+        UnitObj.report('\nFewer than 3 good points.')
+        Result.BestPos = Args.PosGuess;   % moving back to initial position
         
     else
         switch lower(FocStatus)
@@ -292,13 +300,13 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                 % Estimate minimum FWHM
                 [Result.BestPos, Result.BestFWHM] = fitParabola(Foc,FWHM);
                 %ransacLinear([Foc,FWHM], Args)
-                [~,~] = fitRansacParabola(Foc,FWHM)
+                [~,~] = fitRansacParabola(Foc,FWHM);
                 plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
 
-                fprintf('\nbest pos %d', Result.BestPos)
-                fprintf('\nbest FWHM %d', Result.BestFWHM)
+                UnitObj.report('\nbest pos %d', Result.BestPos)
+                UnitObj.report('\nbest FWHM %d', Result.BestFWHM)
                 
-                Result.Status = 'Found.'
+                Result.Status = 'Found.';
                 Success       = true;
 
         end
@@ -315,7 +323,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     %--- move focuser to best focus position: BestPos
             
     if Args.Verbose
-        fprintf('\nMoving to best position %d\n', Result.BestPos);
+        UnitObj.report('\nMoving to best position %d\n', Result.BestPos);
     end
     
     FocuserObj.Pos = Result.BestPos;
@@ -343,9 +351,9 @@ function Status = checkForMinimum(FocFWHM)
         % focus FWHM is decreasing near starting point - ok
         
         lowestPoint = min(FWHM(3:end-2));
-        fprintf('lowestPoint: %f min beginning: %f min end: %f', lowestPoint,min(FWHM(1:2)),min(FWHM(end-1:end)))
+        UnitObj.report('lowestPoint: %f min beginning: %f min end: %f', lowestPoint,min(FWHM(1:2)),min(FWHM(end-1:end)))
 
-        if lowestPoint<min(FWHM(end-1:end)-1) & lowestPoint<min(FWHM(1:3)-1) & min(FWHM(3:end-2))<6       
+        if lowestPoint<min(FWHM(end-1:end)-1) && lowestPoint<min(FWHM(1:3)-1) && min(FWHM(3:end-2))<6       
             % minimum likely found
             Status = 'found';
         else
@@ -366,7 +374,7 @@ function [BestPos, BestFWHM] = fitRansacParabola(Foc,FWHM)
         
     H = [ones(length(Foc),1), Foc_small, Foc_small.^2];
 
-    [FlagGood, BestPar, BestStd] = tools.math.fit.ransacLinearModel(H, FWHM, 'Nsim',200, 'FracPoints',0.7, 'NsigmaClip', [5,5])
+    [FlagGood, BestPar, BestStd] = tools.math.fit.ransacLinearModel(H, FWHM, 'Nsim',200, 'FracPoints',0.7, 'NsigmaClip', [5,5]);
 
     
     x_new = linspace(min(Foc)-50, max(Foc)+50,20)';
@@ -395,7 +403,7 @@ function [BestPos, BestFWHM] = fitParabola(Foc,FWHM)
 
     % define parabola and fit
     fitfun = fittype( @(a,b,c,x) a+b*(x-c).^2);
-    [fitted_curve,gof] = fit(x,FWHM,fitfun,'StartPoint',x0)
+    [fitted_curve,gof] = fit(x,FWHM,fitfun,'StartPoint',x0);
     res = coeffvalues(fitted_curve);
     BestPos = (res(3)*100)+median(Foc);
     BestFWHM = fitted_curve(res(3));
