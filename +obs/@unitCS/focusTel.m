@@ -98,14 +98,18 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     CameraObj.SaveOnDisk=false;
     % TODO restore it at the end
     
-    % take exposure
-    UnitObj.takeExposure(itel,Args.ExpTime);
-            
     % wait till camera is ready
     CameraObj.waitFinish;
-    
-    %save image explicitely, not via callback (in order to work also
+
+    % take exposure
+    % image is read with a callback - nogood when launched via messenger
+    % UnitObj.takeExposure(itel,Args.ExpTime);
+    CameraObj.startExposure(Args.ExpTime);
+                
+    % retrieve and save image explicitely, not via callbacks (in order to work also
     %  when the command is received from a messenger)
+    pause(Args.ExpTime)
+    CameraObj.collectExposure;
     UnitObj.saveCurImage(itel)
                 
     % get image
@@ -145,11 +149,16 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     Result.BestFWHM   = NaN;
     Result.Counter    = NaN;
     
+    MaxPlotFWHM=26;
+    
     if Args.Plot
         figure;
-        plot(CurrentPos, min(25, InitialFWHM), 'co', 'MarkerFaceColor','c');
+        semilogy(CurrentPos, min(MaxPlotFWHM, InitialFWHM), 'co', 'MarkerFaceColor','c');
+        grid on
+        set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
         hold on;
         title('Focuser '+string(CameraObj.classCommand('CameraNumber'))+' - '+datestr(now,'HH:MM:SS'));
+        drawnow
     end
     
     % move to backlash position
@@ -184,13 +193,14 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         for Iim=1:1:Args.Nim
                 
             % take exposure
-            UnitObj.takeExposure(itel,Args.ExpTime);
+            CameraObj.startExposure(Args.ExpTime);            
             
-            % wait till camera is ready
-            CameraObj.waitFinish;
+            % wait
+            pause(Args.ExpTime)
                 
             % save image explicitely, not via callback (in order to work also
             %  when the command is received from a messenger)
+            CameraObj.collectExposure;
             UnitObj.saveCurImage(itel)
 
             % get image
@@ -219,14 +229,17 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
 
         if Args.Plot
             if FlagGood
-                plot(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','b');
+                semilogy(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','b');
             else
-                plot(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','w');
+                semilogy(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','w');
             end
+            grid on
+            set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
             
             hold on;
             H = gca;
-            H.YLim = [0 26];
+            H.YLim = [0.8 MaxPlotFWHM];
+            drawnow
         end
         
         
@@ -308,7 +321,8 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                 [Result.BestPos, Result.BestFWHM] = fitParabola(Foc,FWHM);
                 %ransacLinear([Foc,FWHM], Args)
                 [~,~] = fitRansacParabola(Foc,FWHM);
-                plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
+                semilogy(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
+                drawnow
 
                 UnitObj.report('\nbest pos %d', Result.BestPos)
                 UnitObj.report('\nbest FWHM %d', Result.BestFWHM)
@@ -319,6 +333,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         end
            
     end
+    hold off
     
     % go back to previous imgtype
     CameraObj.ImType = previousImgType;
@@ -390,8 +405,8 @@ function [BestPos, BestFWHM] = fitRansacParabola(Foc,FWHM)
     x_new = linspace(min(Foc)-50, max(Foc)+50,20)';
     x_new_small = (x_new-median(Foc))/100;
 
-    plot(Foc(FlagGood), FWHM(FlagGood), 'xk')
-    plot(x_new, BestPar(1)+BestPar(2)*x_new+BestPar(3)*x_new.^2,'k')
+    semilogy(Foc(FlagGood), FWHM(FlagGood), 'xk')
+    semilogy(x_new, BestPar(1)+BestPar(2)*x_new+BestPar(3)*x_new.^2,'k')
 
     
     %BestPos = (BestPar(1)*100)+median(Foc);
@@ -423,7 +438,7 @@ function [BestPos, BestFWHM] = fitParabola(Foc,FWHM)
         x_new = linspace(min(Foc)-50, max(Foc)+50,20)';
         x_new2 = (x_new-median(Foc))/100;
 
-        plot(x_new, fitted_curve(x_new2), 'r');
+        semilogy(x_new, fitted_curve(x_new2), 'r');
         %scatter(Foc, FWHM, 'og');
         %scatter(BestPos, BestFWHM, 'ok');
         
