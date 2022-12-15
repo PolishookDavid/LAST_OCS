@@ -94,6 +94,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     CameraObj.ImType = 'focus';
     
     % disable automatic saving (won't work in callback)
+    CurrentSaveImage=CameraObj.SaveOnDisk;
     CameraObj.SaveOnDisk=false;
     % TODO restore it at the end
     
@@ -170,6 +171,8 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     FocPos = StartPos;
         
     ResTable = nan(Args.MaxIter,4);  % % [FocPos, FWHM, Nstars, FlagGood]
+    VecFWHM=nan(Args.Nim);
+    VecNstars=nan(Args.Nim);
     Cont     = true;
     Counter  = 0;
     while Cont && Counter<Args.MaxIter
@@ -181,11 +184,15 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         for Iim=1:1:Args.Nim
                 
             % take exposure
-            CameraObj.takeExposure(Args.ExpTime);
+            UnitObj.takeExposure(itel,Args.ExpTime);
             
             % wait till camera is ready
             CameraObj.waitFinish;
                 
+            % save image explicitely, not via callback (in order to work also
+            %  when the command is received from a messenger)
+            UnitObj.saveCurImage(itel)
+
             % get image
             Image = CameraObj.LastImage;
                 
@@ -315,6 +322,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     
     % go back to previous imgtype
     CameraObj.ImType = previousImgType;
+    
+    % restore saving image flag
+    CameraObj.SaveOnDisk=CurrentSaveImage;
     
     %--- move focuser to: BacklashPos
     FocuserObj.Pos = BacklashPos;
