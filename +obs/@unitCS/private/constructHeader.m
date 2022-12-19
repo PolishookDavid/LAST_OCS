@@ -52,6 +52,10 @@ function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
         %OBSNAME
         %OBSPLACE
         
+        I = I + 1;
+        Info(I).Key = 'PROJNAME';
+        Info(I).Val = UnitObj.Config.ProjName;
+        
         MountConfig  = UnitObj.Mount.classCommand('Config');
         CameraConfig = CameraObj.classCommand('Config');
         
