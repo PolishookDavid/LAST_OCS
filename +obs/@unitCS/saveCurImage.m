@@ -67,6 +67,9 @@ function saveCurImage(UnitObj,itel,Path)
             HeaderCell=constructHeader(UnitObj,icam);
             UnitObj.report('Writing image %s to disk\n',FullPath);
 
+            % prepend FILENAME to header
+            HeaderCell=[{'FILENAME',FullPath,''};HeaderCell];
+
             PWD = pwd;
             try
                 tools.os.cdmkdir(Path);  % cd and on the fly mkdir

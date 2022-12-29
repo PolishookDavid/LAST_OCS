@@ -1,4 +1,4 @@
-function [HeaderCell,AllInfo]=constructHeader(UnitObj,itel)
+function HeaderCell=constructHeader(UnitObj,itel)
     % Construct image header for takes of the nth telescope. Intended to
     %   work only both for local and remote telescopes as well as mount in this unit
     % This could well be demoted to private method, it is temporarily left
