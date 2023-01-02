@@ -33,7 +33,7 @@ function ok=testCamera(U,camnum,full)
     if ~isempty(model) && contains(model,'QHY')
         allcameras=U.Camera{camnum}.classCommand('allQHYCameraNames');
         physicalid=U.Camera{camnum}.classCommand('PhysicalId');
-        if ~contains(allcameras,physicalid)
+        if isempty(allcameras) || ~contains(allcameras,physicalid)
              U.report('camera %s is not even known registered on the computer\n',...
                       physicalid)
              U.report('check if the camera is physically connected and powered,\n')
