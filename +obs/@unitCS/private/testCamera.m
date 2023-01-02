@@ -33,11 +33,11 @@ function ok=testCamera(U,camnum,full)
     if ~isempty(model) && contains(model,'QHY')
         allcameras=U.Camera{camnum}.classCommand('allQHYCameraNames');
         physicalid=U.Camera{camnum}.classCommand('PhysicalId');
-        if isempty(allcameras) || ~contains(allcameras,physicalid)
+        if isempty(allcameras) || ~any(contains(allcameras,physicalid))
              U.report('camera %s is not even known registered on the computer\n',...
                       physicalid)
              U.report('check if the camera is physically connected and powered,\n')
-             U.report('or otherwise check that the obs.camera configuration file is correct\n')
+             U.report('  or otherwise check that the obs.camera configuration file is correct\n')
              ok=false;
         end 
         if ok && gain>10000
@@ -54,11 +54,11 @@ function ok=testCamera(U,camnum,full)
         if isempty(U.Camera{camnum}.classCommand('LastImageName')) && ...
            U.Camera{camnum}.classCommand('SaveOnDisk')
             U.report('image was not saved on disk. Check if disks are mounted\n')
-            U.report('or if paths in obs.camera config file are correct\n')
+            U.report('  or if paths in obs.camera config file are correct\n')
         end
         if ~isempty(ok) && ok
             U.report('acquisition of a single image with camera %d successful\n',camnum)
-            U.report('attempting to take three contiguous images with camera %d\n',camnum)
+            U.report('  attempting to take three contiguous images with camera %d\n',camnum)
             U.takeExposure(camnum,5,3);
             pause(30) % should be sufficient for switching mode, readout
             ok=U.Camera{camnum}.classCommand('ProgressiveFrame')==3;
