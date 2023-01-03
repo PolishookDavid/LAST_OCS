@@ -11,11 +11,7 @@ function ok=testCamera(U,camnum,full)
     if isempty(status)
         U.report('retrieved no camera %d status\n',camnum)
         ok=false;
-    end
-    
-    gain=U.Camera{camnum}.classCommand('Gain');
-
-    if ~isempty(status)
+    else
         switch status
             case 'idle'
                 ok=true;
@@ -28,11 +24,20 @@ function ok=testCamera(U,camnum,full)
                 U.report('camera %d is "%s", try perhaps later\n',camnum,status)
         end
     end
+    
+    gain=U.Camera{camnum}.classCommand('Gain');
+    
     % specific tests for QHY
     model=U.Camera{camnum}.classCommand('CameraModel');
     if ~isempty(model) && contains(model,'QHY')
         allcameras=U.Camera{camnum}.classCommand('allQHYCameraNames');
+        camname=U.Camera{camnum}.classCommand('CameraName');
         physicalid=U.Camera{camnum}.classCommand('PhysicalId');
+        if ~strcmp(camname,physicalid)
+            U.report('connected to %s, but config says it should be %s\n',...
+                      camname, physicalid)
+            ok=false;
+        end
         if isempty(allcameras) || ~any(contains(allcameras,physicalid))
              U.report('camera %s is not even known registered on the computer\n',...
                       physicalid)
