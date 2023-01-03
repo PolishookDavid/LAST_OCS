@@ -58,7 +58,7 @@ function [ok,remedy]=checkCamera(U,camnum,full,remediate)
                 if ~ok
                     U.report('trying power cycle and reconnect of camera %d\n',camnum)
                     U.CameraPower(camnum)=false;
-                    pause(1)
+                    pause(3)
                     U.CameraPower(camnum)=true;
                     U.Camera{camnum}.classCommand('connect');
                     ok=U.testCamera(camnum,full);
