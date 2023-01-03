@@ -50,6 +50,17 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     Info(I).Val  = CameraObj.classCommand('Object');
     
     I = I + 1;
+    Info(I).Name = 'EXPMODE';
+    switch CameraObj.classCommand('StreamMode');
+        case 0
+           Info(I).Val  = 'SINGLE';
+        case 1
+           Info(I).Val  = 'VIDEO';
+        otherwise
+           Info(I).Val  = 'UNKNOWN';
+    end
+    
+    I = I + 1;
     Info(I).Name = 'Counter';
     Info(I).Val  = CameraObj.classCommand('ProgressiveFrame');
     
