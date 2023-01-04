@@ -60,6 +60,7 @@ function [ok,remedy]=checkCamera(U,camnum,full,remediate)
                     U.CameraPower(camnum)=false;
                     pause(3)
                     U.CameraPower(camnum)=true;
+                    pause(3)
                     U.Camera{camnum}.classCommand('connect');
                     ok=U.testCamera(camnum,full);
                 end
