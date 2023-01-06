@@ -376,7 +376,7 @@ function Status = checkForMinimum(FocFWHM)
         % focus FWHM is decreasing near starting point - ok
         
         lowestPoint = min(FWHM(3:end-2));
-        UnitObj.report('lowestPoint: %f min beginning: %f min end: %f', lowestPoint,min(FWHM(1:2)),min(FWHM(end-1:end)))
+        %UnitObj.report('lowestPoint: %f min beginning: %f min end: %f', lowestPoint,min(FWHM(1:2)),min(FWHM(end-1:end)))
 
         if lowestPoint<min(FWHM(end-1:end)-1) && lowestPoint<min(FWHM(1:3)-1) && min(FWHM(3:end-2))<6       
             % minimum likely found
