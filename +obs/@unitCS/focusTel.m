@@ -166,8 +166,6 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     FocPos = StartPos;
         
     ResTable = nan(Args.MaxIter,4);  % % [FocPos, FWHM, Nstars, FlagGood]
-    VecFWHM=nan(Args.Nim);
-    VecNstars=nan(Args.Nim);
     Cont     = true;
     Counter  = 0;
     while Cont && Counter<Args.MaxIter
@@ -176,28 +174,22 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         Result.Counter = Counter;
 
         % take exposure
-        for Iim=1:1:Args.Nim
-                
-            % take exposure
-            CameraObj.startExposure(Args.ExpTime);            
+        CameraObj.startExposure(Args.ExpTime);            
             
-            % wait
-            pause(Args.ExpTime)
+        % wait
+        pause(Args.ExpTime)
                 
-            % save image explicitely, not via callback (in order to work also
-            %  when the command is received from a messenger)
-            CameraObj.collectExposure;
-            UnitObj.saveCurImage(itel)
+        % save image explicitely, not via callback (in order to work also
+        %  when the command is received from a messenger)
+        CameraObj.collectExposure;
+        UnitObj.saveCurImage(itel)
 
-            % get image
-            Image = CameraObj.LastImage;
+        % get image
+        Image = CameraObj.LastImage;
                 
-            % measure focus value
-            [VecFWHM(Iim), VecNstars(Iim)] = imUtil.psf.fwhm_fromBank(Image, 'HalfSize',Args.ImageHalfSize);
-
-        end
-        FWHM  = min(25, median(VecFWHM, 'all', 'omitnan')); % very large values not reliable, as fwhm_fromBank doesn't work for donuts
-        Nstars = median(VecNstars, 'all', 'omitnan');
+        % measure focus value
+        [FWHM, Nstars] = imUtil.psf.fwhm_fromBank(Image, 'HalfSize',Args.ImageHalfSize);
+        FWHM  = min(25, FWHM); % very large values not reliable, as fwhm_fromBank doesn't work for donuts
         
         % adding outlier on purpose. delete after testing!
         %if Counter==5
@@ -254,7 +246,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         
                 case 'found'
                     if Args.Verbose
-                        UnitObj.report('	Focus found.\n');
+                        UnitObj.report('	Focus found.\n\n');
                     end
                     % focus likely found
                     Cont = false;
