@@ -51,7 +51,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     %            .BestPos
     %            .BestFWHM
     %            .Counter
-    % Author : Eran Ofek (Apr 2022) Nora (Oct. 2022)
+    % Author : Eran Ofek (Apr 2022) Nora (Jan. 2023)
     % Example: P.Camera{4}.focusTel(P.Focuser{4});
     
     arguments
@@ -153,7 +153,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     
     if Args.Plot
         figure;
-        semilogy(CurrentPos, min(MaxPlotFWHM, InitialFWHM), 'co', 'MarkerFaceColor','c');
+        plot(CurrentPos, min(MaxPlotFWHM, InitialFWHM), 'co', 'MarkerFaceColor','c');
         grid on
         set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
         hold on;
@@ -214,8 +214,8 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         FWHM  = min(25, median(VecFWHM, 'all', 'omitnan')); % very large values not reliable, as fwhm_fromBank doesn't work for donuts
         Nstars = median(VecNstars, 'all', 'omitnan');
         
-        %UnitObj.report('\n%d', VecFWHM)
-        %UnitObj.report('\n%d', VecNstars)
+        UnitObj.report('\n%d', VecFWHM)
+        UnitObj.report('\n%d', VecNstars)
         
         actualFocPos = FocuserObj.Pos;
         FlagGood = ~isnan(actualFocPos) & FWHM>0.5 & FWHM<Args.MaxFWHM & Nstars>Args.MinNstars;
@@ -229,9 +229,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
 
         if Args.Plot
             if FlagGood
-                semilogy(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','b');
+                plot(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','b');
             else
-                semilogy(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','w');
+                plot(actualFocPos, FWHM, 'bo', 'MarkerFaceColor','w');
             end
             grid on
             set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
@@ -321,7 +321,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                 [Result.BestPos, Result.BestFWHM] = fitParabola(Foc,FWHM);
                 %ransacLinear([Foc,FWHM], Args)
                 [~,~] = fitRansacParabola(Foc,FWHM);
-                semilogy(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
+                plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
                 drawnow
 
                 UnitObj.report('\nbest pos %d', Result.BestPos)
