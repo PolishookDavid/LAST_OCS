@@ -317,7 +317,15 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                 UnitObj.report('   best position %d\n', Result.BestPos)
                 UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
                 UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
-             
+                
+                
+                % not yet tested at night
+                % always TemperatureSensors(1)? 2, returns -60
+                temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)')
+                temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)')
+                UnitObj.report('   temperature 1 %d \n', temp1)
+                UnitObj.report('   temperature 2 %d \n\n', temp2)
+        
                 Result.Status = 'Found.';
                 Success       = true;
 
