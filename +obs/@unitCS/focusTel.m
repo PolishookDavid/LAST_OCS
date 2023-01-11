@@ -273,6 +273,11 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     ResTable = ResTable(1:Counter,:);
     Result.ResTable = ResTable;
         
+    % opening or creating the log file
+    fileID = fopen('~/log/logfocusTel_C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYMMDD')+'.txt','a+');
+    fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
+    fclose(fileID);
+    
     
     % search for global minimum    
     if Counter>=Args.MaxIter
@@ -329,10 +334,26 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                 Result.Status = 'Found.';
                 Success       = true;
 
+        
+        end
+        
+        fprintf(fileID,'\nStatus '+Result.Status);
+        if Success
+            fprintf(fileID,'\nTemperature 1 '+string(temp1));
+            fprintf(fileID,'\nTemperature 2 '+string(temp2));
+            fprintf(fileID,'\nbest position '+string(Result.BestPos));
+            fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
+            fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
+            fprintf(fileID,'\nsteps '+string(counter));
+            fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
+            fprintf(fileID,'\nprevious focuser pos. '+string(CurrentPos));
         end
            
     end
     hold off
+    
+    fprintf(fileID,'\nnew focuser position '+string(Result.BestPos));
+    fclose(fileID);
     
     % go back to previous imgtype
     CameraObj.ImType = previousImgType;
@@ -356,7 +377,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);
     
     text(Result.BestPos, 20, info) 
-    saveas(gcf,'~/log/focus_plots/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'HH:MM:SS')+'.png') 
+    saveas(gcf,'~/log/focus_plots/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYMMDD_HH:MM:SS')+'.png') 
 
 end
 
