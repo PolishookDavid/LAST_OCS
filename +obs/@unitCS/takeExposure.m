@@ -82,9 +82,9 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
                         '; camera.SaveOnDisk will be turned off for all cameras involved']);
         % keep the previous SaveOnDisk status
         saving=false(size(Cameras));
-        for i=numel(Cameras)
-            saving(i)=Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk;');
-            Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk=false;');
+        for i=Cameras
+            saving(i)=Unit.Camera{i}.classCommand('SaveOnDisk;');
+            Unit.Camera{i}.classCommand('SaveOnDisk=false;');
             % however, this seems to have had no effect inside
             % unitCS.treatNewImage. Why? some issue of snapshotting the
             % object at the moment of creation of the listener, or
@@ -142,8 +142,8 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     
     % restore the previous SaveOnDisk status if needed
      if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave
-        for i=numel(Cameras)
-            Unit.Camera{Cameras(i)}.classCommand('SaveOnDisk=%d;',saving(i));
+        for i=Cameras
+            Unit.Camera{i}.classCommand('SaveOnDisk=%d;',saving(i));
         end
     end
    
