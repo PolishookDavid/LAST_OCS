@@ -68,7 +68,7 @@ function saveCurImage(UnitObj,itel,Path)
             UnitObj.report('Writing image %s to disk\n',FullPath);
 
             % prepend FILENAME to header
-            HeaderCell=[{'FILENAME',FullPath,''};HeaderCell];
+            HeaderCell=[{'FILENAME',FileName,''};HeaderCell];
 
             PWD = pwd;
             try

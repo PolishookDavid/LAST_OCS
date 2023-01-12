@@ -234,11 +234,13 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
     % Read additional fixed keys from camera Config.FITSHeader
     try
-        ExtraKeys = UnitObj.classCommand('Config.FITSHeader');
-        for i=1:numel(ExtraKeys)
-            I= I + 1;
-            Info(I).Name = ExtraKeys{i}{1};
-            Info(I).Val  = ExtraKeys{i}{2};
+        if isfield(UnitObj.classCommand('Config'),'FITSHeader')
+            ExtraKeys = UnitObj.classCommand('Config.FITSHeader');
+            for i=1:numel(ExtraKeys)
+                I= I + 1;
+                Info(I).Name = ExtraKeys{i}{1};
+                Info(I).Val  = ExtraKeys{i}{2};
+            end
         end
     catch
     end
