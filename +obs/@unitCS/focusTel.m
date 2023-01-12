@@ -274,9 +274,8 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     Result.ResTable = ResTable;
         
     % opening or creating the log file
-    fileID = fopen('~/log/logfocusTel_C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYMMDD')+'.txt','a+');
+    fileID = fopen('~/log/logfocusTel_C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-MM-DD')+'.txt','a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
-    fclose(fileID);
     
     
     % search for global minimum    
@@ -337,14 +336,14 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         
         end
         
-        fprintf(fileID,'\nStatus '+Result.Status);
+        fprintf(fileID,'\nStatus '+string(Result.Status));
         if Success
             fprintf(fileID,'\nTemperature 1 '+string(temp1));
             fprintf(fileID,'\nTemperature 2 '+string(temp2));
             fprintf(fileID,'\nbest position '+string(Result.BestPos));
             fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
             fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
-            fprintf(fileID,'\nsteps '+string(counter));
+            fprintf(fileID,'\nsteps '+string(Counter));
             fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
             fprintf(fileID,'\nprevious focuser pos. '+string(CurrentPos));
         end
