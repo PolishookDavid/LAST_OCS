@@ -274,7 +274,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     Result.ResTable = ResTable;
         
     % opening or creating the log file
-    fileID = fopen('~/log/logfocusTel_C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-MM-DD')+'.txt','a+');
+    fileID = fopen('~/log/logfocusTel_C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
     
     
@@ -376,7 +376,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);
     
     text(Result.BestPos, 20, info) 
-    saveas(gcf,'~/log/focus_plots/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYMMDD_HH:MM:SS')+'.png') 
+    saveas(gcf,'~/log/focus_plots/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
 
 end
 
