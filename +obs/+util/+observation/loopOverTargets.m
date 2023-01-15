@@ -29,6 +29,8 @@ function loopOverTargets(Unit, Args)
 
     % reading target coordinates from file with format name,ra,dec
     [name, RA, Dec] = textread(Args.CoordFileName, '%s %f %f', 'delimiter',',');
+    RA
+    Dec
     Ntargets = length(RA);
     
     Nloops = Args.NLoops;
