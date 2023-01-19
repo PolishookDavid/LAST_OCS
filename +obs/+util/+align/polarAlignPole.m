@@ -195,6 +195,11 @@ function [Result, ResFit] = polarAlignPole(UnitCS, Args)
         else
            fprintf('Increase Alt by [arcmin]: %f\n',ResFit.DAlt);
         end
+        fprintf('Az screw rotation (no sign)             : %f\n',ResFit.DAz./60./0.086);
+        fprintf('Alt front 2 screws rotation (no sign)   : %f\n',ResFit.DAlt./60./0.176);
+        fprintf('Alt back single screw rotation (no sign): %f\n',ResFit.DAlt./60./0.115);
+        
+        
     end    
     
     
