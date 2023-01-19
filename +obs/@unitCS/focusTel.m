@@ -274,7 +274,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     Result.ResTable = ResTable;
         
     % opening or creating the log file
-    fileID = fopen('~/log/logfocusTel_C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
+    fileID = fopen('~/log/logfocusTel_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
     
     
@@ -345,14 +345,11 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
             fprintf(fileID,'\nsteps '+string(Counter));
             fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
-            fprintf(fileID,'\nprevious focuser pos. '+string(CurrentPos));
+            %fprintf(fileID,'\nprevious focuser pos. '+string(CurrentPos));
         end
            
     end
     hold off
-    
-    fprintf(fileID,'\nnew focuser position '+string(Result.BestPos));
-    fclose(fileID);
     
     % go back to previous imgtype
     CameraObj.ImType = previousImgType;
@@ -373,10 +370,13 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     FocuserObj.Pos = Result.BestPos;
     FocuserObj.waitFinish;
     
+    fprintf(fileID,'\nactual new focuser position '+string(FocuserObj.Pos));
+    fclose(fileID);
+    
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);
     
     text(Result.BestPos, 20, info) 
-    saveas(gcf,'~/log/focus_plots/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
+    saveas(gcf,'~/log/focus_plots/focusres_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
 
 end
 
