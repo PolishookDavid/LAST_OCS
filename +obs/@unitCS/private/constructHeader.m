@@ -212,6 +212,11 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Val = TrackingSpeed(2)./3600;  % [arcsec/s]
     end
     
+    % mount temperature, reading 1wire sensors on the power switches
+    I = I + 1;
+    Info(I).Key = 'MNTTEMP';
+    Info(I).Val = nanmean(UnitObj.classCommand('Temperature'));
+
     % focuser information
     if isa(FocuserObj,'obs.focuser') || isa(FocuserObj,'obs.remoteClass')
         I = I + 1;
