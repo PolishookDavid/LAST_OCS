@@ -11,7 +11,7 @@ classdef focuser < obs.LAST_Handle
         
     properties (Hidden=true)
         LogFile;
-        PromptMirrorLock logical    = true;  % Prompt the user to check if mirror is locked
+        PromptMirrorLock logical    = false;  % Prompt the user to check if mirror is locked
         PhysicalAddress                      % focuser address (e.g. pci-bridge-usb)
     end
     
