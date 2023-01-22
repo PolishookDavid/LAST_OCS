@@ -8,17 +8,16 @@ classdef focuser < obs.LAST_Handle
     properties (SetAccess=public, GetAccess=private)
         FocuserUniqueName = NaN;
     end
-        
+  
+    properties (SetAccess=public, GetAccess=private, Description='api')
+        Connected logical = false;
+    end
+
     properties (Hidden=true)
         LogFile;
         PromptMirrorLock logical    = false;  % Prompt the user to check if mirror is locked
         PhysicalAddress                      % focuser address (e.g. pci-bridge-usb)
     end
-    
-    properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
-        FocusMotionTimer;
-    end
-
     
     % constructor and destructor
     methods
