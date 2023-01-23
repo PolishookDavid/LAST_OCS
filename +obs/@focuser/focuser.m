@@ -5,11 +5,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 classdef focuser < obs.LAST_Handle
             
-    properties (SetAccess=public, GetAccess=private)
+    properties (GetAccess=public, SetAccess=private)
         FocuserUniqueName = NaN;
     end
   
-    properties (SetAccess=public, GetAccess=private, Description='api')
+    properties (GetAccess=public, SetAccess=public, Description='api')
         Connected logical = false;
     end
 
