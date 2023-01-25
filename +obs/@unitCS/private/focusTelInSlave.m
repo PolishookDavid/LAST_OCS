@@ -261,7 +261,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                     fprintf(fileID,'\nBad fit. Removing two outliers.');
                     UnitObj.report('Bad fit. Trying to remove outliers.\n')
                     % % % outlier rejection might need some more testing % % %
-                    [Result.BestPos, Result.BestFWHM, adjrsquare] = fitParabolaOutliers(Foc,FWHM,2,30)
+                    [Result.BestPos, Result.BestFWHM, adjrsquare] = fitParabolaOutliers(Foc,FWHM,2,30);
 
                 end
                 
@@ -279,8 +279,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         end
     end
     
-    temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)')
-    temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)')
+    temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
+    temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
     UnitObj.report('   temperature 1 %d \n', temp1);
     UnitObj.report('   temperature 2 %d \n\n', temp2);
     
