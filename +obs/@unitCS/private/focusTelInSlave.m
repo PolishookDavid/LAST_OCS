@@ -217,11 +217,14 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     Result.ResTable = ResTable;
     
     BacklashOffset = Args.BacklashOffset;
+
     % opening or creating the log file
     fileID = fopen('~/log/logfocusTel_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
     fprintf(fileID,'\nor JD '+string(celestial.time.julday));
-    fprintf(fileID,'\nBacklashOffset '+string(BacklashOffset));  
+    fprintf(fileID,'\nBacklashOffset '+string(BacklashOffset));
+    %Altitude = UnitObj.Mount.Alt
+    %fprintf(fileID,'\nAltitude '+string(Altitude));
     
     % search for global minimum    
     if Counter>=Args.MaxIter
@@ -268,34 +271,31 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 UnitObj.report('   best position %d\n', Result.BestPos)
                 UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
                 UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
-                
-                
-                % not yet tested at night
-                % always TemperatureSensors(1)? 2, returns -60
-                temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)')
-                temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)')
-                UnitObj.report('   temperature 1 %d \n', temp1);
-                UnitObj.report('   temperature 2 %d \n\n', temp2);
-        
+
                 Result.Status = 'Found.';
                 Success       = true;
 
         
         end
-        
-        fprintf(fileID,'\nStatus '+string(Result.Status));
-        if Success
-            fprintf(fileID,'\nTemperature 1 '+string(temp1));
-            fprintf(fileID,'\nTemperature 2 '+string(temp2));
-            fprintf(fileID,'\nbest position '+string(Result.BestPos));
-            fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
-            fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
-            fprintf(fileID,'\nsteps '+string(Counter));
-            fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
-            %fprintf(fileID,'\nprevious focuser pos. '+string(CurrentPos));
-        end
-           
     end
+    
+    temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)')
+    temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)')
+    UnitObj.report('   temperature 1 %d \n', temp1);
+    UnitObj.report('   temperature 2 %d \n\n', temp2);
+    
+    fprintf(fileID,'\nStatus '+string(Result.Status));
+    fprintf(fileID,'\nTemperature 1 '+string(temp1));
+    fprintf(fileID,'\nTemperature 2 '+string(temp2));
+    fprintf(fileID,'\nsteps '+string(Counter));
+    fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
+        
+    if Success
+        fprintf(fileID,'\nbest position '+string(Result.BestPos));
+        fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
+        fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
+    end
+           
     hold off
     
     % go back to previous imgtype
@@ -320,9 +320,26 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     fprintf(fileID,'\nactual new focuser position '+string(FocuserObj.Pos));
     fclose(fileID);
     
-    info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);
     
-    text(Result.BestPos, 20, info) 
+    % computer readable log containing only most recent result
+    log2 = fopen('~/log/logfocusTel2_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'.txt','w');
+    fprintf(log2,string(CameraObj.classCommand('CameraNumber'))+'\n');
+    fprintf(log2,string(celestial.time.julday)+'\n');            
+    fprintf(log2,string(temp1)+'\n');
+    fprintf(log2,string(temp2)+'\n');
+    if Success
+        fprintf(log2,'1\n');
+        fprintf(log2,string(Result.BestPos)+'\n');
+        fprintf(log2,string(Result.BestFWHM)+'\n');
+    else
+        fprintf(log2,'0\n');
+        fprintf(log2,'NaN\n');
+        fprintf(log2,'NaN\n');
+    end
+    fclose(log2);
+    
+    info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
+    text(Result.BestPos, 10, info) 
     saveas(gcf,'~/log/focus_plots/focusres_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
 
 end
