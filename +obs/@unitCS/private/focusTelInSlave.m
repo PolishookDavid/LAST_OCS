@@ -46,9 +46,11 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % don't move far away if focus already good
     if isempty(Args.SearchHalfRange)
         if (InitialFWHM<5) && isempty(Args.PosGuess)
-            Args.SearchHalfRange=200;
-        else
+            Args.SearchHalfRange=250;
+        elseif (InitialFWHM<10) && isempty(Args.PosGuess)
             Args.SearchHalfRange=500;
+        else
+            Args.SearchHalfRange=1000;
         end
     else
     end
@@ -57,6 +59,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         UnitObj.report('\n\nCurrent/Starting focus position: %d\n',CurrentPos);
         UnitObj.report('Focuser limits: %d %d\n',Limits);
         UnitObj.report('Initial Focus %d\n',InitialFWHM);
+        UnitObj.report('BacklashOffset %d\n',Args.BacklashOffset);
         UnitObj.report('SearchHalfRange set to %d\n\n', Args.SearchHalfRange);
     end
     
@@ -88,7 +91,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     end
     
     % move to backlash position
-    BacklashPos = Args.PosGuess + Args.BacklashOffset;
+    BacklashPos = Args.PosGuess + MoveDir * Args.BacklashOffset;
         
     if BacklashPos>max(Limits)
         error('BacklashPos is above upper focuser limit');
@@ -98,7 +101,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     FocuserObj.Pos = BacklashPos;
     FocuserObj.waitFinish;
         
-    StartPos = Args.PosGuess + Args.SearchHalfRange;
+    StartPos = Args.PosGuess - MoveDir * Args.SearchHalfRange;
     % move to upper range: StartPos
     FocuserObj.Pos = StartPos;
     FocuserObj.waitFinish;
@@ -163,7 +166,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         end
         
         
-        Step   = MoveDir .* interp1(Args.FWHM_Step(:,1), Args.FWHM_Step(:,2), FWHM, 'nearest', 'extrap');
+        Step   = MoveDir * interp1(Args.FWHM_Step(:,1), Args.FWHM_Step(:,2), FWHM, 'nearest', 'extrap');
         FocPos = FocPos + Step;
         if Args.Verbose
             UnitObj.report('   Step=%d\n',Step);
@@ -179,8 +182,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 case 'rising'
                     % problem
                     if Args.Verbose
-                        UnitObj.report('	Rising');
-                        UnitObj.report('	Focus likely larger than %d', StartPos);
+                        UnitObj.report('	Rising\n');
+                        UnitObj.report('	Focus likely larger than %d\n', StartPos);
                     end
                     Cont = false;
         
@@ -212,11 +215,13 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % truncate not used pre allocated matrix
     ResTable = ResTable(1:Counter,:);
     Result.ResTable = ResTable;
-        
+    
+    BacklashOffset = Args.BacklashOffset;
     % opening or creating the log file
     fileID = fopen('~/log/logfocusTel_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
-    
+    fprintf(fileID,'\nor JD '+string(celestial.time.julday));
+    fprintf(fileID,'\nBacklashOffset '+string(BacklashOffset));  
     
     % search for global minimum    
     if Counter>=Args.MaxIter
@@ -247,8 +252,10 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         
                 % Estimate minimum FWHM
                 [Result.BestPos, Result.BestFWHM, adjrsquare] = fitParabola(Foc,FWHM);
+
                 
                 if adjrsquare<0.85 && length(Foc)>6
+                    fprintf(fileID,'\nBad fit. Removing two outliers.');
                     UnitObj.report('Bad fit. Trying to remove outliers.\n')
                     % % % outlier rejection might need some more testing % % %
                     [Result.BestPos, Result.BestFWHM, adjrsquare] = fitParabolaOutliers(Foc,FWHM,2,30)
@@ -267,8 +274,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 % always TemperatureSensors(1)? 2, returns -60
                 temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)')
                 temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)')
-                UnitObj.report('   temperature 1 %d \n', temp1)
-                UnitObj.report('   temperature 2 %d \n\n', temp2)
+                UnitObj.report('   temperature 1 %d \n', temp1);
+                UnitObj.report('   temperature 2 %d \n\n', temp2);
         
                 Result.Status = 'Found.';
                 Success       = true;
