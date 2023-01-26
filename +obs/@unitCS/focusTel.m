@@ -49,7 +49,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         
         Args.BacklashOffset      = +1000;  % sign of the backlash direction
         Args.SearchHalfRange     = []; % if empty will choose small range if FWHM already good and large one otherwise
-        Args.FWHM_Step           = [5 40; 20 60; 25 100]; % [FWHM, step size]
+        Args.FWHM_Step           = [5 40; 15 60; 20 100]; % [FWHM, step size]
         Args.PosGuess            = [];  % empty - use current position
         
         Args.ExpTime             = 3;

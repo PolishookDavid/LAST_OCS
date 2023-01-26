@@ -52,7 +52,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         elseif (InitialFWHM<10) && isempty(Args.PosGuess)
             Args.SearchHalfRange=500;
         else
-            Args.SearchHalfRange=1000;
+            Args.SearchHalfRange=750;
         end
     else
     end
