@@ -24,7 +24,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % disable automatic saving (won't work in callback)
     CurrentSaveImage=CameraObj.SaveOnDisk;
     CameraObj.SaveOnDisk=false;
-    % TODO restore it at the end
+    % restore it at the end
     
     % wait till camera is ready
     CameraObj.waitFinish;
