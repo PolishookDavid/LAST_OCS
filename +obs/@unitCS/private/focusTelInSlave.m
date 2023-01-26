@@ -324,13 +324,13 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     
     % computer readable log containing only most recent result
-    path = pipeline.last.constructCamDir(CameraObj.classCommand('CameraNumber'), 'SubDir', 'log')
+    path = pipeline.last.constructCamDir(CameraObj.classCommand('CameraNumber'), 'SubDir', 'log');
     if not(isfolder(path))
         mkdir(path);
     end
     %filename = sprintf('log_focusTel_LAST.001.%s.%02d.txt',MountNumberStr, CameraNumberStr)
     
-    filename = sprintf('log_focusTel_M'+MountNumberStr+'C'+CameraNumberStr+'.txt')
+    filename = sprintf('log_focusTel_M'+MountNumberStr+'C'+CameraNumberStr+'.txt');
     log2 = fopen(append(path,'/',filename),'w');
     fprintf(log2,CameraNumberStr+'\n');
     fprintf(log2,string(celestial.time.julday)+'\n');            
