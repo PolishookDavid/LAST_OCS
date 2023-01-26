@@ -9,6 +9,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
     
+    MountNumberStr = string(UnitObj.MountNumber);
+    CameraNumberStr = string(CameraObj.classCommand('CameraNumber'));
     
     %--- get Limits and current position of focuser
     Limits     = FocuserObj.Limits;
@@ -86,7 +88,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         grid on
         set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
         hold on;
-        title('Focuser '+string(CameraObj.classCommand('CameraNumber'))+' - '+datestr(now,'HH:MM:SS'));
+        title('Focuser '+CameraNumberStr+' - '+datestr(now,'HH:MM:SS'));
         drawnow
     end
     
@@ -219,7 +221,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     BacklashOffset = Args.BacklashOffset;
 
     % opening or creating the log file
-    fileID = fopen('~/log/logfocusTel_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
+    fileID = fopen('~/log/logfocusTel_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
     fprintf(fileID,'\nor JD '+string(celestial.time.julday));
     fprintf(fileID,'\nBacklashOffset '+string(BacklashOffset));
@@ -322,8 +324,15 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     
     % computer readable log containing only most recent result
-    log2 = fopen('~/log/logfocusTel2_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'.txt','w');
-    fprintf(log2,string(CameraObj.classCommand('CameraNumber'))+'\n');
+    path = pipeline.last.constructCamDir(CameraObj.classCommand('CameraNumber'), 'SubDir', 'log')
+    if not(isfolder(path))
+        mkdir(path);
+    end
+    %filename = sprintf('log_focusTel_LAST.001.%s.%02d.txt',MountNumberStr, CameraNumberStr)
+    
+    filename = sprintf('log_focusTel_M'+MountNumberStr+'C'+CameraNumberStr+'.txt')
+    log2 = fopen(append(path,'/',filename),'w');
+    fprintf(log2,CameraNumberStr+'\n');
     fprintf(log2,string(celestial.time.julday)+'\n');            
     fprintf(log2,string(temp1)+'\n');
     fprintf(log2,string(temp2)+'\n');
@@ -340,7 +349,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
     text(Result.BestPos, 10, info) 
-    saveas(gcf,'~/log/focus_plots/focusres_M'+string(UnitObj.MountNumber)+'C'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
+    saveas(gcf,'~/log/focus_plots/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
 
 end
 
