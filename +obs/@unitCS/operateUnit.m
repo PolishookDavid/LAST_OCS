@@ -36,7 +36,7 @@ Unit.connect
 % Check all systems (mount, cameras, focusers, computers, computer disk space) are operating and ready.
 RC = Unit.checkWholeUnit(0,1);
 TrialsInx = 1;
-while (~RC && Unit.MountlsInx < MaxConnectionTrials)
+while (~RC && TrialsInx < MaxConnectionTrials)
    % If failed, try to reconnect.
    TrialsInx = TrialsInx + 1;
    fprintf('If failed, try to shutdown and reconnect\n');
@@ -98,12 +98,15 @@ end
 if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
    fprintf('Taking flats\n')
    Unit.takeTwilightFlats
+else
+   fprintf('Sun to low, skipping twilight flats\n')
 end
 
 % Continue with the observation.
 
 % Send mount to meridian at dec 60 deg, to avoid moon.
 Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
+fprintf('Send mount to focus coordinates\n')
 
 % Check success:
 if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
