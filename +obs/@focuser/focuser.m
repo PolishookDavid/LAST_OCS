@@ -8,11 +8,7 @@ classdef focuser < obs.LAST_Handle
     properties (GetAccess=public, SetAccess=private)
         FocuserUniqueName = NaN;
     end
-  
-    properties (GetAccess=public, SetAccess=public, Description='api')
-        Connected logical = false;
-    end
-
+ 
     properties (Hidden=true)
         LogFile;
         PromptMirrorLock logical    = false;  % Prompt the user to check if mirror is locked
