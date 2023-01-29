@@ -56,6 +56,7 @@ end
 
 % Send mount to home.
 Unit.Mount.home
+fprintf('Mount moves to home position\n')
 % Wait for slewing to complete
 Timeout = 0;
 while(Unit.Mount.isSlewing && Timeout < SlewingTimeout)
@@ -78,6 +79,7 @@ if (Unit.Mount.TrackingSpeed(1) == 0)
    Unit.shutdown;
    return;
 end
+fprintf('Mount is tracking\n')
 
 % Read the Sun altitude.
 M = Unit.Mount;
@@ -104,8 +106,8 @@ end
 Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
 
 % Check success:
-if (round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
-    round(Unit.Mount.HA,0)  > FocusHA-1  && round(Unit.Mount.HA,0)  < FocusHA+1)
+if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
+    round(Unit.Mount.HA,0)  > FocusHA-1  && round(Unit.Mount.HA,0)  < FocusHA+1))
    fprintf('Mount failed to reach requested coordinates - abort (cable streaching issue?)\n');
    Unit.shutdown;
    return;
