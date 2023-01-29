@@ -36,7 +36,7 @@ Unit.connect
 % Check all systems (mount, cameras, focusers, computers, computer disk space) are operating and ready.
 RC = Unit.checkWholeUnit(0,1);
 TrialsInx = 1;
-while (~RC && TrialsInx < MaxConnectionTrials)
+while (~RC && Unit.MountlsInx < MaxConnectionTrials)
    % If failed, try to reconnect.
    TrialsInx = TrialsInx + 1;
    fprintf('If failed, try to shutdown and reconnect\n');
@@ -80,7 +80,7 @@ if (Unit.Mount.TrackingSpeed(1) == 0)
 end
 
 % Read the Sun altitude.
-M = UnitObj.Mount;
+M = Unit.Mount;
 Lon = M.classCommand('MountPos(2)');
 Lat = M.classCommand('MountPos(1)');
 Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
