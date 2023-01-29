@@ -32,7 +32,7 @@ SlewingTimeout                  = 60;    % sec
 Unit.connect
 
 % No need to wait
-B=timeseries.binning(
+
 % Check all systems (mount, cameras, focusers, computers, computer disk space) are operating and ready.
 RC = Unit.checkWholeUnit(0,1);
 TrialsInx = 1;
