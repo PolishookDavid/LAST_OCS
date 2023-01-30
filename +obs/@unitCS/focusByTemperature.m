@@ -52,20 +52,20 @@ function [RC]=focusByTemp(UnitObj, itel, Args)
     CurrentPos = FocuserObj.Pos;
     
     if FocusLog(Col.Success)==0
-        error('Focus loop did not succeed.');
+        UnitObj.report('   Focus loop did not succeed.\n\n');
     elseif (NewPos>Limits(2))
-        error('New positions is above upper focuser limit.');
+        UnitObj.report('   New position is above upper focuser limit.\n\n');
     elseif (abs(CurrentPos-NewPos)<Args.MovementThreshold)
-        UnitObj.report('   Focuser is already near default position %i \n', CurrentPos);
+        UnitObj.report('   Focuser is already near default position %i \n\n', CurrentPos);
         
     else
-        UnitObj.report('   will move focuser to %i \n', NewPos);
+        UnitObj.report('   will move focuser to %i \n\n', NewPos);
 
         % direction has to be the same as in focusTel
         BacklashPos = CurrentPos - FocusLog(Col.BackLashOffset);
         
         if BacklashPos>max(Limits)
-            error('BacklashPos is above upper focuser limit');
+            UnitObj.report('   BacklashPos is above upper focuser limit.\n\n');
         end
             % move to: BacklashPos
             FocuserObj.Pos = BacklashPos;
