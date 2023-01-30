@@ -1,4 +1,4 @@
-function [RC]=checkFocusTelSuccess(Unit,CameraInx,FocusLoopTimeout)
+function [RC]=checkFocusTelSuccess(Unit,CameraInx,FocusTelStartTime,FocusLoopTimeout)
 % Examine the results of focusTel per camera
 %
 % CameraInx - the index of the camera to examine [1, 2, 3 or 4]
@@ -10,6 +10,7 @@ function [RC]=checkFocusTelSuccess(Unit,CameraInx,FocusLoopTimeout)
 arguments
     Unit
     CameraInx
+    FocusTelStartTime
     FocusLoopTimeout
 end
 
@@ -21,6 +22,7 @@ Col.temp2 = 4;
 Col.Success = 5;
 Col.BestPos = 6;
 BestFWHM = 7;
+Col.BackLashOffset = 8;
 
 RC = 0;
 Timeout = 0;
@@ -38,7 +40,7 @@ else
    Timeout = 0;
    FocusLog = load(FocusLogDirFileName);
    % Wait 10 seconds as long as the log was written before the focusloop start run time (i.e. it's an old log)
-   while (FocusloopStartTime > FocusLog(Col.JD) && Timeout < FocusLoopTimeout)
+   while (FocusTelStartTime > FocusLog(Col.JD) && Timeout < FocusLoopTimeout)
       pause(10);
       Timeout = Timeout + 10;
       FocusLog = load(FocusLogDirFileName);

@@ -40,10 +40,10 @@ while (~RC && TrialsInx < MaxConnectionTrials)
    % If failed, try to reconnect.
    TrialsInx = TrialsInx + 1;
    fprintf('If failed, try to shutdown and reconnect\n');
-   % Shutdown
-   Unit.shutdown
-   % connect
-   Unit.connect
+%    % Shutdown
+%    Unit.shutdown
+%    % connect
+%    Unit.connect
    RC = Unit.checkWholeUnit(0,1);
 end
 
@@ -127,7 +127,7 @@ while (Sun.Alt*RAD > MaxSunAltForFocus)
    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 end
 % Make a focus run
-FocusloopStartTime = celestial.time.julday;
+FocusTelStartTime = celestial.time.julday;
 Unit.focusTel;
 
 % Wait for 1 minute before start checking if the focus run concluded
@@ -136,7 +136,7 @@ pause(60)
 % Check the focusTel success
 CamerasToUse = zeros(1,4);
 for CameraInx=1:1:4
-   CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusLoopTimeout);
+   CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusTelStartTime, FocusLoopTimeout);
 end
 if(~prod(CamerasToUse))
       % Report the focus status

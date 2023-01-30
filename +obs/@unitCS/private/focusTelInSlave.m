@@ -345,6 +345,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         fprintf(log2,'NaN\n');
         fprintf(log2,'NaN\n');
     end
+    fprintf(log2,string(BacklashOffset));
     fclose(log2);
     
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
