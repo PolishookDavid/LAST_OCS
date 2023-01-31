@@ -64,7 +64,9 @@ classdef mount < obs.LAST_Handle
         
     % constructor and destructor
     methods
-        function MountObj=mount(id)
+        function MountObj=mount(Locator)
+            % Now REQUIRES locator. Think at implications
+            id = Locator.Location;
             % mount class constructor
             % Package: +obs/@mount
             % Input  : .Id to set,
