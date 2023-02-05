@@ -53,4 +53,4 @@ data = fits.readImg(fptr);
 fits.closeFile(fptr);
 
 % also this should be 0 if all was ok
-numel(find(result-im))
+numel(find(data-im))
