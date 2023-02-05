@@ -46,3 +46,11 @@ result=FITS.read1('gradsquare.fits');
 
 % this should be 0 if all was ok
 numel(find(result-im))
+
+import matlab.io.*
+fptr = fits.openFile('gradsquare.fits');
+data = fits.readImg(fptr);
+fits.closeFile(fptr);
+
+% also this should be 0 if all was ok
+numel(find(result-im))
