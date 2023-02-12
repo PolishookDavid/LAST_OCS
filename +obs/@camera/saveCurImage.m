@@ -27,18 +27,20 @@ function saveCurImage(CameraObj,Path)
 %         Path=DefaultPath;
 %     end
 
+    FileName = constructFilename(CameraObj);
+
     % create the header locally, even from remote objects, because
     %  round-trip queries fail
     HeaderCell=CameraObj.imageHeader;
+    CameraObj.LastImageName = fullfile(Path,FileName);
     CameraObj.report('Writing image %s to disk\n',...
                               CameraObj.LastImageName);
 
     PWD = pwd;
     try
         tools.os.cdmkdir(Path);  % cd and on the fly mkdir
-        FITS.write(single(CameraObj.LastImage), CameraObj.LastImageName,...
-            'Header',HeaderCell,'DataType','single','Overwrite',true);      
-        CameraObj.LastImageName = fullfile(Path,FileName);
+        FITS.writeSimpleFITS(CameraObj.LastImage, FullPath,...
+                                     'Header',HeaderCell);
         CameraObj.LastImageSaved = true;
     catch
         CameraObj.reportError('saving image in %s failed',Path)
