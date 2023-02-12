@@ -23,9 +23,9 @@ function saveCurImage(CameraObj,Path)
     
 % DefaultPath not constructed here like it is in unitCS.saveCurImage.
 %  Let it error if Path is not provided
-%     if ~exist('Path','var')
-%         Path=DefaultPath;
-%     end
+     if ~exist('Path','var')
+         error('Path must be provided')
+     end
 
     FileName = constructFilename(CameraObj);
 
@@ -39,7 +39,7 @@ function saveCurImage(CameraObj,Path)
     PWD = pwd;
     try
         tools.os.cdmkdir(Path);  % cd and on the fly mkdir
-        FITS.writeSimpleFITS(CameraObj.LastImage, FullPath,...
+        FITS.writeSimpleFITS(CameraObj.LastImage, Filename,...
                                      'Header',HeaderCell);
         CameraObj.LastImageSaved = true;
     catch
