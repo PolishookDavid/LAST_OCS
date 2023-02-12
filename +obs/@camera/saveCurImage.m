@@ -39,7 +39,7 @@ function saveCurImage(CameraObj,Path)
     PWD = pwd;
     try
         tools.os.cdmkdir(Path);  % cd and on the fly mkdir
-        FITS.writeSimpleFITS(CameraObj.LastImage, Filename,...
+        FITS.writeSimpleFITS(CameraObj.LastImage, FileName,...
                                      'Header',HeaderCell);
         CameraObj.LastImageSaved = true;
     catch
