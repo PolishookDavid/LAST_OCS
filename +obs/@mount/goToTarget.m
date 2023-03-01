@@ -33,6 +33,8 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
     %                           [DistHA,DistDec]=@Fun(HA,Dec), where all the
     %                           input and output are in degrees.
     %                           Default is empty. If not given return [0,0].
+    %            'SkipDist'   - A logical indicating if to skip distortion
+    %                           correction. Default is false.
     %            'InputUnits' - Default is 'deg'.
     %            'OutputUnits'- Default is 'deg'
     %            'Temp'       - Default is 15 C.
