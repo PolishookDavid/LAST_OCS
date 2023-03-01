@@ -106,7 +106,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     addOptional(InPar,'FocusTempGrad',0);  
     addOptional(InPar,'BacklashFocus',200);  
     addOptional(InPar,'ExpTime',5);  
-    addOptional(InPar,'NimExp',1);  
+    addOptional(InPar,'NimExp',1);
+    addOptional(InPar,'CropSize',[]);
     addOptional(InPar,'ImageHalfSize',1000);  % If [] use full image
     addOptional(InPar,'SeveralPositions',DefSeveralPositions);  % If [] use full image
     addOptional(InPar,'SigmaVec',[0.1, logspace(0,1,25)].');

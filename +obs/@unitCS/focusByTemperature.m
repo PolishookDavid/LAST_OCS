@@ -1,10 +1,9 @@
-function [RC]=focusByTemp(UnitObj, itel, Args)
+function [RC]=focusByTemperature(UnitObj, itel, Args)
 % adjust focus if temperature has changed significantly
 %
 % Written by Nora, Jan 2023
-% in slave window: P.focusByTel(1)
-% in Master: for i=[1,2] P.Slave{i}.Messenger.send(['P.focusByTemperature(' num2str(i) ')'])
-% end
+% in slave window: P.focusByTemperature(1)
+% in Master: for i=[1,2,3,4], P.Slave{i}.Messenger.send(['P.focusByTemperature(' num2str(i) ')']); end
 
 
     arguments
@@ -45,7 +44,7 @@ function [RC]=focusByTemp(UnitObj, itel, Args)
     UnitObj.report('   temperature increased by %.1f degrees \n', DeltaTemp);
     
     NewPos = FocusLog(Col.BestPos) + DeltaTemp * Args.TicksPerDeg;
-    UnitObj.report('   best focus should be at %i \n', NewPos);
+    UnitObj.report('   best focus should be at %f \n', NewPos);
 
     Limits     = FocuserObj.Limits;
 
@@ -56,7 +55,7 @@ function [RC]=focusByTemp(UnitObj, itel, Args)
     elseif (NewPos>Limits(2))
         UnitObj.report('   New position is above upper focuser limit.\n\n');
     elseif (abs(CurrentPos-NewPos)<Args.MovementThreshold)
-        UnitObj.report('   Focuser is already near default position %i \n\n', CurrentPos);
+        UnitObj.report('   No change required - focuser is already near default position %d \n\n', CurrentPos);
         
     else
         UnitObj.report('   will move focuser to %i \n\n', NewPos);

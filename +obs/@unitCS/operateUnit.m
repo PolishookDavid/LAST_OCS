@@ -1,8 +1,9 @@
-function operateUnit(Unit)
+function operateUnit(Unit, ToFocus)
 % Operate a single mount during a single night.
 % Operate the cameras and focusers.
 % Operating following a single ‘start’ command.
 % Automatically calibrate the system (focus, pointing, flat, etc.)
+% Do not focus if ToFocus = false;
 % Observe different fields of view with different observing parameters according to a given input.
 % Stop observations due to defined stopping criteria.
 % Automatically solve basic problems.
@@ -12,6 +13,7 @@ function operateUnit(Unit)
 
 arguments
     Unit
+    ToFocus = true;
 end
 
 RAD = 180./pi;
@@ -28,8 +30,16 @@ PauseTimeForTargetsAvailability = 5.*60; % sec
 SlewingTimeout                  = 60;    % sec
 
 
-% Connect the mount.
-Unit.connect
+% Connect the mount if not already connected.
+RC1=Unit.Camera{1}.classCommand('CamStatus');
+RC2=Unit.Camera{2}.classCommand('CamStatus');
+RC3=Unit.Camera{3}.classCommand('CamStatus');
+RC4=Unit.Camera{4}.classCommand('CamStatus');
+if(isempty(RC1) && isempty(RC2) && isempty(RC3) && isempty(RC4))
+   Unit.connect
+else
+   fprintf('Observing Unit is already connected\n')
+end
 
 % No need to wait
 
@@ -40,10 +50,10 @@ while (~RC && TrialsInx < MaxConnectionTrials)
    % If failed, try to reconnect.
    TrialsInx = TrialsInx + 1;
    fprintf('If failed, try to shutdown and reconnect\n');
-%    % Shutdown
-%    Unit.shutdown
-%    % connect
-%    Unit.connect
+   % Shutdown
+   Unit.shutdown
+   % connect
+   Unit.connect
    RC = Unit.checkWholeUnit(0,1);
 end
 
@@ -54,21 +64,25 @@ if (~RC)
    return;
 end
 
-% Send mount to home.
-Unit.Mount.home
-fprintf('Mount moves to home position\n')
-% Wait for slewing to complete
-Timeout = 0;
-while(Unit.Mount.isSlewing && Timeout < SlewingTimeout)
-   pause(1);
-   Timeout = Timeout + 1;
-end
+fprintf('~~~~~~~~~~~~~~~~~~~~~\n\n')
 
-% Check home success:
-if (round(Unit.Mount.Alt,0) ~= 60 || round(Unit.Mount.Az,0) ~= 180)
-   fprintf('Mount failed to reach home - abort (cable streaching issue?)\n');
-   Unit.shutdown;
-   return;
+% Send mount to home if at Park Position.
+if (strcmp(Unit.Mount.Status,'disabled'))
+   Unit.Mount.home
+   fprintf('Mount moves to home position\n')
+   % Wait for slewing to complete
+   Timeout = 0;
+   while(Unit.Mount.isSlewing && Timeout < SlewingTimeout)
+      pause(1);
+      Timeout = Timeout + 1;
+   end
+   
+   % Check home success:
+   if (round(Unit.Mount.Alt,0) ~= 60 || round(Unit.Mount.Az,0) ~= 180)
+      fprintf('Mount failed to reach home - abort (cable streaching issue?)\n');
+      Unit.shutdown;
+      return;
+   end
 end
 
 % Track on.
@@ -104,64 +118,111 @@ end
 
 % Continue with the observation.
 
-% Send mount to meridian at dec 60 deg, to avoid moon.
-Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
-fprintf('Send mount to focus coordinates\n')
-
-% Check success:
-if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
-    round(Unit.Mount.HA,0)  > FocusHA-1  && round(Unit.Mount.HA,0)  < FocusHA+1))
-   fprintf('Mount failed to reach requested coordinates - abort (cable streaching issue?)\n');
-   Unit.shutdown;
-   return;
-end
-
-
 % Run focus loop
-% Check Sun altitude to know when to start focus loop
-Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
-while (Sun.Alt*RAD > MaxSunAltForFocus)
-   fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
-   % Wait for 30 seconds
-   pause(30);
+if (ToFocus)
+   % Check Sun altitude to know when to start focus loop
    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
-end
-% Make a focus run
-FocusTelStartTime = celestial.time.julday;
-Unit.focusTel;
-
-% Wait for 1 minute before start checking if the focus run concluded
-pause(60)
-
-% Check the focusTel success
-CamerasToUse = zeros(1,4);
-for CameraInx=1:1:4
-   CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusTelStartTime, FocusLoopTimeout);
-end
-if(~prod(CamerasToUse))
-      % Report the focus status
-   fprintf('Focuser1 %d, Focuser2 %d, Focuser3 %d, Focuser4 %d\n', CamerasToUse)
+   while (Sun.Alt*RAD > MaxSunAltForFocus)
+      fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
+      % Wait for 30 seconds
+      pause(30);
+      Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
+   end
+    
+   % Send mount to meridian at dec 60 deg, to avoid moon.
+   Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
+   fprintf('Send mount to focus coordinates\n')
+    
+    % Check success:
+   if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
+         round(Unit.Mount.HA,0)  > FocusHA-1  && round(Unit.Mount.HA,0)  < FocusHA+1))
+      fprintf('Mount failed to reach requested coordinates - abort (cable streaching issue?)\n');
+      Unit.shutdown;
+      return;
+   end
+    
+   % Make a focus run
+   FocusTelStartTime = celestial.time.julday;
+   Unit.focusTel;
+    
+   % Wait for 1 minute before start checking if the focus run concluded
+   pause(60)
+    
+   % Check the focusTel success
+   CamerasToUse = zeros(1,4);
+   for CameraInx=1:1:4
+       CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusTelStartTime, FocusLoopTimeout);
+   end
+   if(~prod(CamerasToUse))
+       % Report the focus status
+       fprintf('Focuser1 %d, Focuser2 %d, Focuser3 %d, Focuser4 %d\n', CamerasToUse)
+   else
+       fprintf('Focus succeeded for all 4 telescopes\n')
+   end
 else
-   fprintf('Focus succeeded for all 4 telescopes\n')
+   fprintf('Skip focus routine as requested\n')
 end
 
 
 
 % Reached here, 25/01/2023
-return %%%
+%return %%%
 
 
 % % Keep the last time of focusing separately for each telescope.
 % UnitCS.LastFocusTime(1:4) = celestial.time.julday;
 % UnitCS.LastFocusTemp(1:4) = XXX;
 % 
-% % Start loop as long as run criteria are true
-% TargetListLoop = true;
-% 
-% While(TargetListLoop)
-% 
-%    % Read targets.txt file
-%    % Analize target file: decide coordinate shift, camera parameters.
+% Start loop as long as run criteria are true
+TargetListLoop = true;
+TargetCounter = 0;
+
+while(TargetListLoop)
+   % Read targets.txt file
+   T = celestial.Targets;
+   % This line should be replaced with a proper T.readTargetList DP Mar 1, 2023
+   T.generateTargetList('last');
+   fprintf('Read target list\n')
+
+   % Analize target file: decide coordinate shift, camera parameters.
+
+   % This line should be replaced with T.calcPriority
+   Ind = find(T.RA > 70 & T.RA < 60 & T.Dec > 40 & T.Dec < 50);
+   if (isempty(Ind))
+      % If failed to read target file run F6.
+      fprintf('No visible targets - wait for 1 minute, or use ctrl+c to stop the method\n')
+      pause(60);
+   else
+      % Send mount to coordinates.
+      TargetCounter = TargetCounter + 1;
+      if (TargetCounter <= length(Ind))
+         RA = T.RA(Ind(TargetCounter));
+         Dec = T.Dec(Ind(TargetCounter));
+         % Send mount to coordinates.
+         fprintf('Slew to target %d: %s\n', TargetCounter, T.TargetName{Ind(TargetCounter)})
+         RC = Unit.Mount.goToTarget(RA,Dec);
+   
+         if (RC)
+            % Take exposures
+            CamerasToUse = [1,2,3,4]; % Temp
+            ExpTime = 20; % seconds  % Temp
+            ImNum = 2;               % Temp
+            fprintf('Taking exposure, ExpTime=%.2f x ImNum=%d\n', ExpTime, ImNum)
+            Unit.takeExposure(CamerasToUse, ExpTime, ImNum);
+            ReadoutTime = 3;
+            VisitPreparingTime = 20;
+   
+            % Pause for exposure
+            pause(VisitPreparingTime+(ExpTime + ReadoutTime)*ImNum);
+         end
+      else
+         fprintf('Target list was observed\n')
+         return
+      end
+   end
+
+      % Go to loop's start
+      
 %    RC = Unit.analyzeTargetList;
 %    if (~RC)
 %       % If failed to read target file run F6.
@@ -221,7 +282,7 @@ return %%%
 % 
 %       % Go to loop’s beginning.
 %    end
-% end
+end
 % 
 % % Save log
 % Unit.SubmitLogReport
