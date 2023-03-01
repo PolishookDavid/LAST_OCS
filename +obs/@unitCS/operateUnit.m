@@ -187,7 +187,7 @@ while(TargetListLoop)
    % Analize target file: decide coordinate shift, camera parameters.
 
    % This line should be replaced with T.calcPriority
-   Ind = find(T.RA > 70 & T.RA < 60 & T.Dec > 40 & T.Dec < 50);
+   Ind = find(T.RA < 70 & T.RA > 60 & T.Dec > 40 & T.Dec < 50);
    if (isempty(Ind))
       % If failed to read target file run F6.
       fprintf('No visible targets - wait for 1 minute, or use ctrl+c to stop the method\n')
