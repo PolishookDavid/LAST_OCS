@@ -107,7 +107,8 @@ while AttemptTakeFlat
         UnitObj.Mount.goToTarget(RA,Dec);
         
         % estimate mean count rate in images
-        MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun);
+        getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun, Args.LiveMode)
+        MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun, Args.LiveMode);
         
         % DEBUG
         %MeanValPerSec = 670  
@@ -234,7 +235,7 @@ end
 end
 
 
-function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
+function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun, LiveMode)
     % Take exposures with all cameras 
     % do not save images
     % calculate the median counts per second
@@ -248,7 +249,7 @@ function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
         UnitObj.Camera{icam}.classCommand('SaveOnDisk = false;');
     end
     
-    UnitObj.takeExposure(Itel, TestExpTime, 1, 'LiveSingleImage',Args.LiveMode);
+    UnitObj.takeExposure(Itel, TestExpTime, 1, 'LiveSingleImage',LiveMode);
     
     UnitObj.readyToExpose('Itel',Itel, 'Wait',true);
                     
