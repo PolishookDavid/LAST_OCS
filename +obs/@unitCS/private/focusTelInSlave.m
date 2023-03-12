@@ -349,7 +349,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     fclose(log2);
     
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
-    text(Result.BestPos, 10, info) 
+    text(Result.BestPos, 10, info)
     saveas(gcf,'~/log/focus_plots/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
 
 end
