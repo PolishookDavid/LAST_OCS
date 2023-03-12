@@ -35,6 +35,7 @@ classdef unitCS < obs.LAST_Handle
         LocalTelescopes % indices of the local telescopes
         RemoteTelescopes='{}'; % evaluates to a cell, indices of the telescopes assigned to each slave
         Slave cell; % handles to SpawnedMatlad sessions
+        Temperature double; % temperature reading from the IPswitch 1wire sensors
     end
     
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
@@ -184,6 +185,14 @@ classdef unitCS < obs.LAST_Handle
                 Result = 99;
             end
              
+        end
+        
+        function T=get.Temperature(UnitObj)
+            N=numel(UnitObj.PowerSwitch);
+            T=NaN(1,N);
+            for i=1:N
+                T(i)= UnitObj.PowerSwitch{i}.classCommand('Sensors.TemperatureSensors(1)');
+            end
         end
     end
 
