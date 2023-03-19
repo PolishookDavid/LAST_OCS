@@ -86,4 +86,39 @@ function [ok,remedy]=checkMount(U,full,remediate)
 
     if ok && full
         % nudge the mount, perhaps? really?
+        U.report('trying to change HA and Dec of 1°\n')
+        HA=U.Mount.HA;
+        Dec=U.Mount.Dec;
+        U.Mount.goTo(HA+1,Dec+1,'ha')
+        pause(5)
+        HAdiff=mod(U.Mount.HA-1-HA+180,360)-180;
+        Decdiff=mod(U.Mount.Dec-1-Dec+180,360)-180;
+        U.report('  deviations: HA %f", Dec %f"\n',HAdiff*3600,Decdiff*3600)
+        ok=abs(HAdiff)<0.01 & abs(Decdiff)<0.01 & strcmp(U.Mount.Status,'idle');
+        % what would be the remediation otherwise?
+        if ok
+            % revert the mount to original position and check again
+            U.report('moving back the mount to original position\n')
+            U.Mount.goTo(HA,Dec,'ha')
+            pause(5)
+            HAdiff=mod(U.Mount.HA-HA+180,360)-180;
+            Decdiff=mod(U.Mount.Dec-Dec+180,360)-180;
+            U.report('  deviations: HA %f", Dec %f"\n',HAdiff*3600,Decdiff*3600)
+            ok=abs(HAdiff)<0.01 & abs(Decdiff)<0.01 & strcmp(U.Mount.Status,'idle');
+            % what would be the remediation otherwise?
+            if ok
+                % set the mount in tracking
+                U.report('setting the mount in tracking mode\n')
+                U.Mount.track
+                pause(1)
+                ok=strcmp(U.Mount.Status,'tracking');
+                if ok
+                    U.report('  mount tracks succesfully\n')
+                else
+                    U.report('  mount tracking mode failed\n')
+                end
+                % revert to non-tracking
+                U.Mount.track(false);
+            end
+        end
     end
