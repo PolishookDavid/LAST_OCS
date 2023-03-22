@@ -314,6 +314,9 @@ function [Success, Result] = focusTel(CameraObj, FocuserObj, Args)
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);
     
     text(Result.BestPos, 20, info) 
+    %if ~isfolder('~/log/focus_plots')
+     %   mkdir('~/log/focus_plots');
+    %end
     saveas(gcf,'~/log/focus_plots/focusres_'+string(CameraObj.classCommand('CameraNumber'))+'_'+datestr(now,'HH:MM:SS')+'.png') 
 
 end
