@@ -26,11 +26,13 @@ function [RC]=focusByTemperature(UnitObj, itel, Args)
 
     FocuserObj = UnitObj.Focuser{itel};
     HostName = tools.os.get_computer;
-    FocusLogBaseFileName = ['log_focusTel_M',HostName(6),'C',int2str(itel),'.txt'];
+    FocusLogBaseFileName = ['log_focusTel_M',HostName(5:end-1),'C',int2str(itel),'.txt'];
     FocusLogDirFileName = [pipeline.last.constructCamDir(itel,'SubDir','log'),'/', FocusLogBaseFileName];
 
     if(~exist(FocusLogDirFileName, 'file'))
-        fprintf('Could not find focus log.\n')
+        fprintf('Could not find focus log with the name:\n')
+        fprintf(FocusLogDirFileName+'\n\n')
+        return
     else
         FocusLog = load(FocusLogDirFileName);
     end
