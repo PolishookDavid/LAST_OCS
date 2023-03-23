@@ -163,10 +163,19 @@ else
    fprintf('Skip focus routine as requested\n')
 end
 
-
-
 % Reached here, 7/03/2023
 return %%%
+
+
+T = celestial.Targets.createList('RA',[289.16 89.19 227.28 212.59].','Dec',[61.6,48.1,52.5,44.2].','MaxNobs',500);
+T.write('~/Desktop/latetime_SNe.mat');
+fprintf('Read target list\n')
+
+[~,~,Ind] = T.calcPriority(2451545.5,'fields_cont');
+
+%for I=1:1:length(T.RA)
+%
+
 
 
 % % Keep the last time of focusing separately for each telescope.
