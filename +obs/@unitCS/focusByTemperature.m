@@ -1,4 +1,4 @@
-function [RC]=focusByTemperature(UnitObj, itel, Args)
+function focusByTemperature(UnitObj, itel, Args)
 % adjust focus if temperature has changed significantly
 %
 % Written by Nora, Jan 2023
