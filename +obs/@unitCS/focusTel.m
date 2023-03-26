@@ -68,13 +68,6 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         %Args.PlotDir             = '/home/ocs/log/focus_plots'
     end
     
-    if ~isfolder(Args.LogDir)
-        mkdir(Args.LogDir);
-    end
-    if ~isfolder(Args.PlotDir)
-        mkdir(Args.PlotDir);
-    end
-    
     
     if isempty(itel)
        itel=1:numel(UnitObj.Camera);
