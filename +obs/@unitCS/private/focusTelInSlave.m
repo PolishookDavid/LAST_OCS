@@ -9,11 +9,15 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
     
-    if ~isfolder(Args.LogDir)
-        mkdir(Args.LogDir);
+    
+    LogDir              = '/home/ocs/log';
+    PlotDir             = '/home/ocs/log/focus_plots';
+
+    if ~isfolder(LogDir)
+        mkdir(LogDir);
     end
-    if ~isfolder(Args.PlotDir)
-        mkdir(Args.PlotDir);
+    if ~isfolder(PlotDir)
+        mkdir(PlotDir);
     end
     
     MountNumberStr = string(UnitObj.MountNumber);
@@ -228,7 +232,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     BacklashOffset = Args.BacklashOffset;
 
     % opening or creating the log file
-    FName = string(Args.LogDir)+'/logfocusTel_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYY-mm-DD')+'.txt';
+    FName = string(LogDir)+'/logfocusTel_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYY-mm-DD')+'.txt';
     fileID = fopen(FName,'a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
     fprintf(fileID,'\nor JD '+string(celestial.time.julday));
@@ -358,7 +362,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
     text(Result.BestPos, 10, info)
-    PlotName = string(Args.PlotDir)+'/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png';
+    PlotName = string(PlotDir)+'/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png';
     saveas(gcf,PlotName) 
 
 end

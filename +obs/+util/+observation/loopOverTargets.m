@@ -70,7 +70,8 @@ function loopOverTargets(Unit, Args)
 
                 Unit.Mount.goToTarget(RA(Itarget), Dec(Itarget));
                 for IFocuser=[1,2,3,4]
-                    Unit.Slave{IFocuser}.Messenger.send([Unit '.focusByTemperature(' num2str(IFocuser) ')']); 
+                    % TODO 'Unit' should not be hard coded
+                    Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']); 
                 end
                 Unit.Mount.waitFinish;
                 pause(2);
