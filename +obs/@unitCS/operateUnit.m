@@ -102,18 +102,19 @@ Lat = M.classCommand('MountPos(1)');
 Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 % Decide if to run takeTwilightFlats
 while (Sun.Alt*RAD > MaxSunAltForFlat)
-   fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
-   % Wait for 30 seconds
-   pause(30);
-   Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
+    fprintf(Sun.Alt)
+    fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
+    % Wait for 30 seconds
+    pause(30);
+    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 end
 
 % Take Flat Field.
 if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
-   fprintf('Taking flats\n')
-   Unit.takeTwilightFlats
+    fprintf('Taking flats\n')
+    Unit.takeTwilightFlats
 else
-   fprintf('Sun to low, skipping twilight flats\n')
+    fprintf('Sun too low, skipping twilight flats\n')
 end
 
 % Continue with the observation.
@@ -131,7 +132,7 @@ if (ToFocus)
     
    % Send mount to meridian at dec 60 deg, to avoid moon.
    Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
-   fprintf('Send mount to focus coordinates\n')
+   fprintf('Sent mount to focus coordinates\n')
     
     % Check success:
    if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...

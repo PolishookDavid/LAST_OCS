@@ -29,12 +29,7 @@ function loopOverTargets(Unit, Args)
     % columns of logfile
     if ~isfile(logFileName)
         logFile = fopen(logFileName,'a+');
-        fprintf(logFile,'datetime, '...
-            +'targetname, '...
-            +'RA, '...
-            +'Dec, '...
-            +'ExpTime, '...
-            +'NImages\n');
+        fprintf(logFile,'datetime, targetname, RA, Dec, ExpTime, NImages\n');
         fclose(logFile);
     end
 
@@ -75,7 +70,7 @@ function loopOverTargets(Unit, Args)
 
                 Unit.Mount.goToTarget(RA(Itarget), Dec(Itarget));
                 for IFocuser=[1,2,3,4]
-                    Unit.Slave{IFocuser}.Messenger.send(['P.focusByTemperature(' num2str(IFocuser) ')']); 
+                    Unit.Slave{IFocuser}.Messenger.send([Unit '.focusByTemperature(' num2str(IFocuser) ')']); 
                 end
                 Unit.Mount.waitFinish;
                 pause(2);
