@@ -13,7 +13,7 @@ function loopOverTargets(Unit, Args)
         Args.ExpTime  = 20;     % if empty - only move without exposing
         Args.Nimages = 20;
         Args.NLoops  = 1;     %
-        Args.CoordFileName  = '/home/ocs/target_coordinates.txt';
+        Args.CoordFileName  = '/home/ocs/target_coordinates_sne.txt';
         Args.MinAlt   = 30; % [deg]
         Args.ObsCoo   = [35.0407331, 30.0529838] % right order? [LONG, LAT]
     end
@@ -77,7 +77,8 @@ function loopOverTargets(Unit, Args)
                 pause(2);
             
                 fprintf('Actual pointing: RA=%f, Dec=%f\n',Unit.Mount.RA, Unit.Mount.Dec);
-            
+                fprintf('Altitude: %f\n', Unit.Mount.Alt);
+                
                 if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
                     fprintf('Cameras not ready after timeout - abort.\n\n')
                     break;
