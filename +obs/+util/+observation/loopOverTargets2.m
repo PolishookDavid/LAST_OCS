@@ -1,10 +1,10 @@
-function loopOverTargets(Unit, Args)
+function loopOverTargets2(Unit, Args)
     % Loop over list of targets and observe them
     % program checks by itself if targets are observable
     % Ra,Dec of targets are provided in file. Default is ~/target_coordinates.txt
     % The best way to interrupt the observations is creating the file ~/abort
     %
-    % Example: obs.util.observation.loopOverTargets2(Unit, 'ExpTime',5,'Nimages',1, 'NLoops',1)
+    % Example: obs.util.observation.loopOverTargets2(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates.txt')
     %
     % written by Nora Nov. 2022, based on pointing model script
    
@@ -12,7 +12,7 @@ function loopOverTargets(Unit, Args)
         Unit        
         %Args.ExpTime  = 20;     % default values given by
         %celestial.Targets.createList
-        %Args.Nimages = 20;
+        Args.Nimages = 20;
         Args.NLoops  = 1;     %
         Args.CoordFileName  = '/home/ocs/target_coordinates.txt';
         Args.MinAlt   = 30; % [deg]
@@ -26,7 +26,7 @@ function loopOverTargets(Unit, Args)
     MountNumberStr = string(Unit.MountNumber);
 
     % TODO: pass log dir as an argument and create dir if not present
-    logFileName = '~/log/log_loopOverTargets_M'+MountNumberStr+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+';
+    logFileName = '~/log/log_loopOverTargets_M'+MountNumberStr+'_'+datestr(now,'YYYY-mm-DD')+'.txt';
                     
     % columns of logfile
     if ~isfile(logFileName)
@@ -51,7 +51,10 @@ function loopOverTargets(Unit, Args)
             Dec(Itarget) = DecTemp;
         end
     end
-    T=celestial.Targets.createList('RA',RA,'Dec',Dec,'TargetName',name)
+    T=celestial.Targets.createList('RA',RA,'Dec',Dec,'TargetName',name);
+    T.Data.NperVisit = ones(Ntargets,1)*Args.Nimages;
+    fprintf('Number of images per visit: %i\n', Args.Nimages);
+
    
     Nloops = Args.NLoops;
     fprintf('%i fields in target list.\n\n',Ntargets)
@@ -63,9 +66,9 @@ function loopOverTargets(Unit, Args)
         % get observations for all targets
         for Itarget=1:1:Ntargets
             
-            if exist('~/abort','file')>0
-                delete('~/abort');
-                error('user abort file found');
+            if exist('~/abort_obs','file')>0
+                delete('~/abort_obs');
+                error('user abort_obs file found');
             end
             
             % check if the target is observable
@@ -89,7 +92,8 @@ function loopOverTargets(Unit, Args)
                 pause(2);
             
                 fprintf('Actual pointing: RA=%f, Dec=%f\n',Unit.Mount.RA, Unit.Mount.Dec);
-            
+                fprintf('Altitude: %f\n', Unit.Mount.Alt);
+
                 if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
                     fprintf('Cameras not ready after timeout - abort.\n\n')
                     break;
