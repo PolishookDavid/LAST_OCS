@@ -37,11 +37,22 @@ function loopOverTargets(Unit, Args)
 
 
     % reading target coordinates from file with format name,ra,dec
-    [name, RA, Dec] = textread(Args.CoordFileName, '%s %f %f', 'delimiter',',');
-    T=celestial.Targets.createList('RA',RA,'Dec',Dec,'TargetName',name);
+    [name, RAStr, DecStr] = textread(Args.CoordFileName, '%s %s %s', 'delimiter',',');
     
-    Ntargets = length(T.RA);
-    
+    Ntargets = length(RAStr);
+    RA = zeros(Ntargets, 1);
+    Dec = zeros(Ntargets, 1);
+    for Itarget=1:1:Ntargets,
+        RA(Itarget) = str2double(RAStr{Itarget});
+        Dec(Itarget) = str2double(DecStr{Itarget});
+        if isnan(RA(Itarget))
+            [RATemp, DecTemp, ~]=celestial.coo.convert2equatorial(RAStr{Itarget},DecStr{Itarget});
+            RA(Itarget) = RATemp;
+            Dec(Itarget) = DecTemp;
+        end
+    end
+    T=celestial.Targets.createList('RA',RA,'Dec',Dec,'TargetName',name)
+   
     Nloops = Args.NLoops;
     fprintf('%i fields in target list.\n\n',Ntargets)
     
