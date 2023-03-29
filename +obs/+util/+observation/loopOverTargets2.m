@@ -4,7 +4,7 @@ function loopOverTargets(Unit, Args)
     % Ra,Dec of targets are provided in file. Default is ~/target_coordinates.txt
     % The best way to interrupt the observations is creating the file ~/abort
     %
-    % Example: obs.util.observation.loopOverTargets(P, 'ExpTime',5,'Nimages',1, 'NLoops',1)
+    % Example: obs.util.observation.loopOverTargets2(Unit, 'ExpTime',5,'Nimages',1, 'NLoops',1)
     %
     % written by Nora Nov. 2022, based on pointing model script
    
@@ -16,7 +16,8 @@ function loopOverTargets(Unit, Args)
         Args.NLoops  = 1;     %
         Args.CoordFileName  = '/home/ocs/target_coordinates.txt';
         Args.MinAlt   = 30; % [deg]
-        Args.ObsCoo   = [35.0407331, 30.0529838] % right order? [LONG, LAT]
+        Args.ObsCoo   = [35.0407331, 30.0529838]; % [LONG, LAT]
+        %Args.DeltaJD  = 0 % fraction of the day added to JD to trick mount into thinking it's night
     end
     
     RAD = 180./pi;
@@ -57,8 +58,8 @@ function loopOverTargets(Unit, Args)
             end
             
             % check if the target is observable
-            JD = celestial.time.julday;
-            [FlagAll, Flag] = isVisible(T);
+            JD = celestial.time.julday; % + Args.DeltaJD;
+            [FlagAll, Flag] = isVisible(T, JD);
                     
             if ~FlagAll(Itarget)
                 fprintf('Field %d is not observable.\n\n',Itarget)

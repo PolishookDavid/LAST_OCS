@@ -15,7 +15,7 @@ function loopOverTargets(Unit, Args)
         Args.NLoops  = 1;     %
         Args.CoordFileName  = '/home/ocs/target_coordinates_sne.txt';
         Args.MinAlt   = 30; % [deg]
-        Args.ObsCoo   = [35.0407331, 30.0529838] % right order? [LONG, LAT]
+        Args.ObsCoo   = [35.0407331, 30.0529838] % [LONG, LAT]
     end
     
     RAD = 180./pi;

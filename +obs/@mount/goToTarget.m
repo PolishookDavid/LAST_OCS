@@ -43,7 +43,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
     % Output : - Flag 0 if illegal input coordinates, 1 if ok.
     %          - Apparent R.A.
     %          - Apparent Dec.
-    %          - A structure containing the intermidiate values.
+    %          - A structure containing the intermediate values.
     % License: GNU general public license version 3
     %     By : Eran Ofek                    Feb 2020
     % Example: [DistRA,DistDec,Aux]=mount.goToTarget(10,50)
