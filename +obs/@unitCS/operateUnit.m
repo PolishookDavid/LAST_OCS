@@ -102,7 +102,7 @@ Lat = M.classCommand('MountPos(1)');
 Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 % Decide if to run takeTwilightFlats
 while (Sun.Alt*RAD > MaxSunAltForFlat)
-    fprintf(Sun.Alt)
+    %fprintf(Sun.Alt)
     fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
     % Wait for 30 seconds
     pause(30);
