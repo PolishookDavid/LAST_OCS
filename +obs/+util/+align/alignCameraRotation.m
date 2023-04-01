@@ -173,9 +173,11 @@ function [Summary,CAI] = alignCameraRotation(UnitCS, Args)
     Summary.OffsetDist = Summary.OffsetDist.*RAD;
     Summary.OffsetPA   = Summary.OffsetPA  .*RAD;
     
-    Summary.LongDiff   = [Summary.OffsetLong(1)-Summary.OffsetLong(3); ...
-                          Summary.OffsetLong(2)-Summary.OffsetLong(4)];
-    Summary.LatDiff    = [Summary.OffsetLat(1)-Summary.OffsetLat(2);...
-                          Summary.OffsetLat(4)-Summary.OffsetLat(3)];
+    if length(Args.Cameras) == 4
+        Summary.LongDiff   = [Summary.OffsetLong(1)-Summary.OffsetLong(3); ...
+                              Summary.OffsetLong(2)-Summary.OffsetLong(4)];
+        Summary.LatDiff    = [Summary.OffsetLat(1)-Summary.OffsetLat(2);...
+                              Summary.OffsetLat(4)-Summary.OffsetLat(3)];
+    end
     
 end
