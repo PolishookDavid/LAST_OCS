@@ -59,8 +59,20 @@ function loopOverTargets2(Unit, Args)
     Nloops = Args.NLoops;
     fprintf('%i fields in target list.\n\n',Ntargets)
     
+    
+    
     for Iloop=1:1:Nloops
+        
+        JD = celestial.time.julday; % + Args.DeltaJD;
+        [FlagAll, Flag] = isVisible(T, JD);
+        fprintf('%i targets are observable.\n', sum(FlagAll))
 
+        while sum(FlagAll)==0
+            pause(300)
+            JD = celestial.time.julday; % + Args.DeltaJD;
+            [FlagAll, Flag] = isVisible(T, JD);
+            fprintf('%i targets are observable. Waiting 5min.\n', sum(FlagAll))
+        end
         fprintf('Starting loop %i out of %i.\n\n',Iloop,Nloops)
 
         % get observations for all targets
