@@ -18,24 +18,37 @@ function loopOverTargets(Unit, Args)
         Unit        
         %Args.ExpTime  = 20;     % default values given by
         %celestial.Targets.createList
-        Args.NperVisit = 20;
-        Args.NLoops  = 1;     %
+        Args.NperVisit      = 20;
+        Args.NLoops         = 1;     %
         Args.CoordFileName  = '/home/ocs/target_coordinates.txt';
-        Args.MinAlt   = 30; % [deg]
-        Args.ObsCoo   = [35.0407331, 30.0529838]; % [LONG, LAT]
+        Args.MinAlt         = 30; % [deg]
+        Args.ObsCoo         = [35.0407331, 30.0529838]; % [LONG, LAT]
+        Args.Simulate       = false;
+        Args.SimJD          = 2460049.205;
         %Args.DeltaJD  = 0 % fraction of the day added to JD to trick mount into thinking it's night
     end
     
     RAD = 180./pi;
+    sec2day = 1./3600/24;
     
     Timeout=60;
     MountNumberStr = string(Unit.MountNumber);
     dt = datetime('now')-hours(6); % ensure that entire night is in same logfile
     datestring = datestr(dt, 'YYYY-mm-DD');
 
+    if Args.Simulate,
+        fprintf("\nSimulating observations! Won't move mount or take images.\n\n")
+    end
+    
+    
     % TODO: pass log dir as an argument and create dir if not present
-    logFileName = '~/log/log_loopOverTargets_M'+MountNumberStr+'_'+datestring+'.txt';
-                    
+    if Args.Simulate,
+        logFileName = '~/log/sim_log_loopOverTargets_M'+MountNumberStr+'_'+datestring+'.txt';
+    else
+        logFileName = '~/log/log_loopOverTargets_M'+MountNumberStr+'_'+datestring+'.txt';
+    end
+
+        
     % columns of logfile
     if ~isfile(logFileName)
         logFile = fopen(logFileName,'a+');
@@ -46,6 +59,7 @@ function loopOverTargets(Unit, Args)
 
     % reading target coordinates from file with format name,ra,dec
     [name, RAStr, DecStr] = textread(Args.CoordFileName, '%s %s %s', 'delimiter',',');
+    
     
     Ntargets = length(RAStr);
     RA = zeros(Ntargets, 1);
@@ -67,23 +81,43 @@ function loopOverTargets(Unit, Args)
     Nloops = Args.NLoops;
     fprintf('%i fields in target list.\n\n',Ntargets)
     
-    
-    
+    if Args.Simulate,
+        JD = Args.SimJD;
+        simdatetime = celestial.time.get_atime(JD,35./180*pi).ISO;
+        fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
+    end
+        
+        
     for Iloop=1:1:Nloops
         
-        JD = celestial.time.julday; % + Args.DeltaJD;
-        [FlagAll, Flag] = isVisible(T, JD);
-        fprintf('%i targets are observable.\n', sum(FlagAll))
-
-        while sum(FlagAll)==0
-            pause(120)
-            JD = celestial.time.julday; % + Args.DeltaJD;
-            [FlagAll, Flag] = isVisible(T, JD);
-            fprintf('%i targets are observable. Waiting 2 minutes.\n', sum(FlagAll))
+        if ~Args.Simulate,
+            JD = celestial.time.julday;
         end
         
-        fprintf('Starting loop %i out of %i.\n\n',Iloop,Nloops)
+        [FlagAll, Flag] = isVisible(T, JD);
+        fprintf('%i targets are observable.\n\n', sum(FlagAll))
 
+        while sum(FlagAll)==0
+            
+            if Args.Simulate,
+                pause(1)
+                JD = JD + 120*sec2day;
+                simdatetime = celestial.time.get_atime(JD,35./180*pi).ISO;
+                fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
+            else
+                fprintf('Waiting 2 minutes.\n')
+                pause(120)
+                JD = celestial.time.julday; % + Args.DeltaJD;
+            end
+            
+            [FlagAll, Flag] = isVisible(T, JD);
+            fprintf('%i targets are observable.\n\n', sum(FlagAll))
+        end
+        
+        fprintf('------------------------------------\n')
+        fprintf('Starting loop %i out of %i.\n',Iloop,Nloops)
+        fprintf('------------------------------------\n\n')
+        
         % get observations for all targets
         for Itarget=1:1:Ntargets
             
@@ -95,23 +129,29 @@ function loopOverTargets(Unit, Args)
             if exist('~/abort_and_shutdown','file')>0
                 delete('~/abort_and_shutdown');
                 Unit.shutdown
-                pause(60)
+                pause(30)
                 error('user abort_and_shutdown file found');
             end
 
             
-            % check if the target is observable
-            JD = celestial.time.julday; % + Args.DeltaJD;
+            % check whether the target is observable
+            if ~Args.Simulate,
+                JD = celestial.time.julday;
+            end
+
             [FlagAll, Flag] = isVisible(T, JD);
                     
             if ~FlagAll(Itarget)
-                fprintf('Field %d is not observable.\n\n',Itarget)
-            else
+                fprintf('\nField %d is not observable.\n',Itarget)
+                continue;
+            end
                 
                 
-                fprintf('Observing field %d out of %d - Name=%s, RA=%.2f, Dec=%.2f\n',...
-                    Itarget,Ntargets,T.TargetName{Itarget},T.RA(Itarget), T.Dec(Itarget));
+            fprintf('\nObserving field %d out of %d - Name=%s, RA=%.2f, Dec=%.2f\n',...
+                Itarget,Ntargets,T.TargetName{Itarget},T.RA(Itarget), T.Dec(Itarget));
 
+            % slewing
+            if ~Args.Simulate,
                 Unit.Mount.goToTarget(T.RA(Itarget), T.Dec(Itarget));
                 for IFocuser=[1,2,3,4]
                     % TODO: 'Unit' should not be hard coded
@@ -119,26 +159,34 @@ function loopOverTargets(Unit, Args)
                 end
                 Unit.Mount.waitFinish;
                 pause(2);
-            
-                fprintf('Actual pointing: RA=%f, Dec=%f\n',Unit.Mount.RA, Unit.Mount.Dec);
-                fprintf('Altitude: %f\n', Unit.Mount.Alt);
-
                 if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
                     fprintf('Cameras not ready after timeout - abort.\n\n')
                     break;
-                end    
-
-                % logging
-                logFile = fopen(logFileName,'a+');
-                fprintf(logFile,string(datestr(now, 'YYYYmmDD.HHMMSS'))+', '...
-                    +T.TargetName{Itarget}+', '...
-                    +string(Unit.Mount.RA)+', '...
-                    +string(Unit.Mount.Dec)+', '...
-                    +string(T.ExpTime(Itarget))+', '...
-                    +string(T.NperVisit(Itarget))+'\n');
-                fclose(logFile);
-
+                end                  
+            end
+            
+            fprintf('Actual pointing: RA=%f, Dec=%f\n',Unit.Mount.RA, Unit.Mount.Dec);
+            fprintf('Altitude: %f\n', Unit.Mount.Alt);
   
+
+            % logging
+            logFile = fopen(logFileName,'a+');
+            fprintf(logFile,string(datestr(now, 'YYYYmmDD.HHMMSS'))+', '...
+                +T.TargetName{Itarget}+', '...
+                +string(Unit.Mount.RA)+', '...
+                +string(Unit.Mount.Dec)+', '...
+                +string(T.ExpTime(Itarget))+', '...
+                +string(T.NperVisit(Itarget))+'\n');
+            fclose(logFile);
+
+            
+            % taking images
+            if Args.Simulate,
+                JD = JD+(T.ExpTime(Itarget)*(T.NperVisit(Itarget)+1)+6)*sec2day;
+                simdatetime = celestial.time.get_atime(JD,35./180*pi).ISO;
+                fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
+                pause(1)
+            else
                 Unit.takeExposure([],T.ExpTime(Itarget),T.NperVisit(Itarget));
                 fprintf('Waiting for exposures to finish\n\n');
                 
