@@ -51,9 +51,9 @@ function loopOverTargets(Unit, Args)
     dt = datetime('now')-hours(6); % ensure that entire night is in same logfile
     datestring = datestr(dt, 'YYYY-mm-DD');
 
-    if Args.Simulate,
+    if Args.Simulate
         fprintf("\nSimulating observations! Won't move mount or take images.\n")
-        if isempty(Args.SimJD),
+        if isempty(Args.SimJD)
             JD = celestial.time.julday;
             fprintf('Using current JD %.3f for simulation.\n\n',JD)
         else
@@ -63,7 +63,7 @@ function loopOverTargets(Unit, Args)
     
     
     % TODO: pass log dir as an argument and create dir if not present
-    if Args.Simulate,
+    if Args.Simulate
         % will overwrite logfile if in simulation mode
         logFileName = '~/log/sim_log_loopOverTargets_M'+MountNumberStr+'.txt';
     else
@@ -80,6 +80,7 @@ function loopOverTargets(Unit, Args)
         fclose(logFile);
     end
 
+    
     T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);
     Ntargets = length(T.Data.RA);
    
@@ -89,7 +90,7 @@ function loopOverTargets(Unit, Args)
         
     for Iloop=1:1:Nloops
         
-        if ~Args.Simulate,
+        if ~Args.Simulate
             JD = celestial.time.julday;
         end
         
@@ -99,7 +100,7 @@ function loopOverTargets(Unit, Args)
         % wait, if no targets observable
         while sum(FlagAll)==0
             
-            if Args.Simulate,
+            if Args.Simulate
                 pause(1)
                 JD = JD + 120*sec2day;
                 simdatetime = celestial.time.get_atime(JD,35./180*pi).ISO;
@@ -130,7 +131,7 @@ function loopOverTargets(Unit, Args)
             
             
             % check whether the target is observable
-            if ~Args.Simulate,
+            if ~Args.Simulate
                 JD = celestial.time.julday;
             end
 
@@ -146,7 +147,7 @@ function loopOverTargets(Unit, Args)
                 Itarget,Ntargets,T.TargetName{Itarget},T.RA(Itarget), T.Dec(Itarget));
 
             % slewing
-            if ~Args.Simulate,
+            if ~Args.Simulate
                 Unit.Mount.goToTarget(T.RA(Itarget), T.Dec(Itarget));
                 for IFocuser=[1,2,3,4]
                     % TODO: 'Unit' should not be hard coded
@@ -176,7 +177,7 @@ function loopOverTargets(Unit, Args)
 
             
             % taking images
-            if Args.Simulate,
+            if Args.Simulate
                 JD = JD+(T.ExpTime(Itarget)*(T.NperVisit(Itarget)+1)+6)*sec2day;
                 simdatetime = celestial.time.get_atime(JD,35./180*pi).ISO;
                 fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
@@ -191,33 +192,114 @@ function loopOverTargets(Unit, Args)
                     fprintf('Cameras not ready after timeout - abort.\n\n')
                     break;
                 end
-            end    
+            end
+            
         end
     end
 end
     
     
-    
-function T = convertCSV2TargetObject(filename,NperVisit)
 
-    % reading target coordinates from file with format name,ra,dec
-    [name, RAStr, DecStr] = textread(filename, '%s %s %s', 'delimiter',',');
+
+function Result = convertCSV2TargetObject(filename,NperVisit)
+
+
+    targetKeys = {'RA','Dec','Index','TargetName','DeltaRA','DeltaDec', ...
+        'ExpTime', 'NperVisit','MaxNobs','LastJD','GlobalCounter',...
+        'NightCounter','Priority'};
+    dataTypes = {'char','char','int16','char','double','double',...
+        'double','int16','int16','double','int16',...
+        'int16','double'};
+    defaultValues = {0, 0, 0, 'target', 0, 0, ...
+        20, 20, Inf, 0, 0, ...
+        0,1};
     
-    Ntargets = length(RAStr);
+    dataTypeDict = containers.Map(targetKeys,dataTypes);
+    defaultDict = containers.Map(targetKeys,defaultValues);
+
+    opts = detectImportOptions(filename);
+    
+    % read only columns that fit Target class
+    opts.SelectedVariableNames=opts.VariableNames(ismember(opts.VariableNames,targetKeys));
+    
+    
+    % provide correct data types
+    for Icolumn=1:1:length(opts.SelectedVariableNames)
+        ColName = string(opts.SelectedVariableNames(Icolumn));
+        ColIndex = find(opts.VariableNames==ColName);
+        opts.VariableTypes(ColIndex)={dataTypeDict(ColName)};
+    end
+
+    
+    % list rows that do not fit Target class convention
+    SkippedCols = opts.VariableNames(~ismember(opts.VariableNames, opts.SelectedVariableNames));
+    if ~isempty(SkippedCols)
+        fprintf('\nThe following columns are unknown. Skipping them.\n')
+        fprintf(1, '%s \t', SkippedCols{:})
+        fprintf('\n\n')
+    end
+    
+    % check if RA and Dec provided
+    if ~ismember('RA',opts.SelectedVariableNames) || ~ismember('Dec',opts.SelectedVariableNames)
+        fprintf('\n\nCannot read target list: RA or Dec missing.\n\n')
+        Result = celestial.Targets;
+        return
+    end
+
+    % read in relevant columns from table
+    tbl = readtable(filename, opts);
+    
+    % convert RA and Dec to degrees
+    Ntargets = height(tbl);
     RA = zeros(Ntargets, 1);
     Dec = zeros(Ntargets, 1);
-    for Itarget=1:1:Ntargets,
-        RA(Itarget) = str2double(RAStr{Itarget});
-        Dec(Itarget) = str2double(DecStr{Itarget});
+    for Itarget=1:1:Ntargets
+        RA(Itarget) = str2double(tbl.RA{Itarget});
+        Dec(Itarget) = str2double(tbl.Dec{Itarget});
         if isnan(RA(Itarget))
-            [RATemp, DecTemp, ~]=celestial.coo.convert2equatorial(RAStr{Itarget},DecStr{Itarget});
+            [RATemp, DecTemp, ~]=celestial.coo.convert2equatorial(tbl.RA{Itarget},tbl.Dec{Itarget});
             RA(Itarget) = RATemp;
             Dec(Itarget) = DecTemp;
         end
     end
-    T=celestial.Targets.createList('RA',RA,'Dec',Dec,'TargetName',name);
-    T.Data.NperVisit = ones(Ntargets,1)*NperVisit;
-    fprintf('Number of images per visit: %i\n', NperVisit);
+    
+    Cols  = targetKeys;
+    Ncols = numel(Cols);
+
+    % loop over columns and assign default or provided value
+    Result = celestial.Targets;
+    for Icol=1:1:Ncols
+        if string(Cols{Icol})=='RA'
+            Result.Data.RA = RA;
+            
+        elseif string(Cols{Icol})=='Dec'
+            Result.Data.Dec = Dec;
+            
+        elseif ismember(Cols{Icol},tbl.Properties.VariableNames)
+            Result.Data.(Cols{Icol}) = tbl.(Cols{Icol});
+            
+        else
+            Result.Data.(Cols{Icol}) = ones(Ntargets,1)*defaultDict(Cols{Icol});
+        end
+    end
+    
+    
+    if ~ismember('Index',tbl.Properties.VariableNames)
+        Result.Data.Index = (1:1:Ntargets).';
+    end
+    
+    if ~ismember('TargetName',tbl.Properties.VariableNames)
+        Result.Data.TargetName = celestial.Targets.radec2name(RA, Dec);
+    end
+    
+    if ~ismember('NperVisit',tbl.Properties.VariableNames)
+        Result.Data.NperVisit = ones(Ntargets,1)*NperVisit;
+        fprintf('Number of images per visit: %i\n', NperVisit)
+    end
+    
+    %Result
+    %Result.Data
+    
 end
 
 
