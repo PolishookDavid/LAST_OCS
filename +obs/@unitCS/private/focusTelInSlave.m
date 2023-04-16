@@ -363,7 +363,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
     text(Result.BestPos, 10, info)
     PlotName = string(PlotDir)+'/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png';
-    saveas(gcf,PlotName) 
+    saveas(gcf,PlotName)
 
 end
 
