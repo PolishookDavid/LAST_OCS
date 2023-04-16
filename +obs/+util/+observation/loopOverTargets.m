@@ -24,12 +24,14 @@ function loopOverTargets(Unit, Args)
         Args.MinAlt         = 30; % [deg]
         Args.ObsCoo         = [35.0407331, 30.0529838]; % [LONG, LAT]
         Args.Simulate       = false;
-        Args.SimJD          = 2460049.205;
+        Args.SimJD          = []; %current JD %2460049.205;
         %Args.DeltaJD  = 0 % fraction of the day added to JD to trick mount into thinking it's night
     end
     
     RAD = 180./pi;
     sec2day = 1./3600/24;
+    
+
     
     Timeout=60;
     MountNumberStr = string(Unit.MountNumber);
@@ -37,7 +39,13 @@ function loopOverTargets(Unit, Args)
     datestring = datestr(dt, 'YYYY-mm-DD');
 
     if Args.Simulate,
-        fprintf("\nSimulating observations! Won't move mount or take images.\n\n")
+        fprintf("\nSimulating observations! Won't move mount or take images.\n")
+        if isempty(Args.SimJD),
+            JD = celestial.time.julday;
+            fprintf('Using current JD %.3f for simulation.\n\n',JD)
+        else
+            JD = Args.SimJD;
+        end
     end
     
     
@@ -81,12 +89,6 @@ function loopOverTargets(Unit, Args)
     Nloops = Args.NLoops;
     fprintf('%i fields in target list.\n\n',Ntargets)
     
-    if Args.Simulate,
-        JD = Args.SimJD;
-        simdatetime = celestial.time.get_atime(JD,35./180*pi).ISO;
-        fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
-    end
-        
         
     for Iloop=1:1:Nloops
         
