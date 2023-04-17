@@ -115,7 +115,7 @@ function loopOverTargets(Unit, Args)
             fprintf('%i targets are observable.\n\n', sum(FlagAll))
 
             % check if end script or shutdown mount
-            checkAbortFile;
+            checkAbortFile(Unit);
             
         end
         
@@ -127,7 +127,7 @@ function loopOverTargets(Unit, Args)
         for Itarget=1:1:Ntargets
             
             % check if end script or shutdown mount
-            checkAbortFile;
+            checkAbortFile(Unit);
             
             
             % check whether the target is observable
@@ -304,7 +304,7 @@ end
 
 
 
-function checkAbortFile
+function checkAbortFile(Unit)
 
 	if exist('~/abort_obs','file')>0
         delete('~/abort_obs');
