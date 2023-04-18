@@ -5,6 +5,14 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     % The method would be private, but unitCS needs to call it when
     %  constructing a full header, hence it cannot
     
+    % TODO: classCommand is ok for local camera objects, but needs
+    %       to be dealt with (in LAST_HANDLE?) if the method is to
+    %       support remote objects, using the new Locator formalism.
+    % CameraObj.Messenger.query(), ditto
+    
+    % default values for fields which may be a bit too fragile to store
+    %  only in config files: Filter
+
     % get image size
     if isa(CameraObj,'obs.remoteClass')
         SizeImIJ = CameraObj.Messenger.query(...
@@ -12,11 +20,11 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     else
         SizeImIJ = size(CameraObj.LastImage);
     end
-    
+
     % Image related information
     %    12345678
     I = 0;    
-    
+
     I = I + 1;
     Info(I).Name = 'NAXIS';
     Info(I).Val  = numel(SizeImIJ);
@@ -31,15 +39,15 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     
     I = I + 1;
     Info(I).Name = 'BITPIX';
-    Info(I).Val  = -32;
+    Info(I).Val  = 16;  % will be rewritten anyway by io.fits.writeSimpleFITS
     
     I = I + 1;
     Info(I).Name = 'BZERO';
-    Info(I).Val  = 0.0;
+    Info(I).Val  = 0.0; % will be rewritten anyway
     
     I = I + 1;
     Info(I).Name = 'BSCALE';
-    Info(I).Val  = 1.0;
+    Info(I).Val  = 1.0; % will be rewritten anyway
 
     I = I + 1;
     Info(I).Name = 'IMTYPE';
@@ -51,7 +59,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     
     I = I + 1;
     Info(I).Name = 'EXPMODE';
-    switch CameraObj.classCommand('StreamMode');
+    switch CameraObj.classCommand('StreamMode')
         case 0
            Info(I).Val  = 'SINGLE';
         case 1
@@ -128,8 +136,11 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
 
     % build header from structure
     N = numel(Info);
-    HeaderCell = cell(N,3);
-    HeaderCell(:,1) = {Info.Name};
-    HeaderCell(:,2) = {Info.Val};
+    CameraHeaderCell = cell(N,3);
+    CameraHeaderCell(:,1) = {Info.Name};
+    CameraHeaderCell(:,2) = {Info.Val};
+    
+    HeaderCell=[CameraHeaderCell;
+                CameraObj.classCommand('UnitHeaderCell')];
 
 end

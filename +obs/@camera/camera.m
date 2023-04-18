@@ -15,6 +15,10 @@
 
 classdef camera < obs.LAST_Handle
  
+    properties(Hidden, Description='api')
+        UnitHeaderCell cell = cell(0,3);     % additional header keywords injected by unitCS
+    end
+
     properties
         ImType char            = 'sci';       % The image type: science, flat, bias, dark
         Object char            = '';          % The name of the observed object/field
@@ -93,5 +97,11 @@ classdef camera < obs.LAST_Handle
         end
         
     end
-        
+
+    % prototpes of exported methods, which are defined in separate files
+
+    methods(Description='api,must-be-connected')
+        saveCurImage(QC)
+    end
+
 end
