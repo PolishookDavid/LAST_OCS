@@ -282,12 +282,25 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
                 drawnow
 
-                UnitObj.report('   best position %d\n', Result.BestPos)
-                UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
-                UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
-
-                Result.Status = 'Found.';
-                Success       = true;
+                
+                if Result.BestPos<min(Foc)
+                    Result.Status = 'Bad fit.';
+                    Success       = false;
+                    UnitObj.report('   Bad fit.\n')
+                elseif Result.BestPos>max(Foc)
+                    Result.Status = 'Bad fit.';
+                    Success       = false;
+                    Result.BestPos = NaN;   % moving back to initial position
+                    UnitObj.report('   Bad fit.\n')
+                else
+                    Result.Status = 'Found.';
+                    Success       = true;
+                    Result.BestPos = NaN;   % moving back to initial position
+                    
+                    UnitObj.report('   best position %d\n', Result.BestPos)
+                    UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
+                    UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
+                end
 
         
         end
