@@ -39,6 +39,7 @@ function loopOverTargets(Unit, Args)
         Args.ObsCoo         = [35.0407331, 30.0529838]; % [LONG, LAT]
         Args.Simulate       = false;
         Args.SimJD          = []; %default is current JD %2460049.205;
+        Args.MinVisibilityTime = 0.01; %days; stop observing target 15min before it is no longer visible
     end
     
     RAD = 180./pi;
@@ -94,7 +95,7 @@ function loopOverTargets(Unit, Args)
             JD = celestial.time.julday;
         end
         
-        [FlagAll, Flag] = isVisible(T, JD);
+        [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);
         fprintf('%i targets are observable.\n\n', sum(FlagAll))
 
         % wait, if no targets observable
@@ -111,7 +112,7 @@ function loopOverTargets(Unit, Args)
                 JD = celestial.time.julday; % + Args.DeltaJD;
             end
             
-            [FlagAll, Flag] = isVisible(T, JD);
+            [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);         
             fprintf('%i targets are observable.\n\n', sum(FlagAll))
 
             % check if end script or shutdown mount
@@ -135,11 +136,12 @@ function loopOverTargets(Unit, Args)
                 JD = celestial.time.julday;
             end
 
-            [FlagAll, Flag] = isVisible(T, JD);
-                    
+            [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);
+
+                
             if ~FlagAll(Itarget)
                 fprintf('\nField %d is not observable.\n',Itarget)
-                continue;
+               continue;
             end
                 
                 
@@ -158,12 +160,14 @@ function loopOverTargets(Unit, Args)
                 if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
                     fprintf('Cameras not ready after timeout - abort.\n\n')
                     break;
-                end                  
+                end
             end
             
             fprintf('Actual pointing: RA=%f, Dec=%f\n',Unit.Mount.RA, Unit.Mount.Dec);
-            fprintf('Altitude: %f\n', Unit.Mount.Alt);
+            fprintf('MountAltitude: %f\n', Unit.Mount.Alt);
   
+            [Az, Alt] = T.azalt(JD);
+            fprintf('Target Altitude: %f\n', Alt(Itarget));
 
             % logging
             logFile = fopen(logFileName,'a+');
