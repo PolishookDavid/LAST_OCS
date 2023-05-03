@@ -13,7 +13,7 @@ function operateUnit(Unit, ToFocus)
 
 arguments
     Unit
-    ToFocus = false;
+    ToFocus = true;
 end
 
 RAD = 180./pi;
