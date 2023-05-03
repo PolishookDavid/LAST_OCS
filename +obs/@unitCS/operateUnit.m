@@ -117,8 +117,6 @@ else
     fprintf('Sun too low, skipping twilight flats\n')
 end
 
-% Continue with the observation.
-
 % Run focus loop
 if (ToFocus)
    % Check Sun altitude to know when to start focus loop
@@ -133,6 +131,9 @@ if (ToFocus)
    % Send mount to meridian at dec 60 deg, to avoid moon.
    Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
    fprintf('Sent mount to focus coordinates\n')
+   
+   
+   % TODO: should try to run focusByTemperature for a better initial guess   
    %for IFocuser=[1,2,3,4]
    %    try
             % TODO: should try to run focusByTemperature for a
@@ -142,6 +143,8 @@ if (ToFocus)
         %end
    %end
     
+   
+   
     % Check success:
    if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
          round(Unit.Mount.HA,0)  > FocusHA-1  && round(Unit.Mount.HA,0)  < FocusHA+1))
