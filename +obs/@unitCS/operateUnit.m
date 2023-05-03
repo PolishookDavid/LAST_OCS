@@ -13,7 +13,7 @@ function operateUnit(Unit, ToFocus)
 
 arguments
     Unit
-    ToFocus = true;
+    ToFocus = false;
 end
 
 RAD = 180./pi;
@@ -124,7 +124,7 @@ if (ToFocus)
    % Check Sun altitude to know when to start focus loop
    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
    while (Sun.Alt*RAD > MaxSunAltForFocus)
-      fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
+      fprintf('Sun too high to focus - wait, or use ctrl+c to stop the method\n')
       % Wait for 30 seconds
       pause(30);
       Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
@@ -133,6 +133,14 @@ if (ToFocus)
    % Send mount to meridian at dec 60 deg, to avoid moon.
    Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
    fprintf('Sent mount to focus coordinates\n')
+   %for IFocuser=[1,2,3,4]
+   %    try
+            % TODO: should try to run focusByTemperature for a
+            % better initial guess
+            %Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);
+        % catch % won't work if last focus loop was not successful
+        %end
+   %end
     
     % Check success:
    if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
@@ -163,6 +171,9 @@ if (ToFocus)
 else
    fprintf('Skip focus routine as requested\n')
 end
+
+% observe
+%obs.util.observation.loopOverTargets(Unit,'NLoops',1,'Simulate',true,'SimJD',2460068.212,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
 
 % Reached here, 7/03/2023
 return %%%
