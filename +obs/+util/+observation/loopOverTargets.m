@@ -67,10 +67,12 @@ function loopOverTargets(Unit, Args)
     if Args.Simulate
         % will overwrite logfile if in simulation mode
         logFileName = '~/log/sim_log_loopOverTargets_M'+MountNumberStr+'.txt';
+        obsFileName = '~/log/sim_obs_M'+MountNumberStr;
     else
         % will create daily logfile if in observation mode and append all
         % observations
         logFileName = '~/log/log_loopOverTargets_M'+MountNumberStr+'_'+datestring+'.txt';
+        obsFileName = '~/log/obs_M'+MountNumberStr+'_'+datestring;
     end
 
         
@@ -83,6 +85,7 @@ function loopOverTargets(Unit, Args)
 
     
     T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);
+    T
     Ntargets = length(T.Data.RA);
    
     Nloops = Args.NLoops;
@@ -199,6 +202,10 @@ function loopOverTargets(Unit, Args)
                 end
             end
             
+            T.Data.GlobalCounter(Itarget) = T.Data.GlobalCounter(Itarget)+T.NperVisit(Itarget);
+            T.write(obsFileName+'.mat')
+            writetable(T.Data,obsFileName+'.txt','Delimiter',',')
+           
         end
     end
 end
