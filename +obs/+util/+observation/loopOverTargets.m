@@ -85,7 +85,6 @@ function loopOverTargets(Unit, Args)
 
     
     T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);
-    T
     Ntargets = length(T.Data.RA);
    
     Nloops = Args.NLoops;
@@ -202,6 +201,7 @@ function loopOverTargets(Unit, Args)
                 end
             end
             
+            % save Target table after successful observations
             T.Data.GlobalCounter(Itarget) = T.Data.GlobalCounter(Itarget)+T.NperVisit(Itarget);
             T.write(obsFileName+'.mat')
             writetable(T.Data,obsFileName+'.txt','Delimiter',',')
