@@ -101,11 +101,11 @@ function obsByPriority(Unit, Args)
         %fprintf('%i targets are observable.\n\n', sum(FlagAll))
         NeedObs = T.Data.MaxNobs>T.Data.GlobalCounter;
             
-        fprintf('%i targets need more observations.\n', sum(NeedObs))
+        fprintf('\n%i targets need more observations.\n', sum(NeedObs))
         fprintf('%i of them observable now.\n\n', sum(NeedObs&FlagAll))
             
         % wait, if no targets observable
-        while sum(FlagAll)==0
+        while sum(NeedObs&FlagAll)==0
             
             if Args.Simulate
                 pause(1)
@@ -140,7 +140,18 @@ function obsByPriority(Unit, Args)
         end
         
         [~,PP,IndPrio]=T.calcPriority(JD,Args.CadenceMethod);
-                
+        
+        if PP(IndPrio) <= 0
+            fprintf('Highest priority is zero. Waiting two minutes.\n')
+            
+            if Args.Simulate
+                pause(1)
+                JD = JD + 120*sec2day;
+            else
+                pause(120)
+            end
+            continue
+        end
                 
         fprintf('\nObserving field %d out of %d - Name=%s, RA=%.2f, Dec=%.2f\n',...
             IndPrio,Ntargets,T.TargetName{IndPrio},T.RA(IndPrio), T.Dec(IndPrio));
