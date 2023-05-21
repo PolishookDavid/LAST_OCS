@@ -98,8 +98,12 @@ function obsByPriority(Unit, Args)
         end
         
         [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);
-        fprintf('%i targets are observable.\n\n', sum(FlagAll))
-
+        %fprintf('%i targets are observable.\n\n', sum(FlagAll))
+        NeedObs = T.Data.MaxNobs>T.Data.GlobalCounter;
+            
+        fprintf('%i targets need more observations.\n', sum(NeedObs))
+        fprintf('%i of them observable now.\n\n', sum(NeedObs&FlagAll))
+            
         % wait, if no targets observable
         while sum(FlagAll)==0
             
