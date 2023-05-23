@@ -31,7 +31,8 @@ function HeaderCell=constructHeader(UnitObj,itel)
 %         Info=struct();
 %         HeaderCell=cell(0,3);
 %         return
-%     else
+%     else        % Mount information
+
 %         % fill the header first with all which can be retrieved from the
 %         %  camera alone
 %         [CameraHeader,CameraInfo] = imageHeader(CameraObj);
@@ -44,21 +45,54 @@ function HeaderCell=constructHeader(UnitObj,itel)
     
     I = 0;
     
+    % the following three are semi-fragile, since they assume that the
+    %  keys are explicitly in the obs.UnitCS.NN.create.yml config file
+    I = I + 1;
+    Info(I).Key = 'PROJNAME';
+    try
+        ProjName=UnitObj.Config.ProjName;
+    catch
+        ProjName = 'LAST';
+    end
+    Info(I).Val = ProjName;
+    
+    I = I + 1;
+    Info(I).Key = 'NODENUMB';
+    try
+        NodeNum = UnitObj.Config.NodeNumer;
+    catch
+        NodeNum = 1;
+    end
+    Info(I).Val = NodeNum;
+
+    I = I + 1;
+    Info(I).Key = 'TIMEZONE';
+    try
+        TimeZone = UnitObj.Config.TimeZone;
+    catch
+        TimeZone = NaN;
+    end
+    Info(I).Val = TimeZone;
+    
     if isa(UnitObj.Mount,'obs.mount') || isa(UnitObj.Mount,'obs.remoteClass')
         % Mount information
-        Info.MountNum = UnitObj.Mount.classCommand('Id');
+        MountNum = UnitObj.Mount.classCommand('Id');
         % OBSERVER
         %ORIGIN
         %OBSNAME
         %OBSPLACE
-        
+
         I = I + 1;
-        Info(I).Key = 'PROJNAME';
-        Info(I).Val = UnitObj.Config.ProjName;
+        Info(I).Key = 'MOUNTNUM';
+        Info(I).Val = MountNum;
         
         MountConfig  = UnitObj.Mount.classCommand('Config');
         CameraConfig = CameraObj.classCommand('Config');
         
+        I = I + 1;
+        Info(I).Key = 'FULLPROJ';
+        Info(I).Val = sprintf('%s.%2d.%s.%2d',ProjName,NodeNum,MountNum,itel);
+
         I = I + 1;
         Info(I).Key = 'OBSLON';
         ConfigKeyName = 'ObsLon';
