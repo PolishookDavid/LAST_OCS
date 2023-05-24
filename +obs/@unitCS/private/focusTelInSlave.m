@@ -286,12 +286,12 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 if Result.BestPos<min(Foc)
                     Result.Status = 'Bad fit.';
                     Success       = false;
-                    Result.BestPos = NaN;   % moving back to initial position
+                    Result.BestPos = CurrentPos;   % moving back to initial position
                     UnitObj.report('   Bad fit.\n')
                 elseif Result.BestPos>max(Foc)
                     Result.Status = 'Bad fit.';
                     Success       = false;
-                    Result.BestPos = NaN;   % moving back to initial position
+                    Result.BestPos = CurrentPos;   % moving back to initial position
                     UnitObj.report('   Bad fit.\n')
                 else
                     Result.Status = 'Found.';
