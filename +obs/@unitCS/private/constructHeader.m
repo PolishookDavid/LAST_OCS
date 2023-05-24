@@ -76,7 +76,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
     
     if isa(UnitObj.Mount,'obs.mount') || isa(UnitObj.Mount,'obs.remoteClass')
         % Mount information
-        MountNum = UnitObj.Mount.classCommand('Id');
+        MountNum = sscanf(UnitObj.Id,'%d');
         % OBSERVER
         %ORIGIN
         %OBSNAME
@@ -91,7 +91,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'FULLPROJ';
-        Info(I).Val = sprintf('%s.%2d.%s.%2d',ProjName,NodeNum,MountNum,itel);
+        Info(I).Val = sprintf('%s.%02d.%02d.%02d',ProjName,NodeNum,MountNum,itel);
 
         I = I + 1;
         Info(I).Key = 'OBSLON';
