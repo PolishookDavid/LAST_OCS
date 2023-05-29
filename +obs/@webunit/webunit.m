@@ -74,7 +74,8 @@ classdef webunit < obs.LAST_Handle
              %                  'NodeId',UnitObj.NodeId,...
              %                  'MountId',UnitObj.MountId,'EquipType','Mount');
              %
-             % but parsing of the arguments is yet imperfect. Thus, for the
+             % but parsing of the arguments is yet imperfect. (see
+             % https://github.com/blumzi/LAST_Api/issues/29). Thus, for the
              %  time being I construct strings, which is less elegant and
              %  more fragile
              
@@ -84,8 +85,8 @@ classdef webunit < obs.LAST_Handle
              % switches:
              sw=sprintf('%s.%d.psw%d', L.ProjectName, L.NodeId, L.MountId);
              UnitObj.PowerSwitch={
-                 obs.api.Locator('Location',[sw 'e']), ...
-                 obs.api.Locator('Location',[sw 'w'])};
+                 obs.api.makeApi('Location',[sw 'e']), ...
+                 obs.api.makeApi('Location',[sw 'w'])};
 %             % for now always one mount per unit (or, empty mount when absent)
 %             UnitObj.Mount=
 %             Nlocal=numel(UnitObj.LocalTelescopes);
