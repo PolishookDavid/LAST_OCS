@@ -46,59 +46,72 @@ classdef webunit < obs.LAST_Handle
 
     methods
         % constructor, destructor
-        function UnitObj=webunit(id)
-            % unit class constructor
-            % Package: +obs/@unitCS
-            if exist('id','var')
-                if isnumeric(id)
-                    id=num2str(id);
+        function UnitObj=webunit(Locator)
+            % identify the unit by locator
+            if exist('Locator','var') 
+                if isa(Locator,'obs.api.Locator')
+                    id = Locator.Canonical;
+                else
+                    id = Locator;
                 end
-                UnitObj.Id=id;
+            else
+                id=''; % will cause error below
             end
+            UnitObj.Id=id;
+            % fill initial status of untyped .Connected
+            UnitObj.Connected=false;
             % load configuration
             UnitObj.loadConfig(UnitObj.configFileName('create'))
             % this one is read in as string and converted, because of limitations of
             %  Astropack's yml reader
-            UnitObj.RemoteTelescopes=eval(UnitObj.RemoteTelescopes);
-                        
-            % populate mount, camera, focuser and power switches handles
-            for i=1:numel(UnitObj.PowerDriver)
-                UnitObj.PowerSwitch{i}=eval([UnitObj.PowerDriver{i} ...
-                           '(''' sprintf('%s_%d',UnitObj.Id,i) ''')']);
-            end
+%             UnitObj.RemoteTelescopes=eval(UnitObj.RemoteTelescopes);
+%                         
+             % Populate mount, camera, focuser and power switches handles
+             % NB: it would be sensible and elegant to construct locators
+             %     using the relevant arguments of the constructor, e.g.
+             %
+             %  obs.api.Locator('ProjectName',UnitObj.ProjectName,...
+             %                  'NodeId',UnitObj.NodeId,...
+             %                  'MountId',UnitObj.MountId,'EquipType','Mount');
+             %
+             % but parsing of the arguments is yet imperfect. Thus, for the
+             %  time being I construct strings, which is less elegant and
+             %  more fragile
+             
+             % regenerate (in case passed as string) the full locator of
+             % the unit
+             L=obs.api.Locator('Location',id);
+             % switches:
+             sw=sprintf('%s.%d.psw%d', L.ProjectName, L.NodeId, L.MountId);
+             UnitObj.PowerSwitch={
+                 obs.api.Locator('Location',[sw 'e']), ...
+                 obs.api.Locator('Location',[sw 'w'])};
+%             % for now always one mount per unit (or, empty mount when absent)
+%             UnitObj.Mount=
+%             Nlocal=numel(UnitObj.LocalTelescopes);
+%             Nremote=numel(horzcat(UnitObj.RemoteTelescopes{:}));
+%             UnitObj.Camera=cell(1,Nlocal+Nremote);
+%             UnitObj.Focuser=cell(1,Nlocal+Nremote);
+%             
+%             % create camera and focuser objects for local telescopes,
+%             %  as well as listeners for new images
+%             for i=1:Nlocal
+%                 j=UnitObj.LocalTelescopes(i);
+%                 telescope_label=sprintf('%s_%d_%d',UnitObj.Id,1,j);
+%                 UnitObj.Camera{j}=eval([UnitObj.CameraDriver{i} ...
+%                                         '(''' telescope_label ''')']);
+%                 UnitObj.Focuser{j}=eval([UnitObj.FocuserDriver{i} ...
+%                                         '(''' telescope_label ''')']);
+%                 % better listener or addlistener?
+%                 addlistener(UnitObj.Camera{j},'LastImage','PostSet',@UnitObj.treatNewImage);
+%             end
+%             
+%             % create remoteClass objects for remote telescopes
+%             for i=horzcat(UnitObj.RemoteTelescopes{:})
+%                UnitObj.Camera{i}=obs.remoteClass;              
+%                UnitObj.Focuser{i}=obs.remoteClass;
+%             end
             
-            % for now always one mount per unit (or, empty mount when absent)
-            UnitObj.Mount=eval([UnitObj.MountDriver ...
-                            '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);
-            Nlocal=numel(UnitObj.LocalTelescopes);
-            Nremote=numel(horzcat(UnitObj.RemoteTelescopes{:}));
-            UnitObj.Camera=cell(1,Nlocal+Nremote);
-            UnitObj.Focuser=cell(1,Nlocal+Nremote);
-            
-            % create camera and focuser objects for local telescopes,
-            %  as well as listeners for new images
-            for i=1:Nlocal
-                j=UnitObj.LocalTelescopes(i);
-                telescope_label=sprintf('%s_%d_%d',UnitObj.Id,1,j);
-                UnitObj.Camera{j}=eval([UnitObj.CameraDriver{i} ...
-                                        '(''' telescope_label ''')']);
-                UnitObj.Focuser{j}=eval([UnitObj.FocuserDriver{i} ...
-                                        '(''' telescope_label ''')']);
-                % better listener or addlistener?
-                addlistener(UnitObj.Camera{j},'LastImage','PostSet',@UnitObj.treatNewImage);
-            end
-            
-            % create remoteClass objects for remote telescopes
-            for i=horzcat(UnitObj.RemoteTelescopes{:})
-               UnitObj.Camera{i}=obs.remoteClass;              
-               UnitObj.Focuser{i}=obs.remoteClass;
-            end
-            
-            % create slaves for spawned sessions running remote telescopes
-            UnitObj.Slave=cell(1,numel(UnitObj.RemoteTelescopes));
-            for i=1:numel(UnitObj.RemoteTelescopes)
-                UnitObj.Slave{i}=obs.util.SpawnedMatlab(sprintf('%s_slave_%d',UnitObj.Id,i));
-            end
         end
         
 
