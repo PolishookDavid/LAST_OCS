@@ -188,7 +188,7 @@ classdef webunit < obs.LAST_Handle
             status.Focuser=cell(1,numel(U.Focuser));
             for i=1:numel(U.Focuser)
                 try
-                    if U.Camera{i}.Connected
+                    if U.Focuser{i}.Connected
                         status.Focuser{i}=U.Focuser{i}.Status;
                     else
                         status.Focuser{i}='disconnected';
