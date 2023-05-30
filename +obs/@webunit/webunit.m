@@ -138,11 +138,28 @@ classdef webunit < obs.LAST_Handle
                 delete(U.PowerSwitch{i});
             end
         end
-                        
+
     end
     
     % setters/getters
     methods
+
+        function set.Connected(U,tf)
+            % when called via the API, the argument is received as a string
+            if isa(tf,'string')
+                tf=eval(tf);
+            end
+            if isempty(U.Connected)
+                U.Connected=false;
+            end
+            % don't try to connect if already connected, as per API wiki
+            if ~U.Connected && tf
+                U.Connected=U.connect;
+            elseif U.Connected && ~tf
+                U.Connected=~U.disconnect;
+            end
+        end
+
 
         function status=get.Status(U)
             try
