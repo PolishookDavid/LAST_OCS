@@ -63,7 +63,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
     catch
         NodeNum = 1;
     end
-    Info(I).Val = NodeNum;
+    Info(I).Val = int32(NodeNum);
 
     I = I + 1;
     Info(I).Key = 'TIMEZONE';
@@ -72,11 +72,11 @@ function HeaderCell=constructHeader(UnitObj,itel)
     catch
         TimeZone = NaN;
     end
-    Info(I).Val = TimeZone;
+    Info(I).Val = TimeZone; % timezone can be fractional! (e.g. Nepal, New Zeland)
     
     if isa(UnitObj.Mount,'obs.mount') || isa(UnitObj.Mount,'obs.remoteClass')
         % Mount information
-        MountNum = sscanf(UnitObj.Id,'%d');
+        MountNum = int16(sscanf(UnitObj.Id,'%d'));
         % OBSERVER
         %ORIGIN
         %OBSNAME

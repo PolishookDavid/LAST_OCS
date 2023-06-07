@@ -27,7 +27,7 @@ classdef unitCS < obs.LAST_Handle
         CameraPowerOutput double =[]; % switch output controlling each camera
         MountPowerUnit double =[];% switch controlling mount power
         MountPowerOutput double=[]; % switch output controlling the mount
-        MountNumber            = 99;  % Mount number 1..12 - 99=unknown (currently taken from Id)
+        MountNumber    int16   = 99;  % Mount number 1..12 - 99=unknown (currently taken from Id)
     end
 
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle)
