@@ -26,6 +26,12 @@ function obsByPriority(Unit, Args)
     % obs.util.observation.obsByPriority(Unit,'NperVisit',40,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
     % obs.util.observation.obsByPriority(Unit,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
     %
+    % Use the Nmounts option to divide the target list among x mounts.
+    % Modulo specifies which fields each mount will observe.
+    % obs.util.observation.obsByPriority(Unit,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt','NMounts',3,'Modulo',1)
+    % will split the target list into a third and this mount will only
+    % observe fields with mod(Index, 1), e.g. fields: 1, 4, 7, 10 etc.
+    %
     % written by Nora May 2023, based on loopOverTargets script
    
     arguments
@@ -40,6 +46,8 @@ function obsByPriority(Unit, Args)
         Args.SimJD          = []; %default is current JD %2460049.205;
         Args.MinVisibilityTime = 0.01; %days; stop observing target 15min before it is no longer visible
         Args.CadenceMethod = 'predefined';
+        Args.Nmounts = 1;
+        Args.Modulo = 0;
     end
     
     RAD = 180./pi;
@@ -84,13 +92,19 @@ function obsByPriority(Unit, Args)
     end
 
     
-    T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);
-    T.Data
+    T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);    
     
+    fprintf('%i fields in target list.\n\n',length(T.Data.RA))
+    
+    mask_mount = (mod(T.Data.Index, Args.Nmounts) == Args.Modulo);
+    
+    fprintf('Dividing target list among %i mounts. This mount will observe fields with modulo %i.',Args.Nmounts, Args.Modulo)
+
+    T.Data = T.Data(mask_mount,:);
     Ntargets = length(T.Data.RA);
-    fprintf('%i fields in target list.\n\n',Ntargets)
+    fprintf('%i fields remaining.\n\n',Ntargets)
+       
     
-        
     while true
         
         if ~Args.Simulate
