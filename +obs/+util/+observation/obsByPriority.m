@@ -45,7 +45,7 @@ function obsByPriority(Unit, Args)
         Args.Simulate       = false;
         Args.SimJD          = []; %default is current JD %2460049.205;
         Args.MinVisibilityTime = 0.01; %days; stop observing target 15min before it is no longer visible
-        Args.CadenceMethod = 'predefined';
+        Args.CadenceMethod = 'highestsetting';
         Args.Nmounts = 1;
         Args.Modulo = 0;
     end
