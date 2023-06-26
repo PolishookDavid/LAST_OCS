@@ -20,8 +20,8 @@ function pointingModel(Unit, Args)
     [TileList,TileArea] = celestial.coo.tile_the_sky(Args.Nha, Args.Ndec);
     HADec = TileList(:,1:2);
     
-    AtPole = [-135 90; -90 90; -45 90; 0 90; 45 90; 90 90; 135 90]./RAD;
-    HADec = [HADec; AtPole];
+    %AtPole = [-135 90; -90 90; -45 90; 0 90; 45 90; 90 90; 135 90]./RAD;
+    %HADec = [HADec; AtPole];
     
     
     [Az, Alt] = celestial.coo.hadec2azalt(HADec(:,1), HADec(:,2), Args.ObsCoo(2)./RAD);
