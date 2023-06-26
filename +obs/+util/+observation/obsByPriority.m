@@ -95,11 +95,11 @@ function obsByPriority(Unit, Args)
     
     fprintf('%i fields in target list.\n\n',length(T.Data.RA))
     
-    %mask_mount = (mod(T.Data.Index, Args.Nmounts) == Args.Modulo);
+    mask_mount = (mod(T.Data.Index, Args.Nmounts) == Args.Modulo);
     
-    %fprintf('Dividing target list among %i mounts. This mount will observe fields with modulo %i.',Args.Nmounts, Args.Modulo)
+    fprintf('Dividing target list among %i mounts. This mount will observe fields with modulo %i.',Args.Nmounts, Args.Modulo)
 
-    %T.Data = T.Data(mask_mount,:);
+    T.Data = T.Data(mask_mount,:);
     Ntargets = length(T.Data.RA);
     fprintf('%i fields remaining.\n\n',Ntargets)
        
