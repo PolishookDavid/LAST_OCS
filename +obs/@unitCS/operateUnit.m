@@ -175,11 +175,27 @@ else
    fprintf('Skip focus routine as requested\n')
 end
 
+
+
+
+
+
 % observe
-%obs.util.observation.loopOverTargets(Unit,'NLoops',1,'Simulate',true,'SimJD',2460068.212,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
+obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
 
 % Reached here, 7/03/2023
 return %%%
+
+
+
+
+
+
+
+
+
+
+
 
 
 T = celestial.Targets.createList('RA',[289.16 89.19 227.28 212.59].','Dec',[61.6,48.1,52.5,44.2].','MaxNobs',500);

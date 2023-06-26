@@ -90,7 +90,6 @@ function obsByPriority(Unit, Args)
         fprintf(logFile,'datetime, obsJD, targetname, RA, Dec, ExpTime, NImages\n');
         fclose(logFile);
     end
-
     
     T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);    
     
