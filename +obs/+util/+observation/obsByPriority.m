@@ -103,7 +103,6 @@ function obsByPriority(Unit, Args)
     Ntargets = length(T.Data.RA);
     fprintf('%i fields remaining.\n\n',Ntargets)
        
-    
     while true
         
         if ~Args.Simulate
