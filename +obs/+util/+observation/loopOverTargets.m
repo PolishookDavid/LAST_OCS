@@ -40,6 +40,7 @@ function loopOverTargets(Unit, Args)
         Args.Simulate       = false;
         Args.SimJD          = []; %default is current JD %2460049.205;
         Args.MinVisibilityTime = 0.01; %days; stop observing target 15min before it is no longer visible
+        Args.Shutdown       = true; % set to false when testing during the day
     end
     
     RAD = 180./pi;
@@ -102,6 +103,12 @@ function loopOverTargets(Unit, Args)
 
         % wait, if no targets observable
         while sum(FlagAll)==0
+
+            if ~Args.Simulate
+                % check if end script or shutdown mount or sunrise
+                checkAbortFile(Unit, JD, Args.Shutdown);
+            end
+            
             
             if Args.Simulate
                 pause(1)
@@ -118,9 +125,7 @@ function loopOverTargets(Unit, Args)
             [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);         
             fprintf('%i targets are observable.\n\n', sum(FlagAll))
 
-            % check if end script or shutdown mount
-            checkAbortFile(Unit);
-            
+
         end
         
         fprintf('------------------------------------\n')
@@ -130,9 +135,11 @@ function loopOverTargets(Unit, Args)
         % get observations for all targets
         for Itarget=1:1:Ntargets
             
-            % check if end script or shutdown mount
-            checkAbortFile(Unit);
-            
+
+            if ~Args.Simulate
+                % check if end script or shutdown mount or sunrise
+                checkAbortFile(Unit, JD, Args.Shutdown);
+            end
             
             % check whether the target is observable
             if ~Args.Simulate
@@ -316,8 +323,24 @@ end
 
 
 
-function checkAbortFile(Unit)
+function checkAbortFile(Unit, JD, Shutdown)
 
+    Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
+        
+    if (Sun.Alt*180./pi)>-7
+        fprintf('\nThe Sun is too high.\n')
+        if Shutdown
+            fprintf('Shutting down the mount.\n')
+            Unit.shutdown
+            pause(20)
+            error('shutdown because Sun too high');
+        else
+            fprintf('Automatic shutdown disabled!! Press CTRL+C and run Unit.shutdown to shutdown the mount.\n')
+            pause(20)
+        end
+        %error('The Sun is rising. Shutting down the mount. \n\n')
+    end 
+        
 	if exist('~/abort_obs','file')>0
         delete('~/abort_obs');
         error('user abort_obs file found');
