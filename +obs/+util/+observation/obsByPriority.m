@@ -36,8 +36,6 @@ function obsByPriority(Unit, Args)
    
     arguments
         Unit        
-        %Args.ExpTime  = 20;     % default values given by
-        %celestial.Targets.createList
         Args.NperVisit      = 20;
         Args.CoordFileName  = '/home/ocs/targetlists/target_coordinates.txt';
         Args.MinAlt         = 30; % [deg]
@@ -92,7 +90,8 @@ function obsByPriority(Unit, Args)
         fclose(logFile);
     end
     
-    T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);    
+    T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);
+    
     
     fprintf('%i fields in target list.\n\n',length(T.Data.RA))
     
@@ -338,8 +337,12 @@ function Result = convertCSV2TargetObject(filename,NperVisit)
         fprintf('Number of images per visit: %i\n', NperVisit)
     end
     
+    %sort by priority
+    %Result.Data=sortrows(Result.Data,'Priority','descend');
+    %Result.Data.Index = linspace(1,length(Results.Data.Index),length(Results.Data.Index));
+    
     %Result
-    %Result.Data
+    Result.Data
     
 end
 

@@ -26,7 +26,7 @@ function loopOverTargets(Unit, Args)
     % obs.util.observation.loopOverTargets(Unit,'NLoops',2,'NperVisit',40,'CoordFileName','/home/ocs/target_coordinates.txt')
     % obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates.txt')
     %
-    % written by Nora March 2023, based on pointing model script
+    % written by Nora March 2023
    
     arguments
         Unit        
