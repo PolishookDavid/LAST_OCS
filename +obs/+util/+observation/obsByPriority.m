@@ -36,14 +36,14 @@ function obsByPriority(Unit, Args)
    
     arguments
         Unit        
-        Args.NperVisit      = 20;
+        %Args.NperVisit      = 20;
         Args.CoordFileName  = '/home/ocs/targetlists/target_coordinates.txt';
         Args.MinAlt         = 30; % [deg]
         Args.ObsCoo         = [35.0407331, 30.0529838]; % [LONG, LAT]
         Args.Simulate       = false;
         Args.SimJD          = []; %default is current JD %2460049.205;
         Args.MinVisibilityTime = 0.01; %days; stop observing target 15min before it is no longer visible
-        Args.CadenceMethod  = 'highestsetting';
+        Args.CadenceMethod  = 'cycle'; % 'predefined', 'highestsetting', 'cycle'
         Args.Nmounts        = 1;
         Args.Modulo         = 0;
         Args.Shutdown       = true; % set to false when testing during the day
@@ -332,10 +332,10 @@ function Result = convertCSV2TargetObject(filename,NperVisit)
         Result.Data.TargetName = celestial.Targets.radec2name(RA, Dec);
     end
     
-    if ~ismember('NperVisit',tbl.Properties.VariableNames)
-        Result.Data.NperVisit = ones(Ntargets,1)*NperVisit;
-        fprintf('Number of images per visit: %i\n', NperVisit)
-    end
+    %if ~ismember('NperVisit',tbl.Properties.VariableNames)
+    %    Result.Data.NperVisit = ones(Ntargets,1)*NperVisit;
+    %    fprintf('Number of images per visit: %i\n', NperVisit)
+    %end
     
     %sort by priority
     %Result.Data=sortrows(Result.Data,'Priority','descend');
