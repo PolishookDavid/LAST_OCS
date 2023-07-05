@@ -9,23 +9,39 @@ classdef superunit < obs.LAST_Handle
         Logging logical =false; % create stdout and stderr log files. Must be set BEFORE connect
         LoggingDir char ; % directory where to log. Must be set BEFORE connect
     end
-
+    
     methods
         % constructor and destructor
-        function S=superunit()
-            Nunits=numel(S.UnitHosts);
-            S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
-            for i=1:Nunits
-                id=sscanf(S.UnitHosts{i},'last%d');
-                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('super%02d',id));
-                S.RemoteUnits(i).RemoteTerminal='none';
+        function S=superunit(id)
+            % creates the object, assigning an Id if provided, and loads
+            %  the configuration. The actual spawning is done by the method
+            %  .connect
+            if ~exist('id','var')
+                id='';
             end
+            if ~isempty(id)
+                S.Id=id;
+            end
+            % load configuration
+            S.loadConfig(S.configFileName('create'))
         end
         
         function delete(S)
             % maybe not needed, the destructor od SpawnedMatlab should do
             for i=1:Nunits
                 % S.RemoteUnits(i).disconnect;
+            end
+        end
+        
+        function set.UnitHosts(S,UnitHosts)
+            % setter for UnitHosts, constructs all the .RemoteUnits
+            S.UnitHosts=UnitHosts;
+            Nunits=numel(UnitHosts);
+            S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
+            for i=1:Nunits
+                id=sscanf(S.UnitHosts{i},'last%d');
+                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('super%02d',id));
+                S.RemoteUnits(i).RemoteTerminal='none';
             end
         end
     end
@@ -42,9 +58,9 @@ classdef superunit < obs.LAST_Handle
         end
         
         function disconnect(S)
-             for i=1:numel(S.RemoteUnits)
-                 S.RemoteUnits(i).disconnect;
-             end
+            for i=1:numel(S.RemoteUnits)
+                S.RemoteUnits(i).disconnect;
+            end
         end
         
         % shortcuts for sending multiple commands
