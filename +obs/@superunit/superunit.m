@@ -52,7 +52,7 @@ classdef superunit < obs.LAST_Handle
             for i=1:numel(S.RemoteUnits)
                 id=sscanf(S.UnitHosts{i},'last%d');
                 try
-                    S.RemoteUnits(i).connect(S.UnitHosts{i},1000+id,1100+id,1200+id,1300+id)
+                    S.RemoteUnits(i).connect(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
                     S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
                     S.RemoteUnits(i).Messenger.send('for i=1:4,Unit.Slave{i}.RemoteTerminal=''none'';end')
                 catch
@@ -76,7 +76,7 @@ classdef superunit < obs.LAST_Handle
                 units=1:numel(S.RemoteUnits);
             end
             res=cell(1,numel(units));
-            for i=numel(units)
+            for i=1:numel(units)
                 res{i}=S.RemoteUnits(units(i)).Messenger.query(command);
             end
         end
@@ -87,7 +87,7 @@ classdef superunit < obs.LAST_Handle
             if isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
-            for i=numel(units)
+            for i=1:numel(units)
                 S.RemoteUnits(units(i)).Messenger.send(command);
             end
         end
