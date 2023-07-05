@@ -51,9 +51,13 @@ classdef superunit < obs.LAST_Handle
         function connect(S)
             for i=1:numel(S.RemoteUnits)
                 id=sscanf(S.UnitHosts{i},'last%d');
-                S.RemoteUnits(i).connect(S.UnitHosts{i},1000+id,1100+id,1200+id,1300+id)
-                S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
-                S.RemoteUnits(i).Messenger.send('for i=1:4,Unit.Slave{i}.RemoteTerminal=''none'';end')
+                try
+                    S.RemoteUnits(i).connect(S.UnitHosts{i},1000+id,1100+id,1200+id,1300+id)
+                    S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
+                    S.RemoteUnits(i).Messenger.send('for i=1:4,Unit.Slave{i}.RemoteTerminal=''none'';end')
+                catch
+                    S.reportError('cannot create Unit on host %s',S.UnitHosts{i})
+                end
             end
         end
         
