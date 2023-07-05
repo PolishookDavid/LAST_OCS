@@ -14,18 +14,18 @@ classdef superunit < obs.LAST_Handle
         % constructor and destructor
         function S=superunit()
             Nunits=numel(S.UnitHosts);
-            S=repmat(obs.util.SpawnedMatlab,1,Nunits);
+            S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
             for i=1:Nunits
                 id=sscanf(S.UnitHosts{i},'last%d');
-                S(i)=obs.util.SpawnedMatlab(sprintf('super%02d',id));
-                S(i).RemoteTerminal='none';
+                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('super%02d',id));
+                S.RemoteUnits(i).RemoteTerminal='none';
             end
         end
         
         function delete(S)
             % maybe not needed, the destructor od SpawnedMatlab should do
             for i=1:Nunits
-                % S(i).disconnect;
+                % S.RemoteUnits(i).disconnect;
             end
         end
     end
@@ -33,17 +33,17 @@ classdef superunit < obs.LAST_Handle
     methods
         % connect and disconnect
         function connect(S)
-            for i=1:numel(S)
+            for i=1:numel(S.RemoteUnits)
                 id=sscanf(S.UnitHosts{i},'last%d');
-                S(i).connect(S.UnitHosts{i},1000+id,1100+id,1200+id,1300+id)
-                S(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
-                S(i).Messenger.send('for i=1:4,Unit.Slave{i}.RemoteTerminal=''none'';end')
+                S.RemoteUnits(i).connect(S.UnitHosts{i},1000+id,1100+id,1200+id,1300+id)
+                S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
+                S.RemoteUnits(i).Messenger.send('for i=1:4,Unit.Slave{i}.RemoteTerminal=''none'';end')
             end
         end
         
         function disconnect(S)
-             for i=1:numel(S)
-                 S(i).disconnect;
+             for i=1:numel(S.RemoteUnits)
+                 S.RemoteUnits(i).disconnect;
              end
         end
         
@@ -53,11 +53,11 @@ classdef superunit < obs.LAST_Handle
             %  note: this is serial, the next command is sent only after
             %  the previous reply has arrived
             if isempty(units)
-                units=1:numel(S);
+                units=1:numel(S.RemoteUnits);
             end
             res=cell(1,numel(units));
             for i=numel(units)
-                res{i}=S(units(i)).Messenger.query(command);
+                res{i}=S.RemoteUnits(units(i)).Messenger.query(command);
             end
         end
         
@@ -65,10 +65,10 @@ classdef superunit < obs.LAST_Handle
             % send the same command to one or more units, without waiting
             %  for replies
             if isempty(units)
-                units=1:numel(S);
+                units=1:numel(S.RemoteUnits);
             end
             for i=numel(units)
-                S(units(i)).Messenger.send(command);
+                S.RemoteUnits(units(i)).Messenger.send(command);
             end
         end
         
