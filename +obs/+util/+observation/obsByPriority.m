@@ -90,7 +90,7 @@ function obsByPriority(Unit, Args)
         fclose(logFile);
     end
     
-    T = convertCSV2TargetObject(Args.CoordFileName, Args.NperVisit);
+    T = convertCSV2TargetObject(Args.CoordFileName);
     
     
     fprintf('%i fields in target list.\n\n',length(T.Data.RA))
@@ -241,7 +241,7 @@ end
     
 
 
-function Result = convertCSV2TargetObject(filename,NperVisit)
+function Result = convertCSV2TargetObject(filename)
 
 
     targetKeys = {'RA','Dec','Index','TargetName','DeltaRA','DeltaDec', ...
