@@ -48,11 +48,11 @@ classdef superunit < obs.LAST_Handle
     
     methods
         % connect and disconnect
-        function connect(S)
+        function spawn(S)
             for i=1:numel(S.RemoteUnits)
                 id=sscanf(S.UnitHosts{i},'last%d');
                 try
-                    S.RemoteUnits(i).connect(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
+                    S.RemoteUnits(i).spawn(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
                     S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
                     S.RemoteUnits(i).Messenger.send('for i=1:4,Unit.Slave{i}.RemoteTerminal=''none'';end')
                 catch
@@ -61,9 +61,31 @@ classdef superunit < obs.LAST_Handle
             end
         end
         
-        function disconnect(S)
-            for i=1:numel(S.RemoteUnits)
-                S.RemoteUnits(i).disconnect;
+        function res=connect(S,units)
+            if isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            res=false(size(units));
+            for i=1:numel(units)
+                res(i)=S.RemoteUnits(units(i)).connect;
+            end
+         end
+        
+        function disconnect(S,units)
+            if isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            for i=1:numel(units)
+                S.RemoteUnits(units(i)).disconnect;
+            end
+        end
+        
+        function terminate(S,units)
+            if isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            for i=1:numel(units)
+                S.RemoteUnits(units(i)).terminate;
             end
         end
         
