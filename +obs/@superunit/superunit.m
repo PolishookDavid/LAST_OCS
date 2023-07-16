@@ -28,7 +28,7 @@ classdef superunit < obs.LAST_Handle
         
         function delete(S)
             % maybe not needed, the destructor od SpawnedMatlab should do
-            for i=1:Nunits
+            for i=1:numel(S.RemoteUnits)
                 % S.RemoteUnits(i).disconnect;
             end
         end
@@ -41,7 +41,7 @@ classdef superunit < obs.LAST_Handle
             for i=1:Nunits
                 id=sscanf(S.UnitHosts{i},'last%d');
                 S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('super%02d',id));
-                S.RemoteUnits(i).RemoteTerminal='none';
+                S.RemoteUnits(i).RemoteTerminal=S.RemoteTerminal;
             end
         end
     end
@@ -49,12 +49,15 @@ classdef superunit < obs.LAST_Handle
     methods
         % connect and disconnect
         function spawn(S)
+            % spawn includes connect
             for i=1:numel(S.RemoteUnits)
                 id=sscanf(S.UnitHosts{i},'last%d');
                 try
                     S.RemoteUnits(i).spawn(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
                     S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
-                    S.RemoteUnits(i).Messenger.send('for i=1:4,Unit.Slave{i}.RemoteTerminal=''none'';end')
+                    S.RemoteUnits(i).Messenger.send(sprintf(...
+                                 'for i=1:4,Unit.Slave{i}.RemoteTerminal=''%s'';end',...
+                                                    S.RemoteTerminal));
                 catch
                     S.reportError('cannot create Unit on host %s',S.UnitHosts{i})
                 end
@@ -62,7 +65,8 @@ classdef superunit < obs.LAST_Handle
         end
         
         function res=connect(S,units)
-            if isempty(units)
+            % (re)connects to an already spawned remote unit
+            if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
             res=false(size(units));
@@ -72,7 +76,10 @@ classdef superunit < obs.LAST_Handle
          end
         
         function disconnect(S,units)
-            if isempty(units)
+            % disconnect from remote units, without terminating them
+            %  (the hardware stay on and the unit is available for another
+            %   client to connect with it)
+            if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
             for i=1:numel(units)
@@ -81,7 +88,7 @@ classdef superunit < obs.LAST_Handle
         end
         
         function terminate(S,units)
-            if isempty(units)
+            if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
             for i=1:numel(units)
@@ -90,11 +97,13 @@ classdef superunit < obs.LAST_Handle
         end
         
         % shortcuts for sending multiple commands
-        function res=query(S,units,command)
-            % query the same command to one or more units
+        function res=query(S,command,units)
+            % query the same command to all or specific units
+            %  input: command: char array
+            %         units:   empty or numeric array
             %  note: this is serial, the next command is sent only after
             %  the previous reply has arrived
-            if isempty(units)
+            if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
             res=cell(1,numel(units));
@@ -103,10 +112,12 @@ classdef superunit < obs.LAST_Handle
             end
         end
         
-        function send(S,units,command)
-            % send the same command to one or more units, without waiting
+        function send(S,command,units)
+            % send the same command to all or specific units, without waiting
             %  for replies
-            if isempty(units)
+            %  input: command: char array
+            %         units:   empty or numeric array
+            if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
             for i=1:numel(units)
