@@ -42,6 +42,7 @@ classdef superunit < obs.LAST_Handle
                 id=sscanf(S.UnitHosts{i},'last%d');
                 S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('super%02d',id));
                 S.RemoteUnits(i).RemoteTerminal=S.RemoteTerminal;
+                S.RemoteUnits(i).RemoteMessengerFlavor='listener';
             end
         end
     end
@@ -52,6 +53,8 @@ classdef superunit < obs.LAST_Handle
             % spawn includes connect
             for i=1:numel(S.RemoteUnits)
                 id=sscanf(S.UnitHosts{i},'last%d');
+                % of for lastNN machines, would be nice if it worked by IP
+                %  as well
                 try
                     S.RemoteUnits(i).spawn(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
                     S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
