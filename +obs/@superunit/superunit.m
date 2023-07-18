@@ -40,7 +40,7 @@ classdef superunit < obs.LAST_Handle
             S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
             for i=1:Nunits
                 id=sscanf(S.UnitHosts{i},'last%d');
-                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('super%02d',id));
+                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('master%02d',id));
                 S.RemoteUnits(i).RemoteTerminal=S.RemoteTerminal;
                 S.RemoteUnits(i).RemoteMessengerFlavor='listener';
             end
@@ -57,10 +57,10 @@ classdef superunit < obs.LAST_Handle
                 %  as well
                 try
                     S.RemoteUnits(i).spawn(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
-                    S.RemoteUnits(i).Messenger.send(sprintf('Unit=obs.unitCS(''%02d'');',id))
-                    S.RemoteUnits(i).Messenger.send(sprintf(...
+                    S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),i)
+                    S.send(sprintf(...
                                  'for i=1:4,Unit.Slave{i}.RemoteTerminal=''%s'';end',...
-                                                    S.RemoteTerminal));
+                                                    S.RemoteTerminal),i);
                 catch
                     S.reportError('cannot create Unit on host %s',S.UnitHosts{i})
                 end
@@ -125,6 +125,43 @@ classdef superunit < obs.LAST_Handle
             end
             for i=1:numel(units)
                 S.RemoteUnits(units(i)).Messenger.send(command);
+            end
+        end
+
+        % Alternatively, sending multiple commands using the Responder,
+        %  i.e. forcing a callback
+        function res=queryCallback(S,command,units)
+            % query the same command to all or specific units, using the
+            % Responder messenger, which always does a callback
+            %  input: command: char array
+            %         units:   empty or numeric array
+            %  Note: this is serial, the next command is sent only after
+            %  the previous reply has arrived
+            %
+            % Use case:
+            %   S.send('GeneralStatus=''busy'';pause(20);GeneralStatus=''free'';')
+            %   S.queryCallback('GeneralStatus')
+
+            if ~exist('units','var') || isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            res=cell(1,numel(units));
+            for i=1:numel(units)
+                res{i}=S.RemoteUnits(units(i)).Responderer.query(command);
+            end
+        end
+
+        function sendCallback(S,command,units)
+            % send the same command to all or specific units, without waiting
+            %  for replies, using the Responder messenger, which always 
+            %  does a callback
+            %  input: command: char array
+            %         units:   empty or numeric array
+            if ~exist('units','var') || isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            for i=1:numel(units)
+                S.RemoteUnits(units(i)).Responder.send(command);
             end
         end
         
