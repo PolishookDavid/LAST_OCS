@@ -147,7 +147,7 @@ classdef superunit < obs.LAST_Handle
             end
             res=cell(1,numel(units));
             for i=1:numel(units)
-                res{i}=S.RemoteUnits(units(i)).Responderer.query(command);
+                res{i}=S.RemoteUnits(units(i)).Responder.query(command);
             end
         end
 
