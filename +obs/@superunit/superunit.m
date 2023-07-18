@@ -133,10 +133,14 @@ classdef superunit < obs.LAST_Handle
         function res=queryCallback(S,command,units)
             % query the same command to all or specific units, using the
             % Responder messenger, which always does a callback
+            %
             %  input: command: char array
             %         units:   empty or numeric array
-            %  Note: this is serial, the next command is sent only after
-            %  the previous reply has arrived
+            %  Notes:
+            %  - this is serial, the next command is sent only after
+            %    the previous reply has arrived
+            %  - a query command which involves another callback may fail
+            %    I.e., a query about Unit.Slave{i}.Status
             %
             % Use case:
             %   S.send('GeneralStatus=''busy'';pause(20);GeneralStatus=''free'';')
