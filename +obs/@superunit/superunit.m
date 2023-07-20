@@ -4,7 +4,8 @@ classdef superunit < obs.LAST_Handle
 
     properties
         UnitHosts  cell % list of hosts on which to spawn units (cell of char arrays)
-        RemoteTerminal char ='none';
+        UnitTerminal char ='none';
+        SlaveTerminals char ='none';
         RemoteUnits obs.util.SpawnedMatlab; % array of SpawnedMatlabs;
         Logging logical =false; % create stdout and stderr log files. Must be set BEFORE connect
         LoggingDir char ; % directory where to log. Must be set BEFORE connect
@@ -41,10 +42,11 @@ classdef superunit < obs.LAST_Handle
             for i=1:Nunits
                 id=sscanf(S.UnitHosts{i},'last%d');
                 S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('master%02d',id));
-                S.RemoteUnits(i).RemoteTerminal=S.RemoteTerminal;
+                S.RemoteUnits(i).RemoteTerminal=S.UnitTerminal;
                 S.RemoteUnits(i).RemoteMessengerFlavor='listener';
             end
         end
+        
     end
     
     methods
@@ -59,8 +61,8 @@ classdef superunit < obs.LAST_Handle
                     S.RemoteUnits(i).spawn(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),i)
                     S.send(sprintf(...
-                                 'for i=1:4,Unit.Slave{i}.RemoteTerminal=''%s'';end',...
-                                                    S.RemoteTerminal),i);
+                          'for i=1:numel(Unit.Slave),Unit.Slave{i}.RemoteTerminal=''%s'';end',...
+                                                    S.SlaveTerminals),i);
                 catch
                     S.reportError('cannot create Unit on host %s',S.UnitHosts{i})
                 end
