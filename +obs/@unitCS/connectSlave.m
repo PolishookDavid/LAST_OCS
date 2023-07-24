@@ -12,9 +12,9 @@ function connectSlave(Unit,islaves)
     for i=islaves
         Unit.report('spawning slave %d\n',i)
         S=Unit.Slave{i};
-        S.MessengerLocalPort = 8000+i; % arbitrary port numbers, but for definiteness
+        S.MessengerLocalPort = []; % arbitrary port numbers, but for definiteness
         S.MessengerRemotePort= 8500+i;
-        S.ResponderLocalPort = 9000+i;
+        S.ResponderLocalPort = [];
         S.ResponderRemotePort= 9500+i;
         % Spawn a new slave if possible. I doubt that handling the case of 
         %  orphan slaves, and attempting reconnections to existing slaves 
