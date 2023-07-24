@@ -55,10 +55,10 @@ classdef superunit < obs.LAST_Handle
             % spawn includes connect
             for i=1:numel(S.RemoteUnits)
                 id=sscanf(S.UnitHosts{i},'last%d');
-                % of for lastNN machines, would be nice if it worked by IP
+                % ok for lastNN machines, would be nice if it worked by IP
                 %  as well
                 try
-                    S.RemoteUnits(i).spawn(S.UnitHosts{i},10000+id,11000+id,12000+id,13000+id)
+                    S.RemoteUnits(i).spawn(S.UnitHosts{i},[],11000+id,[],13000+id)
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),i)
                     S.send(sprintf(...
                           'for i=1:numel(Unit.Slave),Unit.Slave{i}.RemoteTerminal=''%s'';end',...
@@ -76,6 +76,8 @@ classdef superunit < obs.LAST_Handle
             end
             res=false(size(units));
             for i=1:numel(units)
+                id=sscanf(S.UnitHosts{i},'last%d');
+                S.RemoteUnits(units(i)).MessengerRemotePort=11000+id;
                 res(i)=S.RemoteUnits(units(i)).connect;
             end
          end
