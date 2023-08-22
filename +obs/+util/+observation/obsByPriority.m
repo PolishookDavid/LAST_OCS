@@ -110,7 +110,13 @@ function obsByPriority(Unit, Args)
     T.Data = T.Data(mask_mount,:);
     Ntargets = length(T.Data.RA);
     fprintf('%i fields remaining.\n\n',Ntargets)
-       
+    
+    
+    for I=Args.Itel
+        Unit.Camera{I}.classCommand('SaveOnDisk=1'); % save images on all cameras
+    end
+    
+    
     while true
         
         if ~Args.Simulate
@@ -186,10 +192,36 @@ function obsByPriority(Unit, Args)
         if ~Args.Simulate
             Unit.Mount.goToTarget(T.RA(IndPrio), T.Dec(IndPrio));
             
+            temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
+            temp2 = Unit.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
+    
+            if temp1<-10
+                Temp = temp2;
+            elseif temp2<-10
+                Temp = temp1;
+            else
+                Temp = (temp1+temp2)*0.5;
+            end
+            fprintf('\nTemperature %.1f deg.\n', Temp)
+
+
+            
             for IFocuser=Args.Itel
                 % TODO: 'Unit' should not be hard coded
-                Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']); 
+                Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);    
+                           
+                if Temp>35
+                    Unit.Camera{IFocuser}.classCommand('Temperature=5');
+                elseif Temp>30
+                    Unit.Camera{IFocuser}.classCommand('Temperature=0');
+                %elseif Temp>25
+                %    Unit.Camera{IFocuser}.classCommand('Temperature=0')
+                else
+                    Unit.Camera{IFocuser}.classCommand('Temperature=-5');
+                end
             end
+                
+
             Unit.Mount.waitFinish;
             pause(2);
             if ~Unit.readyToExpose('Itel',Args.Itel,'Wait',true, 'Timeout',Timeout)
