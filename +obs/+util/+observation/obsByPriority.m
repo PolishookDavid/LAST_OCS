@@ -352,7 +352,7 @@ function checkAbortFile(Unit, JD, Shutdown)
 
     Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
         
-    if (Sun.Alt*180./pi)>-7
+    if (Sun.Alt*180./pi)>-11
         fprintf('\nThe Sun is too high.\n')
         if Shutdown
             fprintf('Shutting down the mount.\n')
