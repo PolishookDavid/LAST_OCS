@@ -92,6 +92,9 @@ function obsByPriority(Unit, Args)
     
     T = convertCSV2TargetObject(Args.CoordFileName);
     
+    % disable bug in Targets.isVisible which can't deal with negative HA,
+    % remove line ones that bug is fixed
+    T.VisibilityArgs.HALimit=400
     
     fprintf('%i fields in target list.\n\n',length(T.Data.RA))
     
