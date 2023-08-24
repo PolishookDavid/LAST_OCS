@@ -392,17 +392,17 @@ end
 function checkAbortFile(Unit, JD, Shutdown)
 
     Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
-        
-    if (Sun.Alt*180./pi)>-9.5
+    modulo_jd = mod(JD,1); % this is to avoid shutting down when starting observations in the evening
+    
+    if ((Sun.Alt*180./pi)>-11.5)
         fprintf('\nThe Sun is too high.\n')
-        if Shutdown
+        if Shutdown && (modulo_jd>0.5) && (modulo_jd<0.75)    % automatic shutdown will only happen in the morning
             fprintf('Shutting down the mount.\n')
             Unit.shutdown
             pause(20)
             error('shutdown because Sun too high');
         else
             fprintf('Automatic shutdown disabled!! Press CTRL+C and run Unit.shutdown to shutdown the mount.\n')
-            pause(20)
         end
         %error('The Sun is rising. Shutting down the mount. \n\n')
     end 
