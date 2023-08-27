@@ -28,9 +28,10 @@ FocusHA                         = 0;     % degrees
 FocusLoopTimeout                = 300;   % 5 minutes
 PauseTimeForTargetsAvailability = 5.*60; % sec
 SlewingTimeout                  = 60;    % sec
+CamerasToUse = zeros(1,4);
 
 
-% Connect the mount if not already connected.
+% Connect the mount if already connected.
 RC1=Unit.Camera{1}.classCommand('CamStatus');
 RC2=Unit.Camera{2}.classCommand('CamStatus');
 RC3=Unit.Camera{3}.classCommand('CamStatus');
@@ -190,7 +191,6 @@ if (ToFocus)
    pause(60)
     
    % Check the focusTel success
-   CamerasToUse = zeros(1,4);
    for CameraInx=1:1:4
        CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusTelStartTime, FocusLoopTimeout);
    end
@@ -200,6 +200,7 @@ if (ToFocus)
    else
        fprintf('Focus succeeded for all 4 telescopes\n')
    end
+   
 else
    fprintf('Skip focus routine as requested\n')
 end
@@ -210,7 +211,7 @@ end
 
 
 % observe
-obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
+%obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
 
 % Reached here, 7/03/2023
 return %%%
