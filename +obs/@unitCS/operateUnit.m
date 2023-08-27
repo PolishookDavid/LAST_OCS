@@ -111,6 +111,35 @@ end
 
 % Take Flat Field.
 if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
+    
+    % increase chip temperature if it is too hot
+    temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
+    temp2 = Unit.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
+    
+    if temp1<-10
+        Temp = temp2;
+	elseif temp2<-10
+        Temp = temp1;
+    else
+        Temp = (temp1+temp2)*0.5;
+    end
+	fprintf('\nThe temperature is %.1f deg.\n', Temp)
+
+    for IFocuser=[1 2 3 4]
+        
+        if Temp>35
+            Unit.Camera{IFocuser}.classCommand('Temperature=5');
+            fprintf('Setting the camera temperature to +5deg.\n')
+        elseif Temp>30
+            Unit.Camera{IFocuser}.classCommand('Temperature=0');
+            fprintf('Setting the camera temperature to 0deg.\n')
+        else
+            Unit.Camera{IFocuser}.classCommand('Temperature=-5');
+            fprintf('Setting the camera temperature to -5deg (default).\n')
+        end
+	end
+ 
+    
     fprintf('Taking flats\n')
     Unit.takeTwilightFlats
 else
