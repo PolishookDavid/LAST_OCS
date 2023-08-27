@@ -148,6 +148,7 @@ function obsByPriority(Unit, Args)
                 fprintf('Waiting 2 minutes.\n')
                 pause(120)
                 JD = celestial.time.julday; % + Args.DeltaJD;
+                Unit.Mount.home; % avoid tracking when there are not targets
             end
             
             [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);         
