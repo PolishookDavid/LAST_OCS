@@ -41,6 +41,9 @@ classdef superunit < obs.LAST_Handle
             S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
             for i=1:Nunits
                 id=sscanf(S.UnitHosts{i},'last%d');
+                % set .RemoteUnit(i).Host. The method .spawn sets it
+                %  explicitely, but .connect assumes that is is already set.
+                S.RemoteUnits(i).Host=S.UnitHosts{i};
                 S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('master%02d',id));
                 S.RemoteUnits(i).RemoteTerminal=S.UnitTerminal;
                 S.RemoteUnits(i).RemoteMessengerFlavor='listener';
@@ -51,9 +54,12 @@ classdef superunit < obs.LAST_Handle
     
     methods
         % connect and disconnect
-        function spawn(S)
+        function spawn(S,units)
             % spawn includes connect
-            for i=1:numel(S.RemoteUnits)
+            if ~exist('units','var') || isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            for i=1:numel(units)
                 id=sscanf(S.UnitHosts{i},'last%d');
                 % ok for lastNN machines, would be nice if it worked by IP
                 %  as well
@@ -76,7 +82,7 @@ classdef superunit < obs.LAST_Handle
             end
             res=false(size(units));
             for i=1:numel(units)
-                id=sscanf(S.UnitHosts{i},'last%d');
+                id=sscanf(S.UnitHosts{units(i)},'last%d');
                 S.RemoteUnits(units(i)).MessengerRemotePort=11000+id;
                 res(i)=S.RemoteUnits(units(i)).connect;
             end
