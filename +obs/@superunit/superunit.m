@@ -60,17 +60,18 @@ classdef superunit < obs.LAST_Handle
                 units=1:numel(S.RemoteUnits);
             end
             for i=1:numel(units)
-                id=sscanf(S.UnitHosts{units(i)},'last%d');
+                j=units(i);
+                id=sscanf(S.UnitHosts{j},'last%d');
                 % ok for lastNN machines, would be nice if it worked by IP
                 %  as well
                 try
-                    S.RemoteUnits(i).spawn(S.UnitHosts{i},[],11000+id,[],13000+id)
-                    S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),i)
+                    S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000+id,[],13000+id)
+                    S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
                     S.send(sprintf(...
                           'for i=1:numel(Unit.Slave),Unit.Slave{i}.RemoteTerminal=''%s'';end',...
-                                                    S.SlaveTerminals),i);
+                                                    S.SlaveTerminals),j);
                 catch
-                    S.reportError('cannot create Unit on host %s',S.UnitHosts{i})
+                    S.reportError('cannot create Unit on host %s',S.UnitHosts{j})
                 end
             end
         end
