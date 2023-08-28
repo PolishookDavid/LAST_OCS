@@ -60,7 +60,7 @@ classdef superunit < obs.LAST_Handle
                 units=1:numel(S.RemoteUnits);
             end
             for i=1:numel(units)
-                id=sscanf(S.UnitHosts{i},'last%d');
+                id=sscanf(S.UnitHosts{units(i)},'last%d');
                 % ok for lastNN machines, would be nice if it worked by IP
                 %  as well
                 try
