@@ -41,10 +41,10 @@ classdef superunit < obs.LAST_Handle
             S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
             for i=1:Nunits
                 id=sscanf(S.UnitHosts{i},'last%d');
+                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('master%02d',id));
                 % set .RemoteUnit(i).Host. The method .spawn sets it
                 %  explicitely, but .connect assumes that is is already set.
                 S.RemoteUnits(i).Host=S.UnitHosts{i};
-                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('master%02d',id));
                 S.RemoteUnits(i).RemoteTerminal=S.UnitTerminal;
                 S.RemoteUnits(i).RemoteMessengerFlavor='listener';
             end
