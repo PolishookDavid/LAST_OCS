@@ -57,7 +57,7 @@ classdef superunit < obs.LAST_Handle
         function set.UnitTerminal(S,termtype)
             S.UnitTerminal=termtype;
             for i=1:numel(S.RemoteUnits)
-                S.RemoteUnits.RemoteTerminal=termtype;
+                S.RemoteUnits(i).RemoteTerminal=termtype;
             end
         end
     end
