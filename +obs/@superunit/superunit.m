@@ -34,6 +34,10 @@ classdef superunit < obs.LAST_Handle
             end
         end
         
+    end
+    
+    methods
+        % setters of properties which need further propagation
         function set.UnitHosts(S,UnitHosts)
             % setter for UnitHosts, constructs all the .RemoteUnits
             S.UnitHosts=UnitHosts;
@@ -50,6 +54,12 @@ classdef superunit < obs.LAST_Handle
             end
         end
         
+        function set.UnitTerminal(S,termtype)
+            S.UnitTerminal=termtype;
+            for i=1:numel(S.RemoteUnits)
+                S.RemoteUnits.RemoteTerminal=termtype;
+            end
+        end
     end
     
     methods
