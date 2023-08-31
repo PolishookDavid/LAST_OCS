@@ -68,8 +68,8 @@ function [OperableComponents,ComponentStatus,FailureReasons]=...
     ss=cell(1,Ntel);
     for i=1:Ntel
         ss{i}=Unit.Slave{i}.Status;
+        ComponentStatus.Slave{i}=ss{i};
         if ~strcmp(ss{i},'alive')
-            ComponentStatus.Slave{i}=ss{i};
             FailureReasons{numel(FailureReasons)+1}=...
                 sprintf('slave %d is %s',i,ss{i});
         end
@@ -98,6 +98,7 @@ function [OperableComponents,ComponentStatus,FailureReasons]=...
                     FailureReasons{numel(FailureReasons)+1}=...
                         sprintf('focuser %d is %s',i,rf.reason);
                 end
+                OperableComponents.Telescope(i)= rc.flag & rf.flag;
             end
         else
             ComponentStatus.Camera{i}='poweroff';
