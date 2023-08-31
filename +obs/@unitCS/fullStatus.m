@@ -52,7 +52,7 @@ function [OperableComponents,ComponentStatus,FailureReasons]=...
         % check the mount even if the power switch didn't respond
         rm=Unit.Mount.Ready;
         OperableComponents.Mount=rm.flag; % may be turned false later if cameras are exposing
-        ComponentStatus.Mount=r.reason;
+        ComponentStatus.Mount=rm.reason;
         if shortcut && ~rm.flag
             return
         end
