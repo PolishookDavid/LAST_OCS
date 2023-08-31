@@ -5,7 +5,7 @@
 % Author: Enrico Segre, Jun 2021
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-classdef mount < obs.LAST_Handle
+classdef mount < inst.device
 
     properties (GetAccess=public, SetAccess=private)
         LST double % Local Sidereal Time (LST) in [deg] (fraction of day)
@@ -43,6 +43,10 @@ classdef mount < obs.LAST_Handle
         TimeFromGPS logical     = false;      
     end
         
+    properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
+        Ready=struct('flag',true,'reason',''); % if and why the mount can be operated
+    end
+    
 %         % Mount and telescopes names and models
 %         MountUniqueName = '';
 %         MountGeoName = '';
@@ -128,6 +132,15 @@ classdef mount < obs.LAST_Handle
             LST = LST.*360;
         end
 
+    % getter for isReady
+        function r=get.Ready(M)
+            r=struct('flag',false,'reason',M.Status);
+            switch r.reason
+                case {'disabled','idle','tracking'}
+                    r.flag=true;
+            end
+        end
+    
     % these are merely name translations from properties of the child class
         function lon=get.ObsLon(M)
             lon=M.MountPos(2);
