@@ -50,10 +50,10 @@ function [OperableComponents,ComponentStatus,FailureReasons]=...
     mp=Unit.MountPower;
     if isempty(mp) || mp
         % check the mount even if the power switch didn't respond
-        r=Unit.Mount.Ready;
-        OperableComponents.Mount=r.flag; % may be turned false later if cameras are exposing
+        rm=Unit.Mount.Ready;
+        OperableComponents.Mount=rm.flag; % may be turned false later if cameras are exposing
         ComponentStatus.Mount=r.reason;
-        if shortcut && ~f.flag
+        if shortcut && ~rm.flag
             return
         end
     else
