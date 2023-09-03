@@ -72,10 +72,13 @@ classdef superunit < obs.LAST_Handle
             for i=1:numel(units)
                 j=units(i);
                 id=sscanf(S.UnitHosts{j},'last%d');
+                if isempty(id)
+                    id=ceil(sscanf(S.UnitHosts{j},'10.23.1.%d')/2);
+                end
                 % ok for lastNN machines, would be nice if it worked by IP
                 %  as well
                 try
-                    S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000+id,[],13000+id)
+                    S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000,[],13000)
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
                     S.send(sprintf(...
                           'for i=1:numel(Unit.Slave),Unit.Slave{i}.RemoteTerminal=''%s'';end',...
@@ -93,8 +96,9 @@ classdef superunit < obs.LAST_Handle
             end
             res=false(size(units));
             for i=1:numel(units)
-                id=sscanf(S.UnitHosts{units(i)},'last%d');
-                S.RemoteUnits(units(i)).MessengerRemotePort=11000+id;
+                %id=sscanf(S.UnitHosts{units(i)},'last%d');
+                S.RemoteUnits(units(i)).MessengerRemotePort=11000;
+                S.RemoteUnits(units(i)).ResponderRemotePort=13000;
                 res(i)=S.RemoteUnits(units(i)).connect;
             end
          end
