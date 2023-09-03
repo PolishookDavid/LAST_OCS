@@ -44,8 +44,11 @@ classdef superunit < obs.LAST_Handle
             Nunits=numel(UnitHosts);
             S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
             for i=1:Nunits
-                id=sscanf(S.UnitHosts{i},'last%d');
+                id=S.hostUnitId(S.UnitHosts{i});
                 S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('master%02d',id));
+                if ~isempty(id)
+                    S.RemoteUnits(i).RemoteUser='ocs';
+                end
                 % set .RemoteUnit(i).Host. The method .spawn sets it
                 %  explicitely, but .connect assumes that is is already set.
                 S.RemoteUnits(i).Host=S.UnitHosts{i};
@@ -71,12 +74,7 @@ classdef superunit < obs.LAST_Handle
             end
             for i=1:numel(units)
                 j=units(i);
-                id=sscanf(S.UnitHosts{j},'last%d');
-                if isempty(id)
-                    id=ceil(sscanf(S.UnitHosts{j},'10.23.1.%d')/2);
-                end
-                % ok for lastNN machines, would be nice if it worked by IP
-                %  as well
+                id=S.hostUnitId(S.UnitHosts{i});
                 try
                     S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000,[],13000)
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
@@ -96,7 +94,6 @@ classdef superunit < obs.LAST_Handle
             end
             res=false(size(units));
             for i=1:numel(units)
-                %id=sscanf(S.UnitHosts{units(i)},'last%d');
                 S.RemoteUnits(units(i)).MessengerRemotePort=11000;
                 S.RemoteUnits(units(i)).ResponderRemotePort=13000;
                 res(i)=S.RemoteUnits(units(i)).connect;
@@ -194,5 +191,17 @@ classdef superunit < obs.LAST_Handle
             end
         end
         
+    end
+
+    methods (Static)
+        function id=hostUnitId(address)
+            % quick and dirty function to determine the Unit.Id from
+            %  either the static host name or ip in 10.23.1.x,
+            % intended to be adequate for LAST
+            id=sscanf(address,'last%d');
+            if isempty(id)
+                id=ceil(sscanf(address,'10.23.1.%d')/2);
+            end
+        end
     end
 end
