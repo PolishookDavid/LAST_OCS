@@ -21,6 +21,11 @@ function connectSlave(Unit,islaves)
         %  is viable. Slaves should in principle exist only
         %  when the cameras are powered, and we don't want them dangling
         S.spawn
+    end
+    
+    for i=islaves
+        S=Unit.Slave{i};
+        S.connect;
         % create a slave unitCS object and populate it
         if isempty(S.LastError)
             SlaveUnitName=inputname(1);
