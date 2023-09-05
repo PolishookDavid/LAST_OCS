@@ -53,8 +53,16 @@ function [OperableComponents,ComponentStatus,FailureReasons]=...
         rm=Unit.Mount.Ready;
         OperableComponents.Mount=rm.flag; % may be turned false later if cameras are exposing
         ComponentStatus.Mount=rm.reason;
+        if ~rm.flag
+            FailureReasons{numel(FailureReasons)+1}=...
+                sprintf('mount is %s',rm.reason);
+        end
         if shortcut && ~rm.flag
             return
+        end
+        if ~strcmp(rm.reason,'tracking')
+            FailureReasons{numel(FailureReasons)+1}=...
+                'mount is not tracking';
         end
     else
         ComponentStatus.Mount='poweroff';
@@ -98,7 +106,8 @@ function [OperableComponents,ComponentStatus,FailureReasons]=...
                     FailureReasons{numel(FailureReasons)+1}=...
                         sprintf('focuser %d is %s',i,rf.reason);
                 end
-                OperableComponents.Telescope(i)= rc.flag & rf.flag;
+                OperableComponents.Telescope(i)= rc.flag & rf.flag & ...
+                    strcmp(rm.reason,'tracking');
             end
         else
             ComponentStatus.Camera{i}='poweroff';
