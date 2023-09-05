@@ -9,6 +9,8 @@ function connectSlave(Unit,islaves)
         islaves=1:numel(Unit.Slave);
     end
     
+    SlaveUnitName=inputname(1);
+    
     for i=islaves
         Unit.report('spawning slave %d\n',i)
         S=Unit.Slave{i};
@@ -25,10 +27,8 @@ function connectSlave(Unit,islaves)
     
     for i=islaves
         S=Unit.Slave{i};
-        S.connect;
         % create a slave unitCS object and populate it
-        if isempty(S.LastError)
-            SlaveUnitName=inputname(1);
+        if S.connect
             SlaveUnitId=[Unit.Id '_slave_' num2str(i)];
             M=S.Messenger;
             M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
@@ -96,6 +96,6 @@ function connectSlave(Unit,islaves)
 
             % send the connect command to the slave unit object, to connect
             %  with its own hardware
-            M.query([SlaveUnitName '.connect;']);
+            M.send([SlaveUnitName '.connect;']);
         end
     end

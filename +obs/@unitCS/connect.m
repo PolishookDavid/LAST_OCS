@@ -57,7 +57,7 @@ function Unit=connect(Unit)
         j=Unit.LocalTelescopes(i);
         Unit.Focuser{j}.connect(Unit.Focuser{j}.PhysicalAddress);
         % connect the camera as last, to add a further small delay
-        %  between power on of the first camera and attempt to connect
+        %  between power-on of the first camera and attempt to connect
         Unit.Camera{j}.connect(Unit.Camera{j}.PhysicalId);
     end
     
