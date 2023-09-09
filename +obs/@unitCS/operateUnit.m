@@ -28,9 +28,10 @@ FocusHA                         = 0;     % degrees
 FocusLoopTimeout                = 300;   % 5 minutes
 PauseTimeForTargetsAvailability = 5.*60; % sec
 SlewingTimeout                  = 60;    % sec
+CamerasToUse = zeros(1,4);
 
 
-% Connect the mount if not already connected.
+% Connect the mount if already connected.
 RC1=Unit.Camera{1}.classCommand('CamStatus');
 RC2=Unit.Camera{2}.classCommand('CamStatus');
 RC3=Unit.Camera{3}.classCommand('CamStatus');
@@ -111,6 +112,35 @@ end
 
 % Take Flat Field.
 if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
+    
+    % increase chip temperature if it is too hot
+    temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
+    temp2 = Unit.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
+    
+    if temp1<-10
+        Temp = temp2;
+	elseif temp2<-10
+        Temp = temp1;
+    else
+        Temp = (temp1+temp2)*0.5;
+    end
+	fprintf('\nThe temperature is %.1f deg.\n', Temp)
+
+    for IFocuser=[1 2 3 4]
+        
+        if Temp>35
+            Unit.Camera{IFocuser}.classCommand('Temperature=5');
+            fprintf('Setting the camera temperature to +5deg.\n')
+        elseif Temp>30
+            Unit.Camera{IFocuser}.classCommand('Temperature=0');
+            fprintf('Setting the camera temperature to 0deg.\n')
+        else
+            Unit.Camera{IFocuser}.classCommand('Temperature=-5');
+            fprintf('Setting the camera temperature to -5deg (default).\n')
+        end
+	end
+ 
+    
     fprintf('Taking flats\n')
     Unit.takeTwilightFlats
 else
@@ -161,7 +191,6 @@ if (ToFocus)
    pause(60)
     
    % Check the focusTel success
-   CamerasToUse = zeros(1,4);
    for CameraInx=1:1:4
        CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusTelStartTime, FocusLoopTimeout);
    end
@@ -171,6 +200,7 @@ if (ToFocus)
    else
        fprintf('Focus succeeded for all 4 telescopes\n')
    end
+   
 else
    fprintf('Skip focus routine as requested\n')
 end
@@ -181,7 +211,7 @@ end
 
 
 % observe
-obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
+%obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
 
 % Reached here, 7/03/2023
 return %%%

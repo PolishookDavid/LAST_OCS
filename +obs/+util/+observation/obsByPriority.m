@@ -36,7 +36,7 @@ function obsByPriority(Unit, Args)
    
     arguments
         Unit        
-        %Args.NperVisit      = 20;
+        Args.Itel           = []; % telescopes to use
         Args.CoordFileName  = '/home/ocs/targetlists/target_coordinates.txt';
         Args.MinAlt         = 30; % [deg]
         Args.ObsCoo         = [35.0407331, 30.0529838]; % [LONG, LAT]
@@ -49,6 +49,11 @@ function obsByPriority(Unit, Args)
         Args.Shutdown       = true; % set to false when testing during the day
     end
     
+    if isempty(Args.Itel)
+        Args.Itel = (1:numel(Unit.Camera));
+    end
+    
+        
     RAD = 180./pi;
     sec2day = 1./3600/24;
     
@@ -92,6 +97,9 @@ function obsByPriority(Unit, Args)
     
     T = convertCSV2TargetObject(Args.CoordFileName);
     
+    % disable bug in Targets.isVisible which can't deal with negative HA,
+    % remove line ones that bug is fixed
+    T.VisibilityArgs.HALimit=400;
     
     fprintf('%i fields in target list.\n\n',length(T.Data.RA))
     
@@ -102,7 +110,13 @@ function obsByPriority(Unit, Args)
     T.Data = T.Data(mask_mount,:);
     Ntargets = length(T.Data.RA);
     fprintf('%i fields remaining.\n\n',Ntargets)
-       
+    
+    
+    for I=Args.Itel
+        Unit.Camera{I}.classCommand('SaveOnDisk=1'); % save images on all cameras
+    end
+    
+    
     while true
         
         if ~Args.Simulate
@@ -134,6 +148,7 @@ function obsByPriority(Unit, Args)
                 fprintf('Waiting 2 minutes.\n')
                 pause(120)
                 JD = celestial.time.julday; % + Args.DeltaJD;
+                Unit.Mount.home; % avoid tracking when there are not targets
             end
             
             [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);         
@@ -177,13 +192,40 @@ function obsByPriority(Unit, Args)
         % slewing
         if ~Args.Simulate
             Unit.Mount.goToTarget(T.RA(IndPrio), T.Dec(IndPrio));
-            for IFocuser=[1,2,3,4]
-                % TODO: 'Unit' should not be hard coded
-                Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']); 
+            
+            temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
+            temp2 = Unit.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
+    
+            if temp1<-10
+                Temp = temp2;
+            elseif temp2<-10
+                Temp = temp1;
+            else
+                Temp = (temp1+temp2)*0.5;
             end
+            fprintf('\nTemperature %.1f deg.\n', Temp)
+
+
+            
+            for IFocuser=Args.Itel
+                % TODO: 'Unit' should not be hard coded
+                Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);    
+                           
+                if Temp>35
+                    Unit.Camera{IFocuser}.classCommand('Temperature=5');
+                elseif Temp>30
+                    Unit.Camera{IFocuser}.classCommand('Temperature=0');
+                %elseif Temp>25
+                %    Unit.Camera{IFocuser}.classCommand('Temperature=0')
+                else
+                    Unit.Camera{IFocuser}.classCommand('Temperature=-5');
+                end
+            end
+                
+
             Unit.Mount.waitFinish;
             pause(2);
-            if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
+            if ~Unit.readyToExpose('Itel',Args.Itel,'Wait',true, 'Timeout',Timeout)
                 fprintf('Cameras not ready after timeout - abort.\n\n')
                 break;
             end
@@ -217,12 +259,12 @@ function obsByPriority(Unit, Args)
             fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
             pause(1)
         else
-            Unit.takeExposure([],T.ExpTime(IndPrio),T.NperVisit(IndPrio));
+            Unit.takeExposure(Args.Itel,T.ExpTime(IndPrio),T.NperVisit(IndPrio));
             fprintf('Waiting for exposures to finish\n\n');
                 
             pause(T.ExpTime(IndPrio)*(T.NperVisit(IndPrio)+1)+4);
 
-            if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
+            if ~Unit.readyToExpose('Itel',Args.Itel,'Wait',true, 'Timeout',Timeout)
                fprintf('Cameras not ready after timeout - abort.\n\n')
                break;
             end
@@ -351,17 +393,17 @@ end
 function checkAbortFile(Unit, JD, Shutdown)
 
     Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
-        
-    if (Sun.Alt*180./pi)>-7
+    modulo_jd = mod(JD,1); % this is to avoid shutting down when starting observations in the evening
+    
+    if ((Sun.Alt*180./pi)>-11.5)
         fprintf('\nThe Sun is too high.\n')
-        if Shutdown
+        if Shutdown && (modulo_jd>0.5) && (modulo_jd<0.75)    % automatic shutdown will only happen in the morning
             fprintf('Shutting down the mount.\n')
             Unit.shutdown
             pause(20)
             error('shutdown because Sun too high');
         else
             fprintf('Automatic shutdown disabled!! Press CTRL+C and run Unit.shutdown to shutdown the mount.\n')
-            pause(20)
         end
         %error('The Sun is rising. Shutting down the mount. \n\n')
     end 

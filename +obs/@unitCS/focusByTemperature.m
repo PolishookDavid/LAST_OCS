@@ -42,7 +42,15 @@ function focusByTemperature(UnitObj, itel, Args)
     UnitObj.report('   temperature 1 %.1f \n', temp1);
     UnitObj.report('   temperature 2 %.1f \n', temp2);
     
-    DeltaTemp = ((temp1-FocusLog(Col.temp1))+(temp2-FocusLog(Col.temp2)))*0.5;
+    if temp1<-10
+        DeltaTemp = temp2-FocusLog(Col.temp2);
+        UnitObj.report('   ignoring temperature 1 \n');
+    elseif temp2<-10
+        DeltaTemp = temp1-FocusLog(Col.temp1);
+        UnitObj.report('   ignoring temperature 2 \n');
+    else
+        DeltaTemp = ((temp1-FocusLog(Col.temp1))+(temp2-FocusLog(Col.temp2)))*0.5;
+    end
     UnitObj.report('   temperature changed by %.1f degrees \n', DeltaTemp);
     
     NewPos = FocusLog(Col.BestPos) + DeltaTemp * Args.TicksPerDeg;
