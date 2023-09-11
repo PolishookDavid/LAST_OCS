@@ -259,7 +259,8 @@ function obsByPriority(Unit, Args)
             fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
             pause(1)
         else
-            Unit.takeExposure(Args.Itel,T.ExpTime(IndPrio),T.NperVisit(IndPrio));
+            %char(T.TargetName(IndPrio))
+            Unit.takeExposure(Args.Itel,T.ExpTime(IndPrio),T.NperVisit(IndPrio),'Object',char(T.TargetName(IndPrio)));
             fprintf('Waiting for exposures to finish\n\n');
                 
             pause(T.ExpTime(IndPrio)*(T.NperVisit(IndPrio)+1)+4);
