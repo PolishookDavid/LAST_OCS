@@ -35,7 +35,7 @@ while (~exist(FocusLogDirFileName, 'file') && Timeout < FocusLoopTimeout)
    Timeout = Timeout + 10;
 end
 if(~exist(FocusLogDirFileName, 'file'))
-   fprintf('Focus log file of camera %d not found.\n', Camera)
+   fprintf('Focus log file of camera %d not found.\n', CameraInx)
 else
    Timeout = 0;
    FocusLog = load(FocusLogDirFileName);
