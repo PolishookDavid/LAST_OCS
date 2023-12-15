@@ -323,9 +323,13 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
         UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
         
-        fprintf(fileID,'\nbest position '+string(Result.BestPos));
-        fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
-        fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
+        %fprintf(fileID,'\nbest position %f', Result.BestPos);
+        %fprintf(fileID,'\nbest FWHM %f', Result.BestFWHM);
+        %fprintf(fileID,'\nadjusted Rsquared %f', adjrsquare);
+
+        %fprintf(fileID,'\nbest position '+string(Result.BestPos));
+        %fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
+        %fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
     end
     
     Result
