@@ -24,10 +24,11 @@ function pointingModel(Unit, Args)
     %HADec = [HADec; AtPole];
     
     
-    [Az, Alt] = celestial.coo.hadec2azalt(HADec(:,1), HADec(:,2), Args.ObsCoo(2)./RAD);
+    [~, Alt] = celestial.coo.hadec2azalt(HADec(:,1), HADec(:,2), ...
+        Args.ObsCoo(2)./RAD);
     
     % convert everything to degrees
-    Az = Az*RAD;
+    %Az = Az*RAD;
     Alt = Alt*RAD;
     HADec = HADec*RAD;
     
