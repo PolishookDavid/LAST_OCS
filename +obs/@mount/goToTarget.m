@@ -70,7 +70,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
 %     
     JD = celestial.time.julday;
 
-    Flag = false;
+    Flag = false;     %%% TODO: delete this line
 
     switch lower(MountObj.Status)
         case 'park'
@@ -90,6 +90,17 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                 OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
             end
 
+            %%% TODO: include option to call it without any pointing model
+            %%% use celestial.convert.app... instead of convert2equatorial
+            %%% still need to convert coordinates?
+            %%% save resulting RA, Dec after corrections to MountObject, so
+            %%% they can be written to the header
+            %%%
+            %%% [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
+            %%%     'DistFunHA',[],...
+            %%%     'DistFunDec',[],...
+            %%%     'DistIsDelta',true);
+                                                          
             [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
                                                               'DistFunHA',MountObj.PointingModel.InterpHA,...
                                                               'DistFunDec',MountObj.PointingModel.InterpDec,...
