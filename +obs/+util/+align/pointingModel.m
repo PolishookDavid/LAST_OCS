@@ -17,18 +17,14 @@ function pointingModel(Unit, Args)
     
     % make grid
         
-    [TileList,TileArea] = celestial.coo.tile_the_sky(Args.Nha, Args.Ndec);
+    [TileList,~] = celestial.coo.tile_the_sky(Args.Nha, Args.Ndec);
     HADec = TileList(:,1:2);
-    
-    %AtPole = [-135 90; -90 90; -45 90; 0 90; 45 90; 90 90; 135 90]./RAD;
-    %HADec = [HADec; AtPole];
-    
+        
     
     [~, Alt] = celestial.coo.hadec2azalt(HADec(:,1), HADec(:,2), ...
         Args.ObsCoo(2)./RAD);
     
     % convert everything to degrees
-    %Az = Az*RAD;
     Alt = Alt*RAD;
     HADec = HADec*RAD;
     
@@ -48,6 +44,11 @@ function pointingModel(Unit, Args)
             if Args.ClearFaults
                 Unit.Mount.clearFaults;
             end
+            %%% TODO call this instead to include all corrections except
+            %%% for the pointing model itself
+            % Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha', ...
+            % 	'DistFunHA',[],'DistFunDec',[]);
+            
             Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
             Unit.Mount.waitFinish;
             if Args.Tracking
