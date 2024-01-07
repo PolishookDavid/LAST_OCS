@@ -42,6 +42,23 @@ classdef mount < obs.LAST_Handle
     properties(Hidden)
         TimeFromGPS logical     = false;      
     end
+
+    % solar system ephem
+    properties (Hidden)
+        INPOP = celestial.INPOP.init({'Ear'},'MaxOrder',5);
+    end
+
+    % coordinates converted to different systems
+    properties (Hidden)
+        RA_J2000    = NaN;
+        Dec_J2000   = NaN;
+        RA_App      = NaN;
+        HA_App      = NaN;
+        Dec_App     = NaN;
+        RA_AppDist  = NaN;
+        HA_AppDist  = NaN;
+        Dec_AppDist = NaN;
+    end
         
 %         % Mount and telescopes names and models
 %         MountUniqueName = '';
