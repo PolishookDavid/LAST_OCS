@@ -152,7 +152,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Key = 'M_HA';
         Info(I).Val = convert.minusPi2Pi(LST - M_RA);
         
-        % RA/Dec - mount J2000
+% OLD RA/Dec - mount J2000
 %         J2000coord = MountObj.classCommand('j2000');
 %         I = I + 1;
 %         M_JRA = J2000coord(1);
@@ -189,25 +189,25 @@ function HeaderCell=constructHeader(UnitObj,itel)
         %end
 	
         % buggy!
-        [RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
+        % [RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
         % quick fix:
         %RA=M_JRA;
         %Dec=M_JDec;
         
         %[RA, Dec] = reckon(M_JRA, M_JDec, CamDist, CamPA, 'degrees');
                 
-        I = I + 1;
-        Info(I).Key = 'RA';
-        Info(I).Val = RA;
-        
-        I = I + 1;
-        Info(I).Key = 'DEC';
-        Info(I).Val = Dec;
-        
-        I = I + 1;
-        HA = convert.minusPi2Pi(LST - RA);
-        Info(I).Key = 'HA';
-        Info(I).Val = convert.minusPi2Pi(HA);
+%         I = I + 1;
+%         Info(I).Key = 'RA';
+%         Info(I).Val = RA;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'DEC';
+%         Info(I).Val = Dec;
+%         
+%         I = I + 1;
+%         HA = convert.minusPi2Pi(LST - RA);
+%         Info(I).Key = 'HA';
+%         Info(I).Val = convert.minusPi2Pi(HA);
                 
         I = I + 1;
         Info(I).Key = 'EQUINOX';
@@ -241,20 +241,70 @@ function HeaderCell=constructHeader(UnitObj,itel)
             'ApplyDistortion',true,...
             'InterpHA',MountObj.PointingModel.InterpHA,...
             'InterpDec',MountObj.PointingModel.InterpDec);
-
-        [Az, Alt] = celestial.coo.hadec2azalt(HA, Dec, Lat, 'deg');
+        
+        % all the fields in Aux go into header, with this mapping:
+        I = I + 1;
+        Info(I).Key = 'M_JRA';
+        Info(I).Val = Aux.RA_J2000;
         
         I = I + 1;
-        Info(I).Key = 'AZ';
-        Info(I).Val = Az;
+        Info(I).Key = 'M_JDEC';
+        Info(I).Val = Aux.Dec_J2000;
         
         I = I + 1;
-        Info(I).Key = 'ALT';
-        Info(I).Val = Alt;
+        Info(I).Key = 'M_ARA';
+        Info(I).Val = Aux.RA_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_AHA';
+        Info(I).Val = Aux.Dec_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADRA';
+        Info(I).Val = Aux.RA_AppDist;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADHA';
+        Info(I).Val = Aux.HA_AppDist;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADDec';
+        Info(I).Val = Aux.Dec_AppDist;
+        
+        I = I + 1;
+        Info(I).Key = 'RA';
+        Info(I).Val = Aux.RA_J2000 + TelOffset(1)/cosd(Aux.Dec_J2000);
+        
+        I = I + 1;
+        Info(I).Key = 'DEC';
+        Info(I).Val = Aux.Dec_J2000 + TelOffset(2);
+        
+        I = I + 1;
+        Info(I).Key = 'M_AAZ'; % check intentions - just AZ, perhaps?
+        Info(I).Val = Aux.Az_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_AALT';  % check intentions - just ALT, perhaps?
+        Info(I).Val = Aux.Alt_App;
         
         I = I + 1;
         Info(I).Key = 'AIRMASS';
-        Info(I).Val = celestial.coo.hardie( (90 - Alt)./RAD);
+        Info(I).Val = Aux.AirMass;
+        
+   % old computation of Az, Alt: no more relevant, I'd say.
+%         [Az, Alt] = celestial.coo.hadec2azalt(HA, Dec, Lat, 'deg');
+%         
+%         I = I + 1;
+%         Info(I).Key = 'AZ';
+%         Info(I).Val = Az;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'ALT';
+%         Info(I).Val = Alt;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'AIRMASS';
+%         Info(I).Val = celestial.coo.hardie( (90 - Alt)./RAD);
                 
         TrackingSpeed = MountObj.classCommand('TrackingSpeed');
         
