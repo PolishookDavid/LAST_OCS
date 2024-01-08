@@ -145,7 +145,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                 end
 
                 % move mount
-                % MountObj.goTo(OutRA, OutDec, 'eq');
+                MountObj.goTo(OutRA, OutDec, 'eq');
 
         end
         

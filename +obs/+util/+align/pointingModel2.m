@@ -5,10 +5,10 @@ function pointingModel2(Unit, Args)
    
     arguments
         Unit
-        Args.Nha      = 20; %30
-        Args.Ndec     = 10; %15
+        Args.Nha      = 10; %20; %30
+        Args.Ndec     = 8; %10; %15
         Args.MinAlt   = 25; % [deg]
-        Args.ExpTime  = 1;     % if empty - only move without exposing
+        Args.ExpTime  = ''; %1;     % if empty - only move without exposing
         Args.ObsCoo   = [35, 30]
         Args.Tracking logical   = true;
         Args.ClearFaults logical = false;
