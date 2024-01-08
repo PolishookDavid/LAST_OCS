@@ -45,7 +45,8 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
 
     RAD = 180./pi;
     MinAlt = 10;
-
+    HALimit = 120;
+    
     % Get current UTC time
     % Note that computer clock must be set to UTC
     % FFU: add test that computer clock is in UTC
@@ -136,8 +137,8 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                     MountObj.LogFile.write(sprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt));
                     Flag = false;
                 end
-                HALimit = 0.75.*pi;
-                if abs(Aux.HA_App./RAD)>MountObj.HALimit
+                
+                if abs(Aux.HA_App)>MountObj.HALimit
                     fprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App)
                     MountObj.LogFile.write(sprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App));
                     Flag = false;
