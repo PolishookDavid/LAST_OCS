@@ -146,7 +146,8 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'M_DEC';
-        Info(I).Val = MountObj.classCommand('Dec');
+        M_Dec = MountObj.classCommand('Dec');
+        Info(I).Val = M_Dec;
         
         I = I + 1;
         Info(I).Key = 'M_HA';
@@ -222,13 +223,18 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Val = MountObj.classCommand('Alt');
         
 %  New J2000 considering nutation, aberration, refraction and pointing model
-        GeoPos = [MountObj.ObsLon./RAD, MountObj.ObsLat./RAD, MountObj.ObsHeight];   % [rad rad m]
+%        GeoPos = [MountObj.ObsLon./RAD, MountObj.ObsLat./RAD, MountObj.ObsHeight];   % [rad rad m]
+        GeoPos = MountObj.classCommand('MountPos');
+        GeoPos(1:2)=GeoPos(1:2)/RAD;
 
 % FFU: considering reading meterorological data...
         MetData.Wave = 5000; % A
         MetData.Temp = 15;   % C
         MetData.P    = 760;  % Hg
         MetData.Pw   = 8;    % Hg
+        %% TODO: INPOP cannot be transferred to slaves. It would be sensible
+        %   to evaluate this function in master -> getter for a readonly
+        %   property containing only Aux
         [OutRA, OutDec, Alt, Refraction, Aux] = celestial.convert.apparent_toj2000(M_RA, M_Dec, JD,...
             'InUnits','deg','Epoch',2000,'OutUnits','deg','OutEquinox',[],...
             'OutEquinoxUnits','JD','OutMean',false,...
