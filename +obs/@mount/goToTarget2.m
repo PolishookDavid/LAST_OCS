@@ -131,6 +131,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                                                                    'InterpDec',MountObj.PointingModel.InterpDec);
 
             
+                                                               
                 % verification:
                 if Alt<MinAlt
                     fprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt)
@@ -143,10 +144,17 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                     MountObj.LogFile.write(sprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App));
                     Flag = false;
                 end
-
-                % move mount
-                MountObj.goTo(OutRA, OutDec, 'eq');
-
+                
+                if ~isfinite(OutRA*OutDec)
+                    fprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec)
+                    MountObj.LogFile.write(sprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec);
+                    Flag = false;
+                end
+                    
+                if Flag
+                    % move mount
+                    MountObj.goTo(OutRA, OutDec, 'eq');
+                end
         end
         
     end
