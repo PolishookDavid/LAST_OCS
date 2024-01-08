@@ -11,6 +11,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     %            cameras.
     %            If a char array ('1'|'2'|'3'|'4') then will shift the
     %            position to the center of the requested camera.
+    %            If [] use default.
     %            Default is [0 0].
     %          - A logical indicating if to apply the distortion
     %            corrections. Default is true.
@@ -36,6 +37,10 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                 error('Not enough input arguments');
             end
         end
+    end
+
+    if isempty(Shift)
+        Shift = [0 0];
     end
 
     RAD = 180./pi;
@@ -132,11 +137,14 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                     Flag = false;
                 end
                 HALimit = 0.75.*pi;
-                if abs(Aux.HA_App./RAD)>HALimit
+                if abs(Aux.HA_App./RAD)>MountObj.HALimit
                     fprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App)
                     MountObj.LogFile.write(sprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App));
                     Flag = false;
                 end
+
+                % move mount
+                % MountObj.goTo(OutRA, OutDec, 'eq');
 
         end
         
