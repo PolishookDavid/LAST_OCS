@@ -25,9 +25,9 @@ function pointingModel2(Unit, Args)
     [Az, Alt] = celestial.coo.radec2azalt(JD, RADec(:,1), RADec(:,2), ...
         'GeoCoo', Args.ObsCoo, 'InUnits', 'deg', 'OutUnits', 'deg');
 
-
+    
     RADec = RADec(Alt>Args.MinAlt,:);
-    %Alt = Alt(Alt>Args.MinAlt);
+    Alt = Alt(Alt>Args.MinAlt)
     
     Ntarget = length(RADec(:,1));
     disp('Will observe '+string(Ntarget)+' fields.')
@@ -38,8 +38,8 @@ function pointingModel2(Unit, Args)
             error('user abort file found');
         end
         
-        fprintf('Observe field %d out of %d - HA=%f, Dec=%f\n',Itarget,...
-            Ntarget,RADec(Itarget,1), RADec(Itarget,2));
+        fprintf('Observe field %d out of %d - RA=%f, Dec=%f, Alt=%f\n', ...
+            Itarget,Ntarget,RADec(Itarget,1), RADec(Itarget,2), Alt(Itarget));
 
         if RADec(Itarget,2)>-50
             
@@ -48,9 +48,9 @@ function pointingModel2(Unit, Args)
             end
             %%% TODO call this instead to include all corrections except
             %%% for the pointing model itself
-            [OutRA, OutDec, OutAlt, Refraction, Aux] = ...
+            [Flag,OutRA,OutDec,Aux] = ...
                 Unit.Mount.goToTarget2(RADec(Itarget,1), RADec(Itarget,2), ...
-             	[0, 0],'ApplyDist',false);
+             	[0, 0],false);
             Aux
             
             %Unit.Mount.goTo(HADec(Itarget,1), HADec(Itarget,2), 'ha');
