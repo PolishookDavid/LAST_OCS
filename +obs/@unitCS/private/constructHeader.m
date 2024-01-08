@@ -12,6 +12,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
 
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
+    MountObj = UnitObj.Mount;
     
     [CameraHeader, CameraInfo] = imageHeader(CameraObj);
     
@@ -74,7 +75,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
     end
     Info(I).Val = TimeZone; % timezone can be fractional! (e.g. Nepal, New Zeland)
     
-    if isa(UnitObj.Mount,'obs.mount') || isa(UnitObj.Mount,'obs.remoteClass')
+    if isa(MountObj,'obs.mount') || isa(MountObj,'obs.remoteClass')
         % Mount information
         MountNum = int16(sscanf(UnitObj.Id,'%d'));
         % OBSERVER
@@ -86,7 +87,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Key = 'MOUNTNUM';
         Info(I).Val = MountNum;
         
-        MountConfig  = UnitObj.Mount.classCommand('Config');
+        MountConfig  = MountObj.classCommand('Config');
         CameraConfig = CameraObj.classCommand('Config');
         
         I = I + 1;
@@ -140,33 +141,32 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'M_RA';
-        M_RA = UnitObj.Mount.classCommand('RA');
+        M_RA = MountObj.classCommand('RA');
         Info(I).Val = M_RA;
         
         I = I + 1;
         Info(I).Key = 'M_DEC';
-        Info(I).Val = UnitObj.Mount.classCommand('Dec');
+        Info(I).Val = MountObj.classCommand('Dec');
         
         I = I + 1;
         Info(I).Key = 'M_HA';
         Info(I).Val = convert.minusPi2Pi(LST - M_RA);
         
         % RA/Dec - mount J2000
-        J2000coord = UnitObj.Mount.classCommand('j2000');
-        I = I + 1;
-        M_JRA = J2000coord(1);
-        Info(I).Key = 'M_JRA';
-        Info(I).Val = M_JRA;
-        
-        I = I + 1;
-        M_JDec = J2000coord(2);
-        Info(I).Key = 'M_JDEC';
-        Info(I).Val = M_JDec;
-        
-        I = I + 1;
-        Info(I).Key = 'M_JHA';
-        Info(I).Val = convert.minusPi2Pi(J2000coord(3));
-        
+%         J2000coord = MountObj.classCommand('j2000');
+%         I = I + 1;
+%         M_JRA = J2000coord(1);
+%         Info(I).Key = 'M_JRA';
+%         Info(I).Val = M_JRA;
+%         
+%         I = I + 1;
+%         M_JDec = J2000coord(2);
+%         Info(I).Key = 'M_JDEC';
+%         Info(I).Val = M_JDec;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'M_JHA';
+%         Info(I).Val = convert.minusPi2Pi(J2000coord(3));
         
         % RA & Dec including telescope offsets
         %   ? what about CameraConfig.TelescopeOffset' ?
@@ -215,12 +215,33 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'M_AZ';
-        Info(I).Val = UnitObj.Mount.classCommand('Az');
+        Info(I).Val = MountObj.classCommand('Az');
         
         I = I + 1;
         Info(I).Key = 'M_ALT';
-        Info(I).Val = UnitObj.Mount.classCommand('Alt');
+        Info(I).Val = MountObj.classCommand('Alt');
         
+%  New J2000 considering nutation, aberration, refraction and pointing model
+        GeoPos = [MountObj.ObsLon./RAD, MountObj.ObsLat./RAD, MountObj.ObsHeight];   % [rad rad m]
+
+% FFU: considering reading meterorological data...
+        MetData.Wave = 5000; % A
+        MetData.Temp = 15;   % C
+        MetData.P    = 760;  % Hg
+        MetData.Pw   = 8;    % Hg
+        [OutRA, OutDec, Alt, Refraction, Aux] = celestial.convert.apparent_toj2000(M_RA, M_Dec, JD,...
+            'InUnits','deg','Epoch',2000,'OutUnits','deg','OutEquinox',[],...
+            'OutEquinoxUnits','JD','OutMean',false,...
+            'PM_RA',0,'PM_Dec',0,'Plx',1e-2,'RV',0,'INPOP',MountObj.INPOP,...
+            'GeoPos',GeoPos,'TypeLST','m',...
+            'ApplyAberration',true,'ApplyRefraction',true,...
+            'Wave',MetData.Wave,'Temp',MetData.Temp,'Pressure',MetData.P,...
+            'Pw',MetData.Pw,...
+            'ShiftRA',TelOffset(1),'ShiftDec',TelOffset(2),...
+            'ApplyDistortion',true,...
+            'InterpHA',MountObj.PointingModel.InterpHA,...
+            'InterpDec',MountObj.PointingModel.InterpDec);
+
         [Az, Alt] = celestial.coo.hadec2azalt(HA, Dec, Lat, 'deg');
         
         I = I + 1;
@@ -235,7 +256,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Key = 'AIRMASS';
         Info(I).Val = celestial.coo.hardie( (90 - Alt)./RAD);
                 
-        TrackingSpeed = UnitObj.Mount.classCommand('TrackingSpeed');
+        TrackingSpeed = MountObj.classCommand('TrackingSpeed');
         
         I = I + 1;
         Info(I).Key = 'TRK_RA';

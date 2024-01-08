@@ -48,17 +48,18 @@ classdef mount < obs.LAST_Handle
         INPOP = celestial.INPOP.init({'Ear'},'MaxOrder',5);
     end
 
-    % coordinates converted to different systems
-    properties (Hidden)
-        RA_J2000    = NaN;
-        Dec_J2000   = NaN;
-        RA_App      = NaN;
-        HA_App      = NaN;
-        Dec_App     = NaN;
-        RA_AppDist  = NaN;
-        HA_AppDist  = NaN;
-        Dec_AppDist = NaN;
-    end
+    % coordinates converted to different systems - only computed in
+    % constructHeader, demoted from general properties
+%     properties (Hidden)
+%         RA_J2000    = NaN;
+%         Dec_J2000   = NaN;
+%         RA_App      = NaN;
+%         HA_App      = NaN;
+%         Dec_App     = NaN;
+%         RA_AppDist  = NaN;
+%         HA_AppDist  = NaN;
+%         Dec_AppDist = NaN;
+%     end
         
 %         % Mount and telescopes names and models
 %         MountUniqueName = '';
