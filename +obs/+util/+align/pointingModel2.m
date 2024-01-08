@@ -18,31 +18,29 @@ function pointingModel2(Unit, Args)
     
     % make grid
         
-    [TileList,~] = celestial.coo.tile_the_sky(Args.Nha, Args.Ndec);
+    [TileList,~] = celestial.grid.tile_the_sky(Args.Nha, Args.Ndec);
     RADec = TileList(:,1:2)*RAD;
+    JD = celestial.time.julday;
 
     [Az, Alt] = celestial.coo.radec2azalt(JD, RADec(:,1), RADec(:,2), ...
-        'GeoCoo', ObsCoo, 'InUnits', 'deg', 'OutUnits', 'deg');
+        'GeoCoo', Args.ObsCoo, 'InUnits', 'deg', 'OutUnits', 'deg');
 
 
-    RADec = RADec(Alt>MinAlt,:);
-    Alt = Alt(Alt>MinAlt);
-    [~, Alt] = celestial.coo.hadec2azalt(RADec(:,1), RADec(:,2), ...
-        Args.ObsCoo(2)./RAD);
+    RADec = RADec(Alt>Args.MinAlt,:);
+    %Alt = Alt(Alt>Args.MinAlt);
     
-    
-    Flag = Alt>(Args.MinAlt);
-    RADec = RADec(Flag,:);
-    Ntarget = sum(Flag);
+    Ntarget = length(RADec(:,1));
     disp('Will observe '+string(Ntarget)+' fields.')
     
     for Itarget=1:1:Ntarget
-        fprintf('Observe field %d out of %d - HA=%f, Dec=%f\n',Itarget,...
-            Ntarget,RADec(Itarget,1), RADec(Itarget,2));
         if exist('~/abort','file')>0
             delete('~/abort');
             error('user abort file found');
         end
+        
+        fprintf('Observe field %d out of %d - HA=%f, Dec=%f\n',Itarget,...
+            Ntarget,RADec(Itarget,1), RADec(Itarget,2));
+
         if RADec(Itarget,2)>-50
             
             if Args.ClearFaults
