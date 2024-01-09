@@ -14,14 +14,19 @@ function Aux=pointingCorrection(MountObj,MetData,TelOffset,JD)
 %        JD - julian day (default:  of now)
 %
 % Output: a structure with fields
-%                      RA_J2000 
-%                      Dec_J2000
-%                      RA_App    
-%                      HA_App  
-%                      Dec_App
-%                      RA_AppDist
-%                      HA_AppDist
-%                      Dec_AppDist
+%                           RA_App
+%                           HA_App
+%                           Dec_App
+%                           RA_AppDist
+%                           HA_AppDist
+%                           Dec_AppDist
+%                           Alt_App
+%                           Az_App
+%                           RA_J2000
+%                           Dec_J2000
+%                           HA_J2000
+%                           AirMass
+
 
 if isempty(MountObj.INPOP)
     MountObj.reportError('No INPOP solar system ephemerides installed, cannot execute')
