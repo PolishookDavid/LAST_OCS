@@ -23,6 +23,12 @@ function Aux=pointingCorrection(MountObj,MetData,TelOffset,JD)
 %                      HA_AppDist
 %                      Dec_AppDist
 
+if isempty(MountObj.INPOP)
+    MountObj.reportError('No INPOP solar system ephemerides installed, cannot execute')
+    Aux=[];
+    return
+end
+
 if ~exist('MetData','var') || isempty(MetData)
     MetData.Wave = 5000;
     MetData.Temp = 15;
