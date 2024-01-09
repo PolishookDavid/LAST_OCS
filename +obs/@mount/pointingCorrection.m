@@ -50,7 +50,7 @@ if ~exist('JD','var')
 end
 
 GeoPos = MountObj.MountPos;
-GeoPos(1:2)=GeoPos(1:2) * 180/pi;
+GeoPos(1:2)=GeoPos(1:2) * pi/180;
 
 [OutRA, OutDec, Alt, Refraction, Aux] = celestial.convert.apparent_toJ2000(...
     MountObj.RA, MountObj.Dec, JD,...
