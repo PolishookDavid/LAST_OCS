@@ -1,12 +1,9 @@
 function HeaderCell=constructHeader(UnitObj,itel)
     % Construct image header for takes of the nth telescope. Intended to
     %   work only both for local and remote telescopes as well as mount in this unit
-    % This could well be demoted to private method, it is temporarily left
-    %  public for visibility
     %
     % Input   : the telescope number 
     % Output  : - A 3 column cell array with header for image
-    %           - A structure with all the header key and vals.
     
     RAD = 180./pi;
 
@@ -15,29 +12,6 @@ function HeaderCell=constructHeader(UnitObj,itel)
     MountObj = UnitObj.Mount;
     
     [CameraHeader, CameraInfo] = imageHeader(CameraObj);
-    
-    
-    
-%     % get image size
-%     if isa(CameraObj,'obs.remoteClass')
-%         SizeImIJ = CameraObj.Messenger.query(...
-%             sprintf('size(%s.LastImage)',CameraObj.RemoteName));
-%     else
-%         SizeImIJ = size(CameraObj.LastImage);
-%     end
-% 
-%     if prod(SizeImIJ)==0
-%         UnitObj.reportError('no image taken by telescope %d, no header to create',...
-%                             itel)
-%         Info=struct();
-%         HeaderCell=cell(0,3);
-%         return
-%     else        % Mount information
-
-%         % fill the header first with all which can be retrieved from the
-%         %  camera alone
-%         [CameraHeader,CameraInfo] = imageHeader(CameraObj);
-%     end
     
     % get remaining info from mount and focuser 
     %  (The camera object is queried once more to get its eventual offset
@@ -114,7 +88,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
             Val = NaN;
         end
         Lat = Val;
-        Info(I).Val = Val;
+        Info(I).Val = Lat;
         
         I = I + 1;
         Info(I).Key = 'OBSALT';
@@ -223,31 +197,11 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Val = MountObj.classCommand('Alt');
         
 %  New J2000 considering nutation, aberration, refraction and pointing model
-%        GeoPos = [MountObj.ObsLon./RAD, MountObj.ObsLat./RAD, MountObj.ObsHeight];   % [rad rad m]
-        GeoPos = MountObj.classCommand('MountPos');
-        GeoPos(1:2)=GeoPos(1:2)/RAD;
 
-% FFU: considering reading meterorological data...
-        MetData.Wave = 5000; % A
-        MetData.Temp = 15;   % C
-        MetData.P    = 760;  % Hg
-        MetData.Pw   = 8;    % Hg
-        %% TODO: INPOP cannot be transferred to slaves. It would be sensible
-        %   to evaluate this function in master -> getter for a readonly
-        %   property containing only Aux
-        [OutRA, OutDec, Alt, Refraction, Aux] = celestial.convert.apparent_toj2000(M_RA, M_Dec, JD,...
-            'InUnits','deg','Epoch',2000,'OutUnits','deg','OutEquinox',[],...
-            'OutEquinoxUnits','JD','OutMean',false,...
-            'PM_RA',0,'PM_Dec',0,'Plx',1e-2,'RV',0,'INPOP',MountObj.INPOP,...
-            'GeoPos',GeoPos,'TypeLST','m',...
-            'ApplyAberration',true,'ApplyRefraction',true,...
-            'Wave',MetData.Wave,'Temp',MetData.Temp,'Pressure',MetData.P,...
-            'Pw',MetData.Pw,...
-            'ShiftRA',TelOffset(1),'ShiftDec',TelOffset(2),...
-            'ApplyDistortion',true,...
-            'InterpHA',MountObj.PointingModel.InterpHA,...
-            'InterpDec',MountObj.PointingModel.InterpDec);
-        
+        % FFU -read MetData from site metereology and pass it to classCommand
+        Aux = MountObj.classCommand(sprintf('pointingCorrection([],[%g,%g],%g)',...
+             TelOffset,JD));
+         
         % all the fields in Aux go into header, with this mapping:
         I = I + 1;
         Info(I).Key = 'M_JRA';
@@ -340,6 +294,20 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
     end
     
+    % Read additional fixed keys from Unit.Config.FITSHeader
+    try
+        if isfield(UnitObj.classCommand('Config'),'FITSHeader')
+            ExtraKeys = UnitObj.classCommand('Config.FITSHeader');
+            for i=1:numel(ExtraKeys)
+                I= I + 1;
+                Info(I).Key = ExtraKeys{i}{1};
+                Info(I).Val  = ExtraKeys{i}{2};
+            end
+        end
+    catch
+    end
+    
+    % wrap it all up in HeaderCell
     N = numel(Info);
     HeaderCell = cell(N,3);
     HeaderCell(:,1) = {Info.Key};
@@ -347,18 +315,5 @@ function HeaderCell=constructHeader(UnitObj,itel)
     
     HeaderCell = [CameraHeader; HeaderCell];
 
-        
-    % Read additional fixed keys from camera Config.FITSHeader
-    try
-        if isfield(UnitObj.classCommand('Config'),'FITSHeader')
-            ExtraKeys = UnitObj.classCommand('Config.FITSHeader');
-            for i=1:numel(ExtraKeys)
-                I= I + 1;
-                Info(I).Name = ExtraKeys{i}{1};
-                Info(I).Val  = ExtraKeys{i}{2};
-            end
-        end
-    catch
-    end
 
 end
