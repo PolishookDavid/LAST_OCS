@@ -75,6 +75,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     
     UnitName=inputname(1);
     
+    % make sure the mount is tracking
+    UnitObj.Mount.track;
+    
     if numel(itel)==1 && ~isa(UnitObj.Camera{itel},'obs.remoteClass')
         % run, blocking, the scalar version of the method. Output arguments
         % are returned.
