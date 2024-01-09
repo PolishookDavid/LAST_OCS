@@ -57,6 +57,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     OutDec  = NaN;
     Aux.RA_J2000    = NaN;
     Aux.Dec_J2000   = NaN;
+    Aux.HA_J2000    = NaN;
     Aux.RA_App      = NaN;
     Aux.HA_App      = NaN;
     Aux.Dec_App     = NaN;
@@ -76,7 +77,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
             case '4'
                 Shift = -[-1.65 +1.1];
             otherwise
-                error('Unknwon Shift option');
+                error('Unknown Shift option');
         end
     end
 
@@ -147,12 +148,11 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                 
                 if ~isfinite(OutRA*OutDec)
                     fprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec)
-                    MountObj.LogFile.write(sprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec);
+                    MountObj.LogFile.write(sprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec));
                     Flag = false;
-                end
-                    
-                if Flag
+                else
                     % move mount
+                    Flag = true;
                     MountObj.goTo(OutRA, OutDec, 'eq');
                 end
         end
