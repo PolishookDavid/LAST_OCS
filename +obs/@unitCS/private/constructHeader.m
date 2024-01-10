@@ -200,7 +200,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
 
         % FFU -read MetData from site metereology and pass it to classCommand
         Aux = MountObj.classCommand(sprintf('pointingCorrection([],[%g,%g],%g)',...
-             TelOffset,JD));
+             [0,0],JD));
          
         % all the fields in Aux go into header, with this mapping:
         I = I + 1;
