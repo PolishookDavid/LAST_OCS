@@ -46,7 +46,8 @@ if ~exist('TelOffset','var') || isempty(TelOffset)
 end
 
 if ~exist('JD','var')
-    JD= 1721058.5 + now;
+    %JD= 1721058.5 + now;
+    JD = celestial.time.julday();
 end
 
 GeoPos = MountObj.MountPos;

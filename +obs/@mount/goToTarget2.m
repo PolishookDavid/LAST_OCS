@@ -32,8 +32,9 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
             Shift = [0 0];
             if nargin<3
                 Dec = [];
-            else
-                error('Not enough input arguments');
+                if nargin<2
+                    error('Not enough input arguments');
+                end
             end
         end
     end
@@ -131,12 +132,15 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                     MountObj.LogFile.write(sprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt));
                     Flag = false;
                 end
-                HALimit = 0.75.*pi;
-                if abs(Aux.HA_App./RAD)>HALimit
+                %HALimit = 0.75.*pi;
+                if abs(Aux.HA_App./RAD)>MountObj.HALimit
                     fprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App)
                     MountObj.LogFile.write(sprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App));
                     Flag = false;
                 end
+                
+                % goto
+                MountObj.goTo(OutRA, OutDec);
 
         end
         
