@@ -217,6 +217,10 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'M_AHA';
+        Info(I).Val = Aux.HA_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADEC';
         Info(I).Val = Aux.Dec_App;
         
         I = I + 1;
