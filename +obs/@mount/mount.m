@@ -43,21 +43,11 @@ classdef mount < obs.LAST_Handle
         TimeFromGPS logical     = false;      
     end
 
-    % solar system ephem
+    % solar system ephemerides. It is somewhat dirty to have it as a mount
+    % property, but we have no better solution for now. Loading it is done
+    % in the constructor, to catch the case when it is not installed
     properties (Hidden)
-        INPOP = celestial.INPOP.init({'Ear'},'MaxOrder',5);
-    end
-
-    % coordinates converted to different systems
-    properties (Hidden)
-        RA_J2000    = NaN;
-        Dec_J2000   = NaN;
-        RA_App      = NaN;
-        HA_App      = NaN;
-        Dec_App     = NaN;
-        RA_AppDist  = NaN;
-        HA_AppDist  = NaN;
-        Dec_AppDist = NaN;
+        INPOP
     end
         
 %         % Mount and telescopes names and models
@@ -103,6 +93,13 @@ classdef mount < obs.LAST_Handle
                                    MountObj.Config.ObsHeight];
             end
             
+            % load the ephemerides, if installed. Takes ~10sec
+            try
+                MountObj.INPOP = celestial.INPOP.init({'Ear'},'MaxOrder',5);
+            catch
+                MountObj.reportError('the INPOP ephemerides were not found, doing without')
+            end
+
             % Open the logFile (what do we want to do here? Open a different log
             %  file for each device, or one for the whole unitCS?)
             if isempty(MountObj.LogFile)
