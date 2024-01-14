@@ -138,15 +138,11 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                     fprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt)
                     MountObj.LogFile.write(sprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt));
                     Flag = false;
-                end
-                
-                if abs(Aux.HA_App)>MountObj.HALimit
-                    fprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App)
+                elseif abs(Aux.HA_App)>MountObj.HALimit
+                    fprintf('Error: Requested HA (%f) is out of allowed range',Aux.HA_App)
                     MountObj.LogFile.write(sprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App));
                     Flag = false;
-                end
-                
-                if ~isfinite(OutRA*OutDec)
+                elseif ~isfinite(OutRA*OutDec)
                     fprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec)
                     MountObj.LogFile.write(sprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec));
                     Flag = false;
