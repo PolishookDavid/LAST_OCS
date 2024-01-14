@@ -27,7 +27,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
    
 
     if nargin<5
-        ApplyDist = true;
+        ApplyDist = false;
         if nargin<4
             Shift = [0 0];
             if nargin<3
@@ -141,6 +141,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                 
                 % goto
                 MountObj.goTo(OutRA, OutDec);
+                OutRA, OutDec
 
         end
         
