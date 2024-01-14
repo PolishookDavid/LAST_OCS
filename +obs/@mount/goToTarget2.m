@@ -45,7 +45,6 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
 
     RAD = 180./pi;
     MinAlt = 10;
-    HALimit = 120;
     
     % Get current UTC time
     % Note that computer clock must be set to UTC
