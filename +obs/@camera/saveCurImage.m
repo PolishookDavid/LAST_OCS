@@ -1,8 +1,8 @@
 function saveCurImage(CameraObj,Path)
     % Save the last acquired image to disk (camera only version)
     % Also set LastImageSaved to true, until a new image is taken
-    % Input: the path where to save the image. If omitted, the canonical one
-    %  is used
+    % Input: the path where to save the image. If omitted, the default one
+    %  constructed from .Config.BaseDir and .Config.DataDir is used
     %
     % cfr. unitCS.saveCurImage. UnitCS calls its own saveCurImage automatically
     %  upon notification of new images, whereas this method is intended for
@@ -16,13 +16,18 @@ function saveCurImage(CameraObj,Path)
     
     % Write the fits file, in the session where the camera object lives
     % Construct directory name to save image in
-        
-    % Default Path can be overriden if provided
-    if ~exist('Path','var')
-        [FileName,Path] = CameraObj.constructFilename;
-    else
-        FileName = CameraObj.constructFilename;
-    end
+    JD = CameraObj.TimeStartLastImage + 1721058.5;
+    
+    % default values for fields which may be a bit too fragile to store
+    %  only in config files: Filter, DataDir, BaseDir
+    
+% DefaultPath not constructed here like it is in unitCS.saveCurImage.
+%  Let it error if Path is not provided
+     if ~exist('Path','var')
+         error('Path must be provided')
+     end
+
+    FileName = constructFilename(CameraObj);
 
     % create the header locally, even from remote objects, because
     %  round-trip queries fail

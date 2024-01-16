@@ -42,7 +42,7 @@ classdef camera < obs.LAST_Handle
     
     % Camera ID, for labels. Typically set in config file
     properties(Hidden, GetAccess = public, SetAccess = public)
-        CameraNumber double    = 1         %  1       2      3      4
+        CameraNumber uint8  = 1         %  1       2      3      4
         CameraPos char         = '';       % 'NE' | 'SE' | 'SW' | 'NW'
         %CCDnum = 0;         % ????   % Perhaps obselete. Keep here until we sure it should be removed
     end

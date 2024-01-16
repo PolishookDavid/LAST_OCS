@@ -43,6 +43,12 @@ classdef mount < obs.LAST_Handle
         TimeFromGPS logical     = false;      
     end
         
+    % solar system ephemerides. It is somewhat dirty to have it as a mount
+    % property, but we have no better solution for now. Loading it is done
+    % in the constructor, to catch the case when it is not installed
+    properties (Hidden)
+        INPOP
+    end
 %         % Mount and telescopes names and models
 %         MountUniqueName = '';
 %         MountGeoName = '';

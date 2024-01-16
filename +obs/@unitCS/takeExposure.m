@@ -22,6 +22,13 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     %                                  will be temporarily turned off if
     %                                  ExpTime is smaller than that.
     %                                  (BUG - doesn't happen)
+    %            'LiveSingleImage' - default is false. Use Live acquisition
+    %                        even when acquiring just one image. Overhead
+    %                        times are larger (the first image is available
+    %                        only after two exposure times + starting
+    %                        overheads), but offset, which may be different
+    %                        between modes (!) will be consistent with that
+    %                        of live acquisitions
     % TAKE CARE, Unit.Camera{i}.classCommand('waitFinish') may timeout
     %  because of no reply, if the messenger timeout is shorter than
     %  ExpTime. Consider using the method readyToExpose(...,true,timeout)
@@ -37,7 +44,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
         InPar.ImType               = 'sci';
         InPar.Object               = NaN;
         InPar.MinExpTimeForSave    = 5;
-        
+        InPar.LiveSingleImage      = false;
     end
         
     if isempty(Cameras)
@@ -116,13 +123,13 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
         if strcmp(CamStatus,'idle')
             if isa(Unit.Camera{i},'obs.remoteClass')
                 remotename=Unit.Camera{i}.RemoteName;
-                if Nimages>1
+                if Nimages>1 || InPar.LiveSingleImage
                     Unit.Camera{i}.Messenger.send(sprintf('%s.takeLive(%d)',remotename,Nimages));
                 else
                     Unit.Camera{i}.Messenger.send(sprintf('%s.takeExposure',remotename));
                 end
             else
-                if Nimages>1
+                if Nimages>1 || InPar.LiveSingleImage
                     Unit.Camera{i}.takeLive(Nimages);
                 else
                     Unit.Camera{i}.takeExposure;

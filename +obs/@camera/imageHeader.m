@@ -136,11 +136,8 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
 
     % build header from structure
     N = numel(Info);
-    CameraHeaderCell = cell(N,3);
-    CameraHeaderCell(:,1) = {Info.Name};
-    CameraHeaderCell(:,2) = {Info.Val};
-    
-    HeaderCell=[CameraHeaderCell;
-                CameraObj.classCommand('UnitHeaderCell')];
+    HeaderCell = cell(N,3);
+    HeaderCell(:,1) = {Info.Name};
+    HeaderCell(:,2) = {Info.Val};
 
 end
