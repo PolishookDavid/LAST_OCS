@@ -199,8 +199,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
 %  New J2000 considering nutation, aberration, refraction and pointing model
 
         % FFU -read MetData from site metereology and pass it to classCommand
-        Aux = MountObj.classCommand(sprintf('pointingCorrection([],[%.6f,%.6f],%.8f)',...
-             [0,0],JD));
+        Aux = MountObj.classCommand(sprintf('pointingCorrection([],%.8f)',JD));
          
         % all the fields in Aux go into header, with this mapping:
         I = I + 1;
