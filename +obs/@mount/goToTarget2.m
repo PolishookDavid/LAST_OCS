@@ -82,17 +82,12 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     else
         
         switch lower(MountObj.Status)
-            case 'park'
-                MountObj.LogFile.write('Error: Attempt to slew telescope while parking');
-                Flag = false;
-                %error('Can not slew telescope while parking');
-            otherwise
+            case {'idle','disabled','tracking','aborted','limited'}
                 % Convert input into RA/Dec [input deg, output deg]
                 GeoPos = [MountObj.ObsLon./RAD, MountObj.ObsLat./RAD, MountObj.ObsHeight];   % [rad rad m]
     
     
                 % treat Shift
-    
     
                 % FFU: considering reading meterorological data...
                 MetData.Wave = 5000; % A
@@ -126,37 +121,18 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                                                                    'InterpDec',MountObj.PointingModel.InterpDec);
 
       
-                % verification:
-                if Alt<MinAlt
-                    fprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt)
-                    MountObj.LogFile.write(sprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt));
-                    Flag = false;
-                end
-                %HALimit = 0.75.*pi;
-                if abs(Aux.HA_App./RAD)>MountObj.HALimit
-                    fprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App)
-                    MountObj.LogFile.write(sprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App));
-                    Flag = false;
-                end
-                
                 % goto
                 MountObj.goTo(OutRA, OutDec);
-                OutRA, OutDec
 
+                % Flag=true if success, i.e. no mount error
+                Flag = isempty(MountObj.LastError);
+
+            otherwise
+                MountObj.LogFile.write('Error: cannot slew telescope while mount is %s',MountObj.Status);
+                Flag = false;
+                %error('Can not slew telescope while parking');
         end
         
     end
-
-    % write coordinates to MountObj
-    % MountObj.RA_J2000   = Aux.RA_J2000;     % M_JRA
-    % MountObj.Dec_J2000  = Aux.Dec_J2000;    % M_JDEC
-    % MountObj.RA_App     = Aux.RA_App;       % M_ARA
-    % MountObj.HA_App     = Aux.HA_App;       % M_AHA
-    % MountObj.Dec_App    = Aux.Dec_App;      % M_ADEC
-    % MountObj.RA_AppDist = Aux.RA_AppDist;   % M_ADRA
-    % MountObj.HA_AppDist = Aux.HA_AppDist;   % M_ADHA
-    % MountObj.Dec_AppDist= Aux.Dec_AppDist;  % M_ADDEC
-    %                                         % RA = M_JRA + CamShiftRA./cosd(M_JDEC)
-    %                                         % DEC = M_JDEC + CameraShiftDec 
 
 end
