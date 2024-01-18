@@ -15,8 +15,6 @@ classdef mount < obs.LAST_Handle
         %LastRC    = '';
         LogFile            = LogFile;
         LogFileDir char    = '';
-        IsConnected = false; % Connection status between class to camera (??)
-        %IsCounterWeightDown=true; % Test that this works as expected
     end
     
     % Mount ID
