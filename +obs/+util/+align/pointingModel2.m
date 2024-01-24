@@ -20,7 +20,7 @@ function pointingModel2(Unit, Args)
         Unit
         Args.Nha      = 20; %30
         Args.Ndec     = 10; %15
-        Args.MinAlt   = 35; % [deg]
+        Args.MinAlt   = 25; % [deg]
         Args.ExpTime  = 1;     % if empty - only move without exposing
         Args.ObsCoo   = [35, 30];
         Args.Object   = 'PointingModel';
