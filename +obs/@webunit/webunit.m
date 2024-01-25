@@ -37,7 +37,7 @@ classdef webunit < obs.LAST_Handle
         MountPowerOutput double=[]; % switch output controlling the mount
         MountNumber            = 99;  % Mount number 1..12 - 99=unknown (currently taken from Id)
         NumLocalTelescopes=2;
-        NumRemoteTelescopes=2;
+        NumRemoteTelescopes=0;
         Timezone=2;
     end
 
@@ -51,11 +51,14 @@ classdef webunit < obs.LAST_Handle
         % constructor, destructor
         function U=webunit(Locator)
             % identify the unit by locator
-            if exist('Locator','var') 
+            if exist('Locator','var')
                 if isa(Locator,'obs.api.Locator')
                     id = Locator.Canonical;
+                elseif isa(Locator,'char') || isa(Locator,'string')
+                    L=obs.api.Locator('Location',Locator);
+                    id=L.Canonical;
                 else
-                    id = Locator;
+                    id='';
                 end
             else
                 id=''; % will cause error below
@@ -84,16 +87,16 @@ classdef webunit < obs.LAST_Handle
              
              % regenerate (in case passed as string) the full locator of
              % the unit
-             L=obs.api.Locator('Location',id);
+             %L=obs.api.Locator('Location',id);
              projectnode=sprintf('%s.%d', L.ProjectName, L.NodeId);
              % switches:
-             sw=sprintf('%s.psw%d', projectnode, L.MountId);
-             U.PowerSwitch={
-                 obs.api.makeApi('Location',[sw 'e']), ...
-                 obs.api.makeApi('Location',[sw 'w'])};
+             sw=sprintf('%s.psw%d', projectnode,L.UnitId);
+%              U.PowerSwitch={
+%                  obs.api.makeApi('Location',[sw 'e'],'ForceHttp',true), ...
+%                  obs.api.makeApi('Location',[sw 'w'],'ForceHttp',true)};
              % for now always one mount per unit (or, empty mount when absent)
              U.Mount=obs.api.makeApi('Location',...
-                 sprintf('%s.mount%de', projectnode, L.MountId),'ForceRemote',true);
+                 sprintf('%s.unit%de.mount', projectnode, L.UnitId),'ForceHttp',true);
 %    BUG: 'ForceRemote' should be true, see https://github.com/blumzi/LAST_Api/issues/30
             % create camera and focuser objects for local telescopes
             U.Camera=cell(1,U.NumLocalTelescopes+U.NumRemoteTelescopes);
@@ -101,17 +104,17 @@ classdef webunit < obs.LAST_Handle
             % sides hardwired for the moment, locator parsing has bugs
             for j=1:2
                 U.Camera{j}=obs.api.makeApi('Location',...
-                      sprintf('%s.mount%de.camera%d',projectnode,L.MountId,j),...
-                      'ForceRemote',true);
+                      sprintf('%s.unit%de.camera%d',projectnode,L.UnitId,j),...
+                      'ForceHttp',true);
                 U.Camera{j+2}=obs.api.makeApi('Location',...
-                      sprintf('%s.mount%dw.camera%d',projectnode,L.MountId,j+2),...
-                      'ForceRemote',~true);
+                      sprintf('%s.unit%dw.camera%d',projectnode,L.UnitId,j+2),...
+                      'ForceHttp',~true);
                 U.Focuser{j}=obs.api.makeApi('Location',...
-                      sprintf('%s.mount%de.focuser%d',projectnode,L.MountId,j),...
-                      'ForceRemote',true);
+                      sprintf('%s.unit%de.focuser%d',projectnode,L.UnitId,j),...
+                      'ForceHttp',true);
                 U.Focuser{j+2}=obs.api.makeApi('Location',...
-                      sprintf('%s.mount%dw.focuser%d',projectnode,L.MountId,j+2),...
-                      'ForceRemote',~true);
+                      sprintf('%s.unit%dw.focuser%d',projectnode,L.UnitId,j+2),...
+                      'ForceHttp',~true);
             end
             
         end
