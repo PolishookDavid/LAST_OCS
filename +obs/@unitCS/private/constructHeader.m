@@ -234,9 +234,11 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Key = 'M_ADDec';
         Info(I).Val = Aux.Dec_AppDist;
         
-        I = I + 1;
-        Info(I).Key = 'RA';
-        Info(I).Val = Aux.RA_J2000 + TelOffset(1)/cosd(Aux.Dec_J2000);
+        if ~isempty(Aux.Dec_J2000)
+            I = I + 1;
+            Info(I).Key = 'RA';
+            Info(I).Val = Aux.RA_J2000 + TelOffset(1)/cosd(Aux.Dec_J2000);
+        end
         
         I = I + 1;
         Info(I).Key = 'DEC';
