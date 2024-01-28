@@ -37,7 +37,7 @@ function pointingModel2(Unit, Args)
     if Args.TestPM
         fprintf('\nRecording test images for existing pointing model.\n\n')
         ApplyDistortions = true;
-        Object = NaN;
+        Object = 'PointingTest';
     else
         fprintf('\nRecording new pointing model. Make sure to remove the previous PM before defining the Unit object.\n\n')
         ApplyDistortions = false;
