@@ -11,6 +11,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     %            cameras.
     %            If a char array ('1'|'2'|'3'|'4') then will shift the
     %            position to the center of the requested camera.
+    %            If [] use default.
     %            Default is [0 0].
     %          - A logical indicating if to apply the distortion
     %            corrections. Default is true.
@@ -23,8 +24,6 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     %          M.goToTarget('M31');
     %          M.goToTarget('M15',[],[1 1]);
     %          M.goToTarget('M81',[],[0 0 ], false);
-
-   
 
     if nargin<5
         ApplyDist = true;
@@ -39,9 +38,13 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
         end
     end
 
+    if isempty(Shift)
+        Shift = [0 0];
+    end
+
     RAD = 180./pi;
     MinAlt = 10;
-
+    
     % Get current UTC time
     % Note that computer clock must be set to UTC
     % FFU: add test that computer clock is in UTC
@@ -52,6 +55,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     OutDec  = NaN;
     Aux.RA_J2000    = NaN;
     Aux.Dec_J2000   = NaN;
+    Aux.HA_J2000    = NaN;
     Aux.RA_App      = NaN;
     Aux.HA_App      = NaN;
     Aux.Dec_App     = NaN;
@@ -71,7 +75,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
             case '4'
                 Shift = -[-1.65 +1.1];
             otherwise
-                error('Unknwon Shift option');
+                error('Unknown Shift option');
         end
     end
 
@@ -119,7 +123,6 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                                                                    'ApplyDistortion',ApplyDist,...
                                                                    'InterpHA',MountObj.PointingModel.InterpHA,...
                                                                    'InterpDec',MountObj.PointingModel.InterpDec);
-
       
                 % goto
                 MountObj.goTo(OutRA, OutDec);
@@ -130,7 +133,6 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
             otherwise
                 MountObj.LogFile.write('Error: cannot slew telescope while mount is %s',MountObj.Status);
                 Flag = false;
-                %error('Can not slew telescope while parking');
         end
         
     end

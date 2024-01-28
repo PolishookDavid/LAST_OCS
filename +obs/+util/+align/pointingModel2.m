@@ -83,7 +83,7 @@ function pointingModel2(Unit, Args)
         pause(Args.ExpTime+3);
 
         if ~Unit.readyToExpose('Wait',true, 'Timeout',Timeout)
-            disp('cameras not ready after timeout - abort')
+            Unit.reportError('cameras not ready after timeout - abort')
             break;
         end
     end
