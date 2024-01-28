@@ -25,16 +25,15 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     %          M.goToTarget('M15',[],[1 1]);
     %          M.goToTarget('M81',[],[0 0 ], false);
 
-   
-
     if nargin<5
         ApplyDist = true;
         if nargin<4
             Shift = [0 0];
             if nargin<3
                 Dec = [];
-            else
-                error('Not enough input arguments');
+                if nargin<2
+                    error('Not enough input arguments');
+                end
             end
         end
     end
@@ -87,17 +86,12 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
     else
         
         switch lower(MountObj.Status)
-            case 'park'
-                MountObj.LogFile.write('Error: Attempt to slew telescope while parking');
-                Flag = false;
-                %error('Can not slew telescope while parking');
-            otherwise
+            case {'idle','disabled','tracking','aborted','limited'}
                 % Convert input into RA/Dec [input deg, output deg]
                 GeoPos = [MountObj.ObsLon./RAD, MountObj.ObsLat./RAD, MountObj.ObsHeight];   % [rad rad m]
     
     
                 % treat Shift
-    
     
                 % FFU: considering reading meterorological data...
                 MetData.Wave = 5000; % A
@@ -117,7 +111,7 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                                                                    'RV',0,...
                                                                    'INPOP',MountObj.INPOP,...
                                                                    'GeoPos',GeoPos,...
-                                                                   'TypeLST','m',...
+                                                                   'TypeLST','a',...
                                                                    'ApplyAberration',true,...
                                                                    'ApplyRefraction',true,...
                                                                    'Wave',MetData.Wave,...
@@ -129,41 +123,18 @@ function [Flag,OutRA,OutDec,Aux]=goToTarget2(MountObj, RA, Dec, Shift, ApplyDist
                                                                    'ApplyDistortion',ApplyDist,...
                                                                    'InterpHA',MountObj.PointingModel.InterpHA,...
                                                                    'InterpDec',MountObj.PointingModel.InterpDec);
+      
+                % goto
+                MountObj.goTo(OutRA, OutDec);
 
-            
-                                                               
-                % verification:
-                if Alt<MinAlt
-                    fprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt)
-                    MountObj.LogFile.write(sprintf('Error: Target requested altitude (%f) is below limit (%f)',Alt,MinAlt));
-                    Flag = false;
-                elseif abs(Aux.HA_App)>MountObj.HALimit
-                    fprintf('Error: Requested HA (%f) is out of allowed range',Aux.HA_App)
-                    MountObj.LogFile.write(sprintf('Error: Requested HA (%f) is out of allowd range',Aux.HA_App));
-                    Flag = false;
-                elseif ~isfinite(OutRA*OutDec)
-                    fprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec)
-                    MountObj.LogFile.write(sprintf('Error: RA (%f) or Dec (%f) not finite',OutRA, OutDec));
-                    Flag = false;
-                else
-                    % move mount
-                    Flag = true;
-                    MountObj.goTo(OutRA, OutDec, 'eq');
-                end
+                % Flag=true if success, i.e. no mount error
+                Flag = isempty(MountObj.LastError);
+
+            otherwise
+                MountObj.LogFile.write('Error: cannot slew telescope while mount is %s',MountObj.Status);
+                Flag = false;
         end
         
     end
-
-    % write coordinates to MountObj
-    % MountObj.RA_J2000   = Aux.RA_J2000;     % M_JRA
-    % MountObj.Dec_J2000  = Aux.Dec_J2000;    % M_JDEC
-    % MountObj.RA_App     = Aux.RA_App;       % M_ARA
-    % MountObj.HA_App     = Aux.HA_App;       % M_AHA
-    % MountObj.Dec_App    = Aux.Dec_App;      % M_ADEC
-    % MountObj.RA_AppDist = Aux.RA_AppDist;   % M_ADRA
-    % MountObj.HA_AppDist = Aux.HA_AppDist;   % M_ADHA
-    % MountObj.Dec_AppDist= Aux.Dec_AppDist;  % M_ADDEC
-    %                                         % RA = M_JRA + CamShiftRA./cosd(M_JDEC)
-    %                                         % DEC = M_JDEC + CameraShiftDec 
 
 end
