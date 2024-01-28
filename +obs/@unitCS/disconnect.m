@@ -9,7 +9,7 @@ function UnitObj=disconnect(UnitObj)
     
     % quit slaves
     for i=1:numel(UnitObj.Slave)
-       UnitObj.Slave{i}.disconnect;
+       UnitObj.Slave{i}.terminate;
     end
 
 end
