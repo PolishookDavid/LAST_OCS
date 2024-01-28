@@ -42,6 +42,13 @@ classdef mount < inst.device
     properties(Hidden)
         TimeFromGPS logical     = false;      
     end
+
+    % solar system ephemerides. It is somewhat dirty to have it as a mount
+    % property, but we have no better solution for now. Loading it is done
+    % in the constructor, to catch the case when it is not installed
+    properties (Hidden)
+        INPOP
+    end
         
     properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
         Ready=struct('flag',true,'reason',''); % if and why the mount can be operated
@@ -90,6 +97,13 @@ classdef mount < inst.device
                                    MountObj.Config.ObsHeight];
             end
             
+            % load the ephemerides, if installed. Takes ~10sec
+            try
+                MountObj.INPOP = celestial.INPOP.init({'Ear'},'MaxOrder',5);
+            catch
+                MountObj.reportError('the INPOP ephemerides were not found, doing without')
+            end
+
             % Open the logFile (what do we want to do here? Open a different log
             %  file for each device, or one for the whole unitCS?)
             if isempty(MountObj.LogFile)

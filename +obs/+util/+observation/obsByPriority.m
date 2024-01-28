@@ -259,7 +259,8 @@ function obsByPriority(Unit, Args)
             fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
             pause(1)
         else
-            Unit.takeExposure(Args.Itel,T.ExpTime(IndPrio),T.NperVisit(IndPrio));
+            %char(T.TargetName(IndPrio))
+            Unit.takeExposure(Args.Itel,T.ExpTime(IndPrio),T.NperVisit(IndPrio),'Object',char(T.TargetName(IndPrio)));
             fprintf('Waiting for exposures to finish\n\n');
                 
             pause(T.ExpTime(IndPrio)*(T.NperVisit(IndPrio)+1)+4);
@@ -401,7 +402,7 @@ function checkAbortFile(Unit, JD, Shutdown)
             fprintf('Shutting down the mount.\n')
             Unit.shutdown
             pause(20)
-            error('shutdown because Sun too high');
+            fprintf('shutdown because Sun too high');
         else
             fprintf('Automatic shutdown disabled!! Press CTRL+C and run Unit.shutdown to shutdown the mount.\n')
         end
@@ -410,13 +411,13 @@ function checkAbortFile(Unit, JD, Shutdown)
         
 	if exist('~/abort_obs','file')>0
         delete('~/abort_obs');
-        error('user abort_obs file found');
+        fprintf('user abort_obs file found');
     end
             
 	if exist('~/abort_and_shutdown','file')>0
         delete('~/abort_and_shutdown');
         Unit.shutdown
         pause(30)
-        error('user abort_and_shutdown file found');
+        fprintf('user abort_and_shutdown file found');
     end
 end
