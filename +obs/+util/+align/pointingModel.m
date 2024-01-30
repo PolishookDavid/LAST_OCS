@@ -4,8 +4,8 @@ function pointingModel(Unit, Args)
    
     arguments
         Unit
-        Args.Nha      = 30;
-        Args.Ndec     = 15;
+        Args.Nha      = 20; %30
+        Args.Ndec     = 10; %15
         Args.MinAlt   = 25; % [deg]
         Args.ExpTime  = 1;     % if empty - only move without exposing
         Args.ObsCoo   = [35, 30]
@@ -17,7 +17,7 @@ function pointingModel(Unit, Args)
     
     % make grid
         
-    [TileList,~] = celestial.grid.tile_the_sky(Args.Nha, Args.Ndec);
+    [TileList,~] = celestial.coo.tile_the_sky(Args.Nha, Args.Ndec);
     HADec = TileList(:,1:2);
         
     
