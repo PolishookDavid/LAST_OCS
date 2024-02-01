@@ -7,8 +7,8 @@ for i=1:2
 end
 
 for i=1:2
-    Unit.Camera{i}.classCommand('Verbose=2;')
-    Unit.Camera{i}.classCommand(sprintf('connect(Unit.Camera{%d}.allQHYCameraNames{%d})',i,i))
+    Unit.Camera{i}.classCommand('Verbose=2;');
+    Unit.Camera{i}.classCommand(sprintf('connect(Unit.Camera{%d}.allQHYCameraNames{%d})',i,i));
 end
 
 Unit.takeExposure(1:2,6)
