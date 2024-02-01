@@ -26,12 +26,11 @@ function treatNewImage(UnitObj,Source,EventData)
         end
         
         % Save the image according to setting.
-        if SourceCamera.SaveOnDisk
+        if UnitObj.Camera{icam}.SaveOnDisk
             % this creates a header, and succeeds in querying a remote mount
             %  in a slave, only because we have created a Messenger and a
             %  Responder there. With only a single messenger, asynchronous
             %  commands and queries from both sides would mix up and create
             %  a mess.
             UnitObj.saveCurImage(icam);
-            SourceCamera.LastImageSaved = true;
         end
