@@ -6,11 +6,10 @@ function pointingModel(Unit, Args)
     %          'MinAlt' - only observe positions above this altitude [deg]
     %          'ExpTime' - exposure time [s]
     %          'ObsCoo' - observatory Long Lat [deg deg]. Default [35, 30].
-    %          'Object' - string that will appear in file name. Default
-    %          is "PointModel"
-    %          'ApplyDistortion' - logical use existing pointing model or
-    %          not. Should be false to record a new pointing model. Default 
-    %          is false.
+    %          'TestPM' - if true: test existing pointing model, Object set
+    %          to TestPM (will apear in filename) and applies distortions,
+    %          if false Object set to PointingModel and doesn't apply
+    %          distortions - default false
     %
     % Output : - None
     % Author : Nora Strotjohann (Jan 2024)
@@ -23,10 +22,18 @@ function pointingModel(Unit, Args)
         Args.MinAlt   = 25; % [deg]
         Args.ExpTime  = 1;     % if empty - only move without exposing
         Args.Obs      = celestial.earth.observatoryCoo('Name','LAST');
-        Args.Object   = 'PointingModel';
-        Args.ApplyDistortion = false;
+        Args.TestPM   = false;
     end
     
+    
+    if ~Args.TestPM
+        Object   = 'PointingModel';
+        ApplyDistortion = false;
+    else
+        Object   = 'TestPM';
+        ApplyDistortion = true;
+    end
+
     RAD = 180./pi;    
     
     % timeout for cameras used in readyToExpose
@@ -69,14 +76,14 @@ function pointingModel(Unit, Args)
         fprintf('\nObserve field %d out of %d - RA=%.3f, HA=%.3f, Dec=%.3f, Alt=%.3f\n', ...
             Itarget,Ntarget,RA, HADec(Itarget,1), HADec(Itarget,2), Alt(Itarget));
 
-        Unit.Mount.goToTarget2(RA,HADec(Itarget,2),[0, 0],Args.ApplyDistortion);
+        Unit.Mount.goToTarget2(RA,HADec(Itarget,2),[0, 0],ApplyDistortion);
         Unit.Mount.waitFinish;
 
             
         fprintf('Actual pointing: HA=%.3f, Dec=%.3f\n',Unit.Mount.HA, Unit.Mount.Dec);
 
         if ~isempty(Args.ExpTime)
-            Unit.takeExposure([],Args.ExpTime,1,'Object',Args.Object);
+            Unit.takeExposure([],Args.ExpTime,1,'Object',Object);
             fprintf('Wait for exposure to finish\n');
         end
         
