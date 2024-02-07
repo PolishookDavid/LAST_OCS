@@ -404,6 +404,7 @@ function checkAbortFile(Unit, JD, Shutdown)
             Unit.shutdown
             pause(20)
             fprintf('shutdown because Sun too high');
+            return
         else
             fprintf('Automatic shutdown disabled!! Press CTRL+C and run Unit.shutdown to shutdown the mount.\n')
         end
@@ -413,6 +414,7 @@ function checkAbortFile(Unit, JD, Shutdown)
 	if exist('~/abort_obs','file')>0
         delete('~/abort_obs');
         fprintf('user abort_obs file found');
+        return
     end
             
 	if exist('~/abort_and_shutdown','file')>0
@@ -420,5 +422,6 @@ function checkAbortFile(Unit, JD, Shutdown)
         Unit.shutdown
         pause(30)
         fprintf('user abort_and_shutdown file found');
+        return
     end
 end
