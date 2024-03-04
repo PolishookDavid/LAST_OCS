@@ -117,7 +117,9 @@ function obsByPriority2(Unit, Args)
     end
     
     
-    while true
+    OperateBool = true;
+    
+    while OperateBool
         
         if ~Args.Simulate
             JD = celestial.time.julday;
@@ -135,7 +137,7 @@ function obsByPriority2(Unit, Args)
             
             if ~Args.Simulate
                 % check if end script or shutdown mount
-                checkAbortFile(Unit, JD, Args.Shutdown);
+                OperateBool = checkAbortFile(Unit, JD, Args.Shutdown);
             end
             
             
@@ -163,7 +165,7 @@ function obsByPriority2(Unit, Args)
         
         if ~Args.Simulate
             % check if end script or shutdown mount or sunrise
-            checkAbortFile(Unit, JD, Args.Shutdown);
+            OperateBool = checkAbortFile(Unit, JD, Args.Shutdown);
         end
             
             
@@ -392,7 +394,9 @@ end
 
 
 
-function checkAbortFile(Unit, JD, Shutdown)
+function OperateBool = checkAbortFile(Unit, JD, Shutdown)
+
+    OperateBool = true;
 
     Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
     modulo_jd = mod(JD,1); % this is to avoid shutting down when starting observations in the evening
@@ -404,6 +408,7 @@ function checkAbortFile(Unit, JD, Shutdown)
             Unit.shutdown
             pause(20)
             fprintf('shutdown because Sun too high');
+            OperateBool = false;
             return
         else
             fprintf('Automatic shutdown disabled!! Press CTRL+C and run Unit.shutdown to shutdown the mount.\n')
@@ -414,6 +419,7 @@ function checkAbortFile(Unit, JD, Shutdown)
 	if exist('~/abort_obs','file')>0
         delete('~/abort_obs');
         fprintf('user abort_obs file found');
+        OperateBool = false;
         return
     end
             
@@ -422,6 +428,7 @@ function checkAbortFile(Unit, JD, Shutdown)
         Unit.shutdown
         pause(30)
         fprintf('user abort_and_shutdown file found');
+        OperateBool = false;
         return
     end
 end
