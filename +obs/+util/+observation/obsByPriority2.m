@@ -133,7 +133,7 @@ function obsByPriority2(Unit, Args)
         fprintf('%i of them observable now.\n\n', sum(NeedObs&FlagAll))
             
         % wait, if no targets observable
-        while (sum(NeedObs&FlagAll == 0)) && OperateBool
+        while (sum(NeedObs&FlagAll) == 0) && OperateBool
             
             if ~Args.Simulate
                 % check if end script or shutdown mount
@@ -409,7 +409,7 @@ function OperateBool = checkAbortFile(Unit, JD, Shutdown)
     
     if ((Sun.Alt*180./pi)>-11.5)
         fprintf('\nThe Sun is too high.\n')
-        if Shutdown %&& (modulo_jd>0.5) && (modulo_jd<0.75)    % automatic shutdown will only happen in the morning
+        if Shutdown && (modulo_jd>0.5) && (modulo_jd<0.75)    % automatic shutdown will only happen in the morning
             fprintf('Shutting down the mount.\n')
             Unit.shutdown
             pause(20)
