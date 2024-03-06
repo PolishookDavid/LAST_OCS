@@ -166,6 +166,10 @@ function obsByPriority2(Unit, Args)
             
         end
         
+        if ~OperateBool
+            break
+        end          
+        
         if ~Args.Simulate
             % check if end script or shutdown mount or sunrise
             OperateBool = checkAbortFile(Unit, JD, Args.Shutdown);
