@@ -1,42 +1,17 @@
 function HeaderCell=constructHeader(UnitObj,itel)
     % Construct image header for takes of the nth telescope. Intended to
     %   work only both for local and remote telescopes as well as mount in this unit
-    % This could well be demoted to private method, it is temporarily left
-    %  public for visibility
     %
     % Input   : the telescope number 
     % Output  : - A 3 column cell array with header for image
-    %           - A structure with all the header key and vals.
     
     RAD = 180./pi;
 
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
+    MountObj = UnitObj.Mount;
     
     [CameraHeader, CameraInfo] = imageHeader(CameraObj);
-    
-    
-    
-%     % get image size
-%     if isa(CameraObj,'obs.remoteClass')
-%         SizeImIJ = CameraObj.Messenger.query(...
-%             sprintf('size(%s.LastImage)',CameraObj.RemoteName));
-%     else
-%         SizeImIJ = size(CameraObj.LastImage);
-%     end
-% 
-%     if prod(SizeImIJ)==0
-%         UnitObj.reportError('no image taken by telescope %d, no header to create',...
-%                             itel)
-%         Info=struct();
-%         HeaderCell=cell(0,3);
-%         return
-%     else        % Mount information
-
-%         % fill the header first with all which can be retrieved from the
-%         %  camera alone
-%         [CameraHeader,CameraInfo] = imageHeader(CameraObj);
-%     end
     
     % get remaining info from mount and focuser 
     %  (The camera object is queried once more to get its eventual offset
@@ -74,7 +49,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
     end
     Info(I).Val = TimeZone; % timezone can be fractional! (e.g. Nepal, New Zeland)
     
-    if isa(UnitObj.Mount,'obs.mount') || isa(UnitObj.Mount,'obs.remoteClass')
+    if isa(MountObj,'obs.mount') || isa(MountObj,'obs.remoteClass')
         % Mount information
         MountNum = int16(sscanf(UnitObj.Id,'%d'));
         % OBSERVER
@@ -86,7 +61,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
         Info(I).Key = 'MOUNTNUM';
         Info(I).Val = MountNum;
         
-        MountConfig  = UnitObj.Mount.classCommand('Config');
+        MountConfig  = MountObj.classCommand('Config');
         CameraConfig = CameraObj.classCommand('Config');
         
         I = I + 1;
@@ -113,7 +88,7 @@ function HeaderCell=constructHeader(UnitObj,itel)
             Val = NaN;
         end
         Lat = Val;
-        Info(I).Val = Val;
+        Info(I).Val = Lat;
         
         I = I + 1;
         Info(I).Key = 'OBSALT';
@@ -140,33 +115,33 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'M_RA';
-        M_RA = UnitObj.Mount.classCommand('RA');
+        M_RA = MountObj.classCommand('RA');
         Info(I).Val = M_RA;
         
         I = I + 1;
         Info(I).Key = 'M_DEC';
-        Info(I).Val = UnitObj.Mount.classCommand('Dec');
+        M_Dec = MountObj.classCommand('Dec');
+        Info(I).Val = M_Dec;
         
         I = I + 1;
         Info(I).Key = 'M_HA';
         Info(I).Val = convert.minusPi2Pi(LST - M_RA);
         
-        % RA/Dec - mount J2000
-        J2000coord = UnitObj.Mount.classCommand('j2000');
-        I = I + 1;
-        M_JRA = J2000coord(1);
-        Info(I).Key = 'M_JRA';
-        Info(I).Val = M_JRA;
-        
-        I = I + 1;
-        M_JDec = J2000coord(2);
-        Info(I).Key = 'M_JDEC';
-        Info(I).Val = M_JDec;
-        
-        I = I + 1;
-        Info(I).Key = 'M_JHA';
-        Info(I).Val = convert.minusPi2Pi(J2000coord(3));
-        
+% OLD RA/Dec - mount J2000
+%         J2000coord = MountObj.classCommand('j2000');
+%         I = I + 1;
+%         M_JRA = J2000coord(1);
+%         Info(I).Key = 'M_JRA';
+%         Info(I).Val = M_JRA;
+%         
+%         I = I + 1;
+%         M_JDec = J2000coord(2);
+%         Info(I).Key = 'M_JDEC';
+%         Info(I).Val = M_JDec;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'M_JHA';
+%         Info(I).Val = convert.minusPi2Pi(J2000coord(3));
         
         % RA & Dec including telescope offsets
         %   ? what about CameraConfig.TelescopeOffset' ?
@@ -189,25 +164,25 @@ function HeaderCell=constructHeader(UnitObj,itel)
         %end
 	
         % buggy!
-        [RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
+        % [RA, Dec] = celestial.coo.shift_coo(M_JRA, M_JDec, TelOffset(1), TelOffset(2), 'deg');
         % quick fix:
         %RA=M_JRA;
         %Dec=M_JDec;
         
         %[RA, Dec] = reckon(M_JRA, M_JDec, CamDist, CamPA, 'degrees');
                 
-        I = I + 1;
-        Info(I).Key = 'RA';
-        Info(I).Val = RA;
-        
-        I = I + 1;
-        Info(I).Key = 'DEC';
-        Info(I).Val = Dec;
-        
-        I = I + 1;
-        HA = convert.minusPi2Pi(LST - RA);
-        Info(I).Key = 'HA';
-        Info(I).Val = convert.minusPi2Pi(HA);
+%         I = I + 1;
+%         Info(I).Key = 'RA';
+%         Info(I).Val = RA;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'DEC';
+%         Info(I).Val = Dec;
+%         
+%         I = I + 1;
+%         HA = convert.minusPi2Pi(LST - RA);
+%         Info(I).Key = 'HA';
+%         Info(I).Val = convert.minusPi2Pi(HA);
                 
         I = I + 1;
         Info(I).Key = 'EQUINOX';
@@ -215,27 +190,88 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'M_AZ';
-        Info(I).Val = UnitObj.Mount.classCommand('Az');
+        Info(I).Val = MountObj.classCommand('Az');
         
         I = I + 1;
         Info(I).Key = 'M_ALT';
-        Info(I).Val = UnitObj.Mount.classCommand('Alt');
+        Info(I).Val = MountObj.classCommand('Alt');
         
-        [Az, Alt] = celestial.coo.hadec2azalt(HA, Dec, Lat, 'deg');
+%  New J2000 considering nutation, aberration, refraction and pointing model
+
+        % FFU -read MetData from site metereology and pass it to classCommand
+        Aux = MountObj.classCommand(sprintf('pointingCorrection([],%.8f)',JD));
+         
+        % all the fields in Aux go into header, with this mapping:
+        I = I + 1;
+        Info(I).Key = 'M_JRA';
+        Info(I).Val = Aux.RA_J2000;
         
         I = I + 1;
-        Info(I).Key = 'AZ';
-        Info(I).Val = Az;
+        Info(I).Key = 'M_JDEC';
+        Info(I).Val = Aux.Dec_J2000;
         
         I = I + 1;
-        Info(I).Key = 'ALT';
-        Info(I).Val = Alt;
+        Info(I).Key = 'M_ARA';
+        Info(I).Val = Aux.RA_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_AHA';
+        Info(I).Val = Aux.HA_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADEC';
+        Info(I).Val = Aux.Dec_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADRA';
+        Info(I).Val = Aux.RA_AppDist;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADHA';
+        Info(I).Val = Aux.HA_AppDist;
+        
+        I = I + 1;
+        Info(I).Key = 'M_ADDec';
+        Info(I).Val = Aux.Dec_AppDist;
+        
+        if ~isempty(Aux.Dec_J2000)
+            I = I + 1;
+            Info(I).Key = 'RA';
+            Info(I).Val = Aux.RA_J2000 + TelOffset(1)/cosd(Aux.Dec_J2000);
+        end
+        
+        I = I + 1;
+        Info(I).Key = 'DEC';
+        Info(I).Val = Aux.Dec_J2000 + TelOffset(2);
+        
+        I = I + 1;
+        Info(I).Key = 'M_AAZ'; % check intentions - just AZ, perhaps?
+        Info(I).Val = Aux.Az_App;
+        
+        I = I + 1;
+        Info(I).Key = 'M_AALT';  % check intentions - just ALT, perhaps?
+        Info(I).Val = Aux.Alt_App;
         
         I = I + 1;
         Info(I).Key = 'AIRMASS';
-        Info(I).Val = celestial.coo.hardie( (90 - Alt)./RAD);
+        Info(I).Val = Aux.AirMass;
+        
+   % old computation of Az, Alt: no more relevant, I'd say.
+%         [Az, Alt] = celestial.coo.hadec2azalt(HA, Dec, Lat, 'deg');
+%         
+%         I = I + 1;
+%         Info(I).Key = 'AZ';
+%         Info(I).Val = Az;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'ALT';
+%         Info(I).Val = Alt;
+%         
+%         I = I + 1;
+%         Info(I).Key = 'AIRMASS';
+%         Info(I).Val = celestial.coo.hardie( (90 - Alt)./RAD);
                 
-        TrackingSpeed = UnitObj.Mount.classCommand('TrackingSpeed');
+        TrackingSpeed = MountObj.classCommand('TrackingSpeed');
         
         I = I + 1;
         Info(I).Key = 'TRK_RA';
@@ -263,6 +299,20 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
     end
     
+    % Read additional fixed keys from Unit.Config.FITSHeader
+    try
+        if isfield(UnitObj.classCommand('Config'),'FITSHeader')
+            ExtraKeys = UnitObj.classCommand('Config.FITSHeader');
+            for i=1:numel(ExtraKeys)
+                I= I + 1;
+                Info(I).Key = ExtraKeys{i}{1};
+                Info(I).Val  = ExtraKeys{i}{2};
+            end
+        end
+    catch
+    end
+    
+    % wrap it all up in HeaderCell
     N = numel(Info);
     HeaderCell = cell(N,3);
     HeaderCell(:,1) = {Info.Key};
@@ -270,18 +320,5 @@ function HeaderCell=constructHeader(UnitObj,itel)
     
     HeaderCell = [CameraHeader; HeaderCell];
 
-        
-    % Read additional fixed keys from camera Config.FITSHeader
-    try
-        if isfield(UnitObj.classCommand('Config'),'FITSHeader')
-            ExtraKeys = UnitObj.classCommand('Config.FITSHeader');
-            for i=1:numel(ExtraKeys)
-                I= I + 1;
-                Info(I).Name = ExtraKeys{i}{1};
-                Info(I).Val  = ExtraKeys{i}{2};
-            end
-        end
-    catch
-    end
 
 end
