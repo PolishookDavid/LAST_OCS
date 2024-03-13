@@ -13,7 +13,7 @@
 %   C.disconnect
 %   clear C
 
-classdef camera < obs.LAST_Handle
+classdef camera < inst.device
  
     properties(Hidden, Description='api')
         UnitHeaderCell cell = cell(0,3);     % additional header keywords injected by unitCS
@@ -78,6 +78,9 @@ classdef camera < obs.LAST_Handle
         LastSeqFlag logical = false;
     end
     
+    properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
+        Ready=struct('flag',true,'reason',''); % if and why the camera can be operated
+    end
     
     % constructor and destructor
     methods
@@ -96,6 +99,17 @@ classdef camera < obs.LAST_Handle
         function delete(CameraObj)
         end
         
+    end
+        
+    % getter for isReady
+    methods
+        function r=get.Ready(CameraObj)
+            r=struct('flag',false,'reason',CameraObj.CamStatus);
+            switch r.reason
+                case 'idle'
+                    r.flag=true;
+            end
+        end
     end
 
     % prototpes of exported methods, which are defined in separate files

@@ -1,4 +1,4 @@
-function obsByPriority(Unit, Args)
+function obsByPriority2(Unit, Args)
     % reads in target list from file Args.CoordFileName
     % waits if no target observable
     % otherwise observe them in the provided order
@@ -117,7 +117,9 @@ function obsByPriority(Unit, Args)
     end
     
     
-    while true
+    OperateBool = true;
+    
+    while OperateBool
         
         if ~Args.Simulate
             JD = celestial.time.julday;
@@ -131,11 +133,14 @@ function obsByPriority(Unit, Args)
         fprintf('%i of them observable now.\n\n', sum(NeedObs&FlagAll))
             
         % wait, if no targets observable
-        while sum(NeedObs&FlagAll)==0
+        while (sum(NeedObs&FlagAll) == 0) && OperateBool
             
             if ~Args.Simulate
                 % check if end script or shutdown mount
-                checkAbortFile(Unit, JD, Args.Shutdown);
+                OperateBool = checkAbortFile(Unit, JD, Args.Shutdown);
+                if ~OperateBool
+                    break
+                end
             end
             
             
@@ -161,9 +166,16 @@ function obsByPriority(Unit, Args)
             
         end
         
+        if ~OperateBool
+            break
+        end          
+        
         if ~Args.Simulate
             % check if end script or shutdown mount or sunrise
-            checkAbortFile(Unit, JD, Args.Shutdown);
+            OperateBool = checkAbortFile(Unit, JD, Args.Shutdown);
+            if ~OperateBool
+                break
+            end            
         end
             
             
@@ -191,7 +203,8 @@ function obsByPriority(Unit, Args)
 
         % slewing
         if ~Args.Simulate
-            Unit.Mount.goToTarget(T.RA(IndPrio), T.Dec(IndPrio));
+            %Unit.Mount.goToTarget(T.RA(IndPrio), T.Dec(IndPrio));
+            Unit.Mount.goToTarget2(T.RA(IndPrio), T.Dec(IndPrio)); 
             
             temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
             temp2 = Unit.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
@@ -277,7 +290,7 @@ function obsByPriority(Unit, Args)
         T.Data.LastJD(IndPrio) = obsJD;
         T.write(obsFileName+'.mat')
         writetable(T.Data,obsFileName+'.txt','Delimiter',',')
-           
+          
     end
 end
     
@@ -391,7 +404,9 @@ end
 
 
 
-function checkAbortFile(Unit, JD, Shutdown)
+function OperateBool = checkAbortFile(Unit, JD, Shutdown)
+
+    OperateBool = true;
 
     Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
     modulo_jd = mod(JD,1); % this is to avoid shutting down when starting observations in the evening
@@ -402,7 +417,8 @@ function checkAbortFile(Unit, JD, Shutdown)
             fprintf('Shutting down the mount.\n')
             Unit.shutdown
             pause(20)
-            fprintf('shutdown because Sun too high');
+            fprintf('shutdown because Sun too high. \n');
+            OperateBool = false;
             return
         else
             fprintf('Automatic shutdown disabled!! Press CTRL+C and run Unit.shutdown to shutdown the mount.\n')
@@ -413,6 +429,7 @@ function checkAbortFile(Unit, JD, Shutdown)
 	if exist('~/abort_obs','file')>0
         delete('~/abort_obs');
         fprintf('user abort_obs file found');
+        OperateBool = false;
         return
     end
             
@@ -421,6 +438,7 @@ function checkAbortFile(Unit, JD, Shutdown)
         Unit.shutdown
         pause(30)
         fprintf('user abort_and_shutdown file found');
+        OperateBool = false;
         return
     end
 end

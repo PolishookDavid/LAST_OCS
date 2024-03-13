@@ -20,6 +20,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 %               'ImType'         ['skyflat']
 %               'WaitTimeCheck'  [30]
 %               'Plot'           true
+%               'LiveMode'       false
 %
 % Output : - none, but flat images are saved on disk, TODO in the directories
 %  specified by each camera's Config.FlatDBDir
@@ -50,6 +51,7 @@ arguments
     Args.ImType               = 'twflat';
     Args.WaitTimeCheck        = 30;
     Args.Plot logical         = true;
+    Args.LiveMode             = false;
     
     Args.PrepMasterFlat logical = false;
     
@@ -105,7 +107,8 @@ while AttemptTakeFlat
         UnitObj.Mount.goToTarget(RA,Dec);
         
         % estimate mean count rate in images
-        MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun);
+        getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun, Args.LiveMode)
+        MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun, Args.LiveMode);
         
         % DEBUG
         %MeanValPerSec = 670  
@@ -136,7 +139,8 @@ while AttemptTakeFlat
                 EstimatedExpTime = min(Args.MaxFlatLimit/mean(MeanValPerSec), max(Args.ExpTimeRange));
 
                 % take images
-                UnitObj.takeExposure(Itel, EstimatedExpTime, 1, 'ImType','twflat');
+                UnitObj.takeExposure(Itel, EstimatedExpTime, 1, ...
+                             'ImType','twflat','LiveSingleImage',Args.LiveMode);
                 UnitObj.readyToExpose('Itel',Itel, 'Wait',true, 'Timeout',EstimatedExpTime+20);
                 
                 for Icam=1:1:Ncam
@@ -231,7 +235,7 @@ end
 end
 
 
-function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
+function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun, LiveMode)
     % Take exposures with all cameras 
     % do not save images
     % calculate the median counts per second
@@ -245,7 +249,7 @@ function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun)
         UnitObj.Camera{icam}.classCommand('SaveOnDisk = false;');
     end
     
-    UnitObj.takeExposure(Itel, TestExpTime, 1);
+    UnitObj.takeExposure(Itel, TestExpTime, 1, 'LiveSingleImage',LiveMode);
     
     UnitObj.readyToExpose('Itel',Itel, 'Wait',true);
                     

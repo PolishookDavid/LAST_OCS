@@ -9,18 +9,30 @@ function connectSlave(Unit,islaves)
         islaves=1:numel(Unit.Slave);
     end
     
-    for i=islaves
-        Unit.report('spawning slave %d\n',i)
-        S=Unit.Slave{i};
-        S.MessengerLocalPort = 8000+i; % arbitrary port numbers, but for definiteness
-        S.MessengerRemotePort= 8500+i;
-        S.ResponderLocalPort = 9000+i;
-        S.ResponderRemotePort= 9500+i;
-        S.connect
+    SlaveUnitName=inputname(1);
+    
+    spawned=false(1,numel(islaves));
+    
+    for i=1:numel(islaves)
+        Unit.report('spawning slave %d\n',islaves(i))
+        S=Unit.Slave{islaves(i)};
+        S.MessengerLocalPort = []; % arbitrary port numbers, but for definiteness
+        S.MessengerRemotePort= 8500+islaves(i);
+        S.ResponderLocalPort = [];
+        S.ResponderRemotePort= 9500+islaves(i);
+        % Spawn a new slave if possible. I doubt that handling the case of 
+        %  orphan slaves, and attempting reconnections to existing slaves 
+        %  is viable. Slaves should in principle exist only
+        %  when the cameras are powered, and we don't want them dangling
+        S.spawn
+        spawned(i)=isempty(S.LastError);
+    end
+    
+    for i=1:numel(islaves)
+        S=Unit.Slave{islaves(i)};
         % create a slave unitCS object and populate it
-        if isempty(S.LastError)
-            SlaveUnitName=inputname(1);
-            SlaveUnitId=[Unit.Id '_slave_' num2str(i)];
+        if spawned(i) && S.connect
+            SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];
             M=S.Messenger;
             M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
 
@@ -59,7 +71,7 @@ function connectSlave(Unit,islaves)
             %  configuration file, when created/connected. Of course the
             %  configurations of the master and of its slaves have to be
             %  consistent!
-            ownedTelescopes=Unit.RemoteTelescopes{i};
+            ownedTelescopes=Unit.RemoteTelescopes{islaves(i)};
             M.query(sprintf('%s.LocalTelescopes=%s;',SlaveUnitName, ...
                              mat2str(ownedTelescopes) ));
             % local cameras and focusers of this unit are remotes of the slave
@@ -87,6 +99,6 @@ function connectSlave(Unit,islaves)
 
             % send the connect command to the slave unit object, to connect
             %  with its own hardware
-            M.query([SlaveUnitName '.connect;']);
+            M.send([SlaveUnitName '.connect;']);
         end
     end

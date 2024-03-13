@@ -33,6 +33,8 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
     %                           [DistHA,DistDec]=@Fun(HA,Dec), where all the
     %                           input and output are in degrees.
     %                           Default is empty. If not given return [0,0].
+    %            'SkipDist'   - A logical indicating if to skip distortion
+    %                           correction. Default is false.
     %            'InputUnits' - Default is 'deg'.
     %            'OutputUnits'- Default is 'deg'
     %            'Temp'       - Default is 15 C.
@@ -41,7 +43,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
     % Output : - Flag 0 if illegal input coordinates, 1 if ok.
     %          - Apparent R.A.
     %          - Apparent Dec.
-    %          - A structure containing the intermidiate values.
+    %          - A structure containing the intermediate values.
     % License: GNU general public license version 3
     %     By : Eran Ofek                    Feb 2020
     % Example: [DistRA,DistDec,Aux]=mount.goToTarget(10,50)
@@ -68,7 +70,7 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
 %     
     JD = celestial.time.julday;
 
-    Flag = false;
+    Flag = false;     %%% TODO: delete this line
 
     switch lower(MountObj.Status)
         case 'park'
@@ -88,6 +90,17 @@ function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
                 OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
             end
 
+            %%% TODO: include option to call it without any pointing model
+            %%% use celestial.convert.app... instead of convert2equatorial
+            %%% still need to convert coordinates?
+            %%% save resulting RA, Dec after corrections to MountObject, so
+            %%% they can be written to the header
+            %%%
+            %%% [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
+            %%%     'DistFunHA',[],...
+            %%%     'DistFunDec',[],...
+            %%%     'DistIsDelta',true);
+                                                          
             [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
                                                               'DistFunHA',MountObj.PointingModel.InterpHA,...
                                                               'DistFunDec',MountObj.PointingModel.InterpDec,...

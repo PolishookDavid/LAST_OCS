@@ -47,7 +47,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         UnitObj
         itel                     = []; % telescopes to focus. [] means all
         
-        Args.BacklashOffset      = +1000;  % sign of the backlash direction
+        Args.BacklashOffset      = +100;  % sign of the backlash direction
         Args.SearchHalfRange     = []; % if empty will choose small range if FWHM already good and large one otherwise
         Args.FWHM_Step           = [5 40; 15 60; 20 100]; % [FWHM, step size]
         Args.PosGuess            = [];  % empty - use current position
@@ -64,13 +64,19 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
        
         Args.Verbose logical     = true;
         Args.Plot logical        = true;
+        %Args.LogDir              = '/home/ocs/log'
+        %Args.PlotDir             = '/home/ocs/log/focus_plots'
     end
+    
     
     if isempty(itel)
        itel=1:numel(UnitObj.Camera);
     end
     
     UnitName=inputname(1);
+    
+    % make sure the mount is tracking
+    %UnitObj.Mount.track;
     
     if numel(itel)==1 && ~isa(UnitObj.Camera{itel},'obs.remoteClass')
         % run, blocking, the scalar version of the method. Output arguments

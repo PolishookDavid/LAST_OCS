@@ -1,10 +1,9 @@
-function [RC]=focusByTemp(UnitObj, itel, Args)
+function focusByTemperature(UnitObj, itel, Args)
 % adjust focus if temperature has changed significantly
 %
 % Written by Nora, Jan 2023
-% in slave window: P.focusByTel(1)
-% in Master: for i=[1,2] P.Slave{i}.Messenger.send(['P.focusByTemperature(' num2str(i) ')'])
-% end
+% in slave window: P.focusByTemperature(1)
+% in Master: for i=[1,2,3,4], P.Slave{i}.Messenger.send(['P.focusByTemperature(' num2str(i) ')']); end
 
 
     arguments
@@ -26,12 +25,14 @@ function [RC]=focusByTemp(UnitObj, itel, Args)
     Col.BackLashOffset = 8;
 
     FocuserObj = UnitObj.Focuser{itel};
-    HostName = tools.os.get_computer;
-    FocusLogBaseFileName = ['log_focusTel_M',HostName(6),'C',int2str(itel),'.txt'];
+    FocusLogBaseFileName = ['log_focusTel_M',int2str(UnitObj.MountNumber),'C',int2str(itel),'.txt'];
     FocusLogDirFileName = [pipeline.last.constructCamDir(itel,'SubDir','log'),'/', FocusLogBaseFileName];
 
     if(~exist(FocusLogDirFileName, 'file'))
-        fprintf('Could not find focus log.\n')
+        fprintf('Could not find focus log with the name:\n')
+        fprintf(FocusLogDirFileName)
+        fprintf('\n')
+        return
     else
         FocusLog = load(FocusLogDirFileName);
     end
@@ -41,11 +42,19 @@ function [RC]=focusByTemp(UnitObj, itel, Args)
     UnitObj.report('   temperature 1 %.1f \n', temp1);
     UnitObj.report('   temperature 2 %.1f \n', temp2);
     
-    DeltaTemp = ((temp1-FocusLog(Col.temp1))+(temp2-FocusLog(Col.temp2)))*0.5;
-    UnitObj.report('   temperature increased by %.1f degrees \n', DeltaTemp);
+    if temp1<-10
+        DeltaTemp = temp2-FocusLog(Col.temp2);
+        UnitObj.report('   ignoring temperature 1 \n');
+    elseif temp2<-10
+        DeltaTemp = temp1-FocusLog(Col.temp1);
+        UnitObj.report('   ignoring temperature 2 \n');
+    else
+        DeltaTemp = ((temp1-FocusLog(Col.temp1))+(temp2-FocusLog(Col.temp2)))*0.5;
+    end
+    UnitObj.report('   temperature changed by %.1f degrees \n', DeltaTemp);
     
     NewPos = FocusLog(Col.BestPos) + DeltaTemp * Args.TicksPerDeg;
-    UnitObj.report('   best focus should be at %i \n', NewPos);
+    UnitObj.report('   best focus should be at %f \n', NewPos);
 
     Limits     = FocuserObj.Limits;
 
@@ -56,7 +65,7 @@ function [RC]=focusByTemp(UnitObj, itel, Args)
     elseif (NewPos>Limits(2))
         UnitObj.report('   New position is above upper focuser limit.\n\n');
     elseif (abs(CurrentPos-NewPos)<Args.MovementThreshold)
-        UnitObj.report('   Focuser is already near default position %i \n\n', CurrentPos);
+        UnitObj.report('   No change required - focuser is already near default position %d \n\n', CurrentPos);
         
     else
         UnitObj.report('   will move focuser to %i \n\n', NewPos);

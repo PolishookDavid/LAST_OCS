@@ -9,6 +9,17 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
     
+    
+    LogDir              = '/home/ocs/log';
+    PlotDir             = '/home/ocs/log/focus_plots';
+
+    if ~isfolder(LogDir)
+        mkdir(LogDir);
+    end
+    if ~isfolder(PlotDir)
+        mkdir(PlotDir);
+    end
+    
     MountNumberStr = string(UnitObj.MountNumber);
     CameraNumberStr = string(CameraObj.classCommand('CameraNumber'));
     
@@ -221,7 +232,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     BacklashOffset = Args.BacklashOffset;
 
     % opening or creating the log file
-    fileID = fopen('~/log/logfocusTel_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYY-mm-DD')+'.txt','a+');
+    FName = string(LogDir)+'/logfocusTel_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYY-mm-DD')+'.txt';
+    fileID = fopen(FName,'a+');
     fprintf(fileID,'\n\nFocusloop finished on '+string(datestr(now)));
     fprintf(fileID,'\nor JD '+string(celestial.time.julday));
     fprintf(fileID,'\nBacklashOffset '+string(BacklashOffset));
@@ -270,12 +282,26 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
                 drawnow
 
-                UnitObj.report('   best position %d\n', Result.BestPos)
-                UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
-                UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
-
-                Result.Status = 'Found.';
-                Success       = true;
+                
+                if Result.BestPos<min(Foc)
+                    Result.Status = 'Bad fit.';
+                    Success       = false;
+                    Result.BestPos = CurrentPos;   % moving back to initial position
+                    UnitObj.report('   Bad fit.\n')
+                elseif Result.BestPos>max(Foc)
+                    Result.Status = 'Bad fit.';
+                    Success       = false;
+                    Result.BestPos = CurrentPos;   % moving back to initial position
+                    UnitObj.report('   Bad fit.\n')
+                else
+                    Result.Status = 'Found.';
+                    Success       = true;
+                    %Result.BestPos = NaN;   % moving back to initial position
+                    
+                    UnitObj.report('   best position %d\n', Result.BestPos)
+                    UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
+                    UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
+                end
 
         
         end
@@ -293,10 +319,20 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
         
     if Success
-        fprintf(fileID,'\nbest position '+string(Result.BestPos));
-        fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
-        fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
+        UnitObj.report('   best position %d\n', Result.BestPos)
+        UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
+        UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
+        
+        %fprintf(fileID,'\nbest position %f', Result.BestPos);
+        %fprintf(fileID,'\nbest FWHM %f', Result.BestFWHM);
+        %fprintf(fileID,'\nadjusted Rsquared %f', adjrsquare);
+
+        %fprintf(fileID,'\nbest position '+string(Result.BestPos));
+        %fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
+        %fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
     end
+    
+    Result
            
     hold off
     
@@ -350,7 +386,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
     text(Result.BestPos, 10, info)
-    saveas(gcf,'~/log/focus_plots/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png') 
+    PlotName = string(PlotDir)+'/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png';
+    saveas(gcf,PlotName)
 
 end
 

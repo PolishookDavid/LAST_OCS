@@ -3,9 +3,9 @@
 % Description: operate focuser drivers.
 %              Currently can work with Celestron's focusers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-classdef focuser < obs.LAST_Handle
+classdef focuser < inst.device
             
-    properties (GetAccess=public, SetAccess=private)
+    properties (SetAccess=public, GetAccess=private)
         FocuserUniqueName = NaN;
     end
  
@@ -14,6 +14,11 @@ classdef focuser < obs.LAST_Handle
         PromptMirrorLock logical    = false;  % Prompt the user to check if mirror is locked
         PhysicalAddress                      % focuser address (e.g. pci-bridge-usb)
     end
+    
+    properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
+        Ready=struct('flag',true,'reason',''); % if and why the focuser can be operated
+    end
+
     
     % constructor and destructor
     methods
@@ -54,4 +59,14 @@ classdef focuser < obs.LAST_Handle
 
     end
     
+    % getter for isReady
+    methods
+        function r=get.Ready(F)
+            r=struct('flag',false,'reason',F.Status);
+            switch r.reason
+                case 'idle'
+                    r.flag=true;
+            end
+        end
+    end
 end
