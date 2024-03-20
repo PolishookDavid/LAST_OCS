@@ -1,5 +1,5 @@
 % unit control system handle class
-% Package: +obs/@unit
+% Package: +obs/@webunit
 % Description: Operate a LAST unit - a mount + 4 telescopes + 4 focusers +
 %              sensors.
 % Input  : 
@@ -18,9 +18,9 @@ classdef webunit < obs.LAST_Handle
 
     % these are filled canonically by the constructor
     properties (GetAccess=public, SetAccess=private)
-        Mount     % handle to the mount(s) abstraction object
-        Camera cell    % cell, handles to the camera abstraction objects
-        Focuser cell   % cell, handles to the focuser abstraction objects
+        Mount    obs.api.wrappers.mount % handle to the mount(s) abstraction object
+        Camera   obs.api.wrappers.camera % handles to the camera abstraction objects
+        Focuser  obs.api.wrappers.focuser % handles to the focuser abstraction objects
         PowerSwitch  cell   % handles to IP power switches units
     end
 
@@ -70,51 +70,41 @@ classdef webunit < obs.LAST_Handle
             U.loadConfig(U.configFileName('create'))
             % this one is read in as string and converted, because of limitations of
             %  Astropack's yml reader
-%             U.RemoteTelescopes=eval(U.RemoteTelescopes);
-%                         
-             % Populate mount, camera, focuser and power switches handles
-             % NB: it would be sensible and elegant to construct locators
-             %     using the relevant arguments of the constructor, e.g.
-             %
-             %  obs.api.Locator('ProjectName',U.ProjectName,...
-             %                  'NodeId',U.NodeId,...
-             %                  'MountId',U.MountId,'EquipType','Mount');
-             %
-             % but parsing of the arguments is yet imperfect. (see
-             % https://github.com/blumzi/LAST_Api/issues/29). Thus, for the
-             %  time being I construct strings, which is less elegant and
-             %  more fragile
-             
-             % regenerate (in case passed as string) the full locator of
-             % the unit
-             %L=obs.api.Locator('Location',id);
-             projectnode=sprintf('%s.%d', L.ProjectName, L.NodeId);
-             % switches:
-             sw=sprintf('%s.psw%d', projectnode,L.UnitId);
-%              U.PowerSwitch={
-%                  obs.api.makeApi('Location',[sw 'e'],'ForceHttp',true), ...
-%                  obs.api.makeApi('Location',[sw 'w'],'ForceHttp',true)};
-             % for now always one mount per unit (or, empty mount when absent)
-             U.Mount=obs.api.makeApi('Location',...
-                 sprintf('%s.unit%de.mount', projectnode, L.UnitId),'ForceHttp',true);
-%    BUG: 'ForceRemote' should be true, see https://github.com/blumzi/LAST_Api/issues/30
-            % create camera and focuser objects for local telescopes
-            U.Camera=cell(1,U.NumLocalTelescopes+U.NumRemoteTelescopes);
-            U.Focuser=cell(1,U.NumLocalTelescopes+U.NumRemoteTelescopes);
-            % sides hardwired for the moment, locator parsing has bugs
+            %             U.RemoteTelescopes=eval(U.RemoteTelescopes);
+            %
+            % Populate mount, camera, focuser and power switches handles
+            % NB: it would be sensible and elegant to construct locators
+            %     using the relevant arguments of the constructor, e.g.
+            %
+            %  obs.api.Locator('ProjectName',U.ProjectName,...
+            %                  'NodeId',U.NodeId,...
+            %                  'MountId',U.MountId,'EquipType','Mount');
+            %
+            % but parsing of the arguments is yet imperfect. (see
+            % https://github.com/blumzi/LAST_Api/issues/29). Thus, for the
+            %  time being I construct strings, which is less elegant and
+            %  more fragile
+            
+            % regenerate (in case passed as string) the full locator of
+            % the unit
+            %L=obs.api.Locator('Location',id);
+            projectnode=sprintf('%s.%d', L.ProjectName, L.NodeId);
+            % switches:
+            U.PowerSwitch=cell(1,2);
             for j=1:2
-                U.Camera{j}=obs.api.makeApi('Location',...
-                      sprintf('%s.unit%de.camera%d',projectnode,L.UnitId,j),...
-                      'ForceHttp',true);
-                U.Camera{j+2}=obs.api.makeApi('Location',...
-                      sprintf('%s.unit%dw.camera%d',projectnode,L.UnitId,j+2),...
-                      'ForceHttp',~true);
-                U.Focuser{j}=obs.api.makeApi('Location',...
-                      sprintf('%s.unit%de.focuser%d',projectnode,L.UnitId,j),...
-                      'ForceHttp',true);
-                U.Focuser{j+2}=obs.api.makeApi('Location',...
-                      sprintf('%s.unit%dw.focuser%d',projectnode,L.UnitId,j+2),...
-                      'ForceHttp',~true);
+                U.PowerSwitch{j}=...
+                    inst.tinycontrolIPpowerSocket(sprintf('%d_%d',L.UnitId,j));
+            end
+            % for now always one mount per unit (or, empty mount when absent)
+            U.Mount=obs.api.makeHttpApi('Location',...
+                sprintf('%s.unit%de.mount', projectnode, L.UnitId));
+            % create camera and focuser objects for local telescopes
+            % sides hardwired for the moment, locator parsing has bugs
+            for j=1:U.NumLocalTelescopes + U.NumRemoteTelescopes
+                U.Camera(j)=obs.api.makeHttpApi('Location',...
+                    sprintf('%s.unit%d.camera%d',projectnode,L.UnitId,j));
+                U.Focuser(j)=obs.api.makeHttpApi('Location',...
+                    sprintf('%s.unit%d.focuser%d',projectnode,L.UnitId,j));
             end
             
         end
