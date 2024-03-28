@@ -2,11 +2,11 @@ function success=disconnect(UnitObj)
     % disconnect all objects of the Unit
 
     try
-        for I=numel(UnitObj.Camera)
-            UnitObj.Camera{I}.Connected=false;
+        for I=1:numel(UnitObj.Camera)
+            UnitObj.Camera(I).Connected=false;
         end
-        for I=numel(UnitObj.Focuser)
-            UnitObj.Focuser{I}.Connected=false;
+        for I=1:numel(UnitObj.Focuser)
+            UnitObj.Focuser(I).Connected=false;
         end
         UnitObj.Mount.Connected=false;
         

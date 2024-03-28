@@ -168,8 +168,8 @@ classdef webunit < obs.LAST_Handle
             status.Camera=cell(1,numel(U.Camera));
             for i=1:numel(U.Camera)
                 try
-                    if U.Camera{i}.Connected
-                        status.Camera{i}=U.Camera{i}.CamStatus;
+                    if U.Camera(i).Connected
+                        status.Camera{i}=U.Camera(i).CamStatus;
                     else
                         status.Camera{i}='disconnected';
                     end
@@ -181,8 +181,8 @@ classdef webunit < obs.LAST_Handle
             status.Focuser=cell(1,numel(U.Focuser));
             for i=1:numel(U.Focuser)
                 try
-                    if U.Focuser{i}.Connected
-                        status.Focuser{i}=U.Focuser{i}.Status;
+                    if U.Focuser(i).Connected
+                        status.Focuser{i}=U.Focuser(i).Status;
                     else
                         status.Focuser{i}='disconnected';
                     end
@@ -193,16 +193,12 @@ classdef webunit < obs.LAST_Handle
             %
             status.Switch=cell(1,numel(U.PowerSwitch));
             for i=1:numel(U.PowerSwitch)
-                try 
-                   if U.PowerSwitch{i}.Connected
-                      status.Switch{i}='connected';
-                   else
-                      status.Switch{i}='disconnected';
-                   end
-                catch
+                if ~isempty(U.PowerSwitch{i}.Name)
+                    status.Switch{i}='connected';
+                else
                     status.Switch{i}='unreachable';
                 end
-            end
+             end
         end
 
 
