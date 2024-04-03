@@ -99,8 +99,9 @@ classdef superunit < obs.LAST_Handle
             end
             res=false(size(units));
             for i=1:numel(units)
-                S.RemoteUnits(units(i)).MessengerRemotePort=11000;
-                S.RemoteUnits(units(i)).ResponderRemotePort=13000;
+                % superfluous?
+                % S.RemoteUnits(units(i)).MessengerRemotePort=11000;
+                % S.RemoteUnits(units(i)).ResponderRemotePort=13000;
                 res(i)=S.RemoteUnits(units(i)).connect;
             end
          end
@@ -205,7 +206,15 @@ classdef superunit < obs.LAST_Handle
             % intended to be adequate for LAST
             id=sscanf(address,'last%d');
             if isempty(id)
-                id=ceil(sscanf(address,'10.23.1.%d')/2);
+                id=ceil(sscanf(address,'10.23.%d.%d')/2);
+                if ~isempty(id)
+                    id=id(end);
+                else
+                    % return 0 as last resort. This will spawn an Unit with Id=00,
+                    %  better than nothing at least for testing on non LAST
+                    %  hosts
+                    id=0;
+                end
             end
         end
     end
