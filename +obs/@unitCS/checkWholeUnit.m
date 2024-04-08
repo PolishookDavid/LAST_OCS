@@ -72,12 +72,14 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate)
     ok = ok && okm && all(okc) && all(okf);
     remedy = remedy || remedyS || remedyM || any(remedyC) || any(remedyF);
     if ok
+        U.GeneralStatus='ready';
         if ~remedy
             U.report('all checks OK\n')
         else
             U.report('all checks ok, but after remediation\n')
         end
     else
+        U.GeneralStatus='not ready';
         if ~remedy
             U.report('check failed!\n')
         else

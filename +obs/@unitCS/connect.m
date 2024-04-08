@@ -72,11 +72,12 @@ function Unit=connect(Unit)
     eval(sprintf('%s.connectSlave(%s)',SlaveUnitName,...
          mat2str(1:numel(Unit.Slave))));
 
-    if Unit.checkWholeUnit
-        Unit.GeneralStatus='ready';
-    else
-        Unit.GeneralStatus='initialization failed';
-    end
+    % this should be attempted only in the master, not in the slaves
+%     if Unit.checkWholeUnit
+%         Unit.GeneralStatus='ready';
+%     else
+%         Unit.GeneralStatus='initialization failed';
+%     end
 
 
 end
