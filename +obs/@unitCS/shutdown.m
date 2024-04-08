@@ -5,6 +5,7 @@ function UnitObj=shutdown(UnitObj)
     %  - quit spawned slaves
     %  - power off cameras and mount
     
+    UnitObj.GeneralStatus='shutting down...';
     UnitObj.report('  parking the mount...\n')
     % restore default slew speed (workaround for slew speed remaining
     %  equal to tracking speed in some anomalous circumstances)
@@ -18,4 +19,5 @@ function UnitObj=shutdown(UnitObj)
     UnitObj.CameraPower(:)=false;
     UnitObj.MountPower=false;
 
+    UnitObj.GeneralStatus='shut down';
 end

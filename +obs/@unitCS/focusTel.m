@@ -20,7 +20,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     %                   current position.
     %            'ExpTime' - Image exposure time. Default is 3 [s].
     %            'PixScale' - Pixel scale. Default is 1.25 [arcsec/pix].
-    %            'HalfSize' - Image half size inw which to estimate focus.
+    %            'HalfSize' - Image half size in which to estimate focus.
     %                   Default is 1000.
     %            'fwhm_fromBankArgs' - A cell array of additional arguments
     %                   to pass to imUtil.psf.fwhm_fromBank
@@ -75,6 +75,8 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     
     UnitName=inputname(1);
     
+    UnitObj.GeneralStatus='running focus loop';
+
     % make sure the mount is tracking
     %UnitObj.Mount.track;
     

@@ -198,8 +198,11 @@ function obsByPriority2(Unit, Args)
             continue
         end
                 
-        fprintf('\nObserving field %d out of %d - Name=%s, RA=%.2f, Dec=%.2f\n',...
+        msg=sprintf('\nObserving field %d out of %d - Name=%s, RA=%.2f, Dec=%.2f\n',...
             IndPrio,Ntargets,T.TargetName{IndPrio},T.RA(IndPrio), T.Dec(IndPrio));
+        fprintf(msg)
+        Unit.GeneralStatus=msg;
+
 
         % slewing
         if ~Args.Simulate
@@ -365,10 +368,10 @@ function Result = convertCSV2TargetObject(filename)
     % loop over columns and assign default or provided value
     Result = celestial.Targets;
     for Icol=1:1:Ncols
-        if string(Cols{Icol})=='RA'
+        if strcmp(Cols{Icol},'RA')
             Result.Data.RA = RA;
             
-        elseif string(Cols{Icol})=='Dec'
+        elseif strcmp(Cols{Icol},'Dec')
             Result.Data.Dec = Dec;
             
         elseif ismember(Cols{Icol},tbl.Properties.VariableNames)
@@ -411,7 +414,7 @@ function OperateBool = checkAbortFile(Unit, JD, Shutdown)
     Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
     modulo_jd = mod(JD,1); % this is to avoid shutting down when starting observations in the evening
     
-    if ((Sun.Alt*180./pi)>-11.5)
+    if ((Sun.Alt*180/pi)>-11.5)
         fprintf('\nThe Sun is too high.\n')
         if Shutdown && (modulo_jd>0.5) && (modulo_jd<0.75)    % automatic shutdown will only happen in the morning
             fprintf('Shutting down the mount.\n')
@@ -426,14 +429,14 @@ function OperateBool = checkAbortFile(Unit, JD, Shutdown)
         %error('The Sun is rising. Shutting down the mount. \n\n')
     end 
         
-	if exist('~/abort_obs','file')>0
+    if exist('~/abort_obs','file')>0
         delete('~/abort_obs');
         fprintf('user abort_obs file found');
         OperateBool = false;
         return
     end
-            
-	if exist('~/abort_and_shutdown','file')>0
+    
+    if exist('~/abort_and_shutdown','file')>0
         delete('~/abort_and_shutdown');
         Unit.shutdown
         pause(30)

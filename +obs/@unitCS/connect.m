@@ -9,6 +9,8 @@ function Unit=connect(Unit)
     % This method is designed to be called both for the master Unit and for
     %  its copies in eventual slaves.
     
+    Unit.GeneralStatus='powering up and connecting';
+    
     % for powering on, we could rely only on the right states being written
     %  in the power switches configuration files. But it is wise
     %  to do it only once, not to have it repeated by each
@@ -69,5 +71,12 @@ function Unit=connect(Unit)
     eval([SlaveUnitName '=Unit;']);
     eval(sprintf('%s.connectSlave(%s)',SlaveUnitName,...
          mat2str(1:numel(Unit.Slave))));
+
+    if Unit.checkWholeUnit
+        Unit.GeneralStatus='ready';
+    else
+        Unit.GeneralStatus='initialization failed';
+    end
+
 
 end

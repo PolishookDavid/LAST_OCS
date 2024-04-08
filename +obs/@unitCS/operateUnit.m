@@ -105,6 +105,7 @@ Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 while (Sun.Alt*RAD > MaxSunAltForFlat)
     %fprintf(Sun.Alt)
     fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
+    UnitObj.GeneralStatus='waiting for sunset';
     % Wait for 30 seconds
     pause(30);
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
@@ -212,6 +213,12 @@ end
 
 % observe
 %obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
+
+if Unit.checkWholeUnit
+    Unit.GeneralStatus='ready';
+else
+    Unit.GeneralStatus='not ready';
+end
 
 % Reached here, 7/03/2023
 return %%%

@@ -21,4 +21,15 @@ function treatNewImage(CameraObj,Source,EventData)
             CameraObj.LastSeq(Iim).Image = CameraObj.LastImage;
             CameraObj.LastSeq(Iim).JD    = CameraObj.TimeStartLastImage + 1721058.5;
         end
+        
+        if CameraObj.ComputeFWHM
+            % compute FWHM each time a new image is received, if so
+            % instructed
+            %  call with fixed HalfSize, TBD if ever needed different
+            [CameraObj.LastImageFWHM, ~] = ...
+                imUtil.psf.fwhm_fromBank(CameraObj.LastImage, 'HalfSize',1000);
+            % TBD if FWHM needs to be capped at 25 as in focusTelInSlave
+        else
+            CameraObj.LastImageFWHM=NaN;
+        end
     end

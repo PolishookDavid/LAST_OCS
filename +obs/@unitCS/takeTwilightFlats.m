@@ -82,6 +82,9 @@ end
 Lon = M.classCommand('MountPos(2)');
 Lat = M.classCommand('MountPos(1)');
 
+UnitObj.GeneralStatus='taking flats';
+
+
 % get Sun Altitude
 
 Counter = 0;

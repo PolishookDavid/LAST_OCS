@@ -36,6 +36,7 @@ classdef unitCS < obs.LAST_Handle
         RemoteTelescopes='{}'; % evaluates to a cell, indices of the telescopes assigned to each slave
         Slave cell; % handles to SpawnedMatlad sessions
         Temperature double; % temperature reading from the IPswitch 1wire sensors
+        GeneralStatus string = "disconnected"; % description, for superunit monitoring
     end
     
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
