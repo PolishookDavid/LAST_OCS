@@ -74,7 +74,7 @@ classdef superunit < obs.LAST_Handle
             end
             for i=1:numel(units)
                 j=units(i);
-                id=S.hostUnitId(S.UnitHosts{i});
+                id=S.hostUnitId(S.UnitHosts{j});
                 try
                     S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000,[],13000)
                     if S.RemoteUnits(j).connect
