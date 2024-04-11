@@ -99,9 +99,6 @@ classdef superunit < obs.LAST_Handle
             end
             res=false(size(units));
             for i=1:numel(units)
-                % superfluous?
-                % S.RemoteUnits(units(i)).MessengerRemotePort=11000;
-                % S.RemoteUnits(units(i)).ResponderRemotePort=13000;
                 res(i)=S.RemoteUnits(units(i)).connect;
             end
          end
