@@ -28,8 +28,8 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate)
             remedy=true;
             % attempt disconnection and reconnection
             if ~strcmp(status,'disconnected')
-                U.report('attempting disconnection of slave %d\n',i)
-                U.Slave{i}.disconnect;
+                U.report('attempting termination of slave %d\n',i)
+                U.Slave{i}.terminate(true);
                 pause(5)
             end
             % this IS tricky, because connectSlave uses inputname()
