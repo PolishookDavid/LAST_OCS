@@ -54,6 +54,9 @@ classdef superunit < obs.LAST_Handle
                 S.RemoteUnits(i).Host=S.UnitHosts{i};
                 S.RemoteUnits(i).RemoteTerminal=S.UnitTerminal;
                 S.RemoteUnits(i).RemoteMessengerFlavor='listener';
+                % this is needed to reconnect to already existing units,
+                %  without attempting to spawn them
+                S.RemoteUnits(i).MessengerRemotePort=11000;
             end
         end
         
