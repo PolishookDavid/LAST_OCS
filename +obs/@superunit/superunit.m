@@ -61,6 +61,12 @@ classdef superunit < obs.LAST_Handle
         end
         
         function set.UnitTerminal(S,termtype)
+            % termtype can be abbreviated
+            if isempty(termtype)
+                termtype='none';
+            end
+            termoptions={'xterm','gnome-terminal','desktop','none'};
+            termtype = termoptions{contains(termoptions,lower(termtype))};
             S.UnitTerminal=termtype;
             for i=1:numel(S.RemoteUnits)
                 S.RemoteUnits(i).RemoteTerminal=termtype;
@@ -80,6 +86,7 @@ classdef superunit < obs.LAST_Handle
                 id=S.hostUnitId(S.UnitHosts{j});
                 try
                     S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000,[],13000)
+                    S.report('connecting to spawned session "%s"\n',S.RemoteUnits(j).Id')
                     if S.RemoteUnits(j).connect
                         S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
                         S.send(sprintf(...
@@ -139,7 +146,11 @@ classdef superunit < obs.LAST_Handle
             end
             res=cell(1,numel(units));
             for i=1:numel(units)
-                res{i}=S.RemoteUnits(units(i)).Messenger.query(command);
+                try
+                    res{i}=S.RemoteUnits(units(i)).Messenger.query(command);
+                catch
+                    S.reportError('invalid Messenger for unit %s',S.RemoteUnits(units(i)).Id)
+                end
             end
         end
         
@@ -152,7 +163,11 @@ classdef superunit < obs.LAST_Handle
                 units=1:numel(S.RemoteUnits);
             end
             for i=1:numel(units)
-                S.RemoteUnits(units(i)).Messenger.send(command);
+                try
+                    S.RemoteUnits(units(i)).Messenger.send(command);
+                catch
+                    S.reportError('invalid Messenger for unit %s',S.RemoteUnits(units(i)).Id)
+                end
             end
         end
 
@@ -179,7 +194,11 @@ classdef superunit < obs.LAST_Handle
             end
             res=cell(1,numel(units));
             for i=1:numel(units)
-                res{i}=S.RemoteUnits(units(i)).Responder.query(command);
+                try
+                    res{i}=S.RemoteUnits(units(i)).Responder.query(command);
+                catch
+                    S.reportError('invalid Responder for unit %s',S.RemoteUnits(units(i)).Id)
+                end
             end
         end
 
@@ -193,7 +212,11 @@ classdef superunit < obs.LAST_Handle
                 units=1:numel(S.RemoteUnits);
             end
             for i=1:numel(units)
-                S.RemoteUnits(units(i)).Responder.send(command);
+                try
+                    S.RemoteUnits(units(i)).Responder.send(command);
+                catch
+                    S.reportError('invalid Responder for unit %s',S.RemoteUnits(units(i)).Id)
+                end
             end
         end
         
