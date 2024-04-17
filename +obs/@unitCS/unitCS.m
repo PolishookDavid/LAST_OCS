@@ -37,6 +37,7 @@ classdef unitCS < obs.LAST_Handle
         Slave cell; % handles to SpawnedMatlad sessions
         Temperature double; % temperature reading from the IPswitch 1wire sensors
         GeneralStatus string = "disconnected"; % description, for superunit monitoring
+        Master logical = true; % spawned slaves will be set false, to prevent calling whole unit methods in them
     end
     
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)

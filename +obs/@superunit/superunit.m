@@ -61,16 +61,16 @@ classdef superunit < obs.LAST_Handle
         end
         
         function set.UnitTerminal(S,termtype)
-            % termtype can be abbreviated
-            if isempty(termtype)
-                termtype='none';
-            end
-            termoptions={'xterm','gnome-terminal','desktop','none'};
-            termtype = termoptions{contains(termoptions,lower(termtype))};
+            termtype=S.validTermType(termtype);
             S.UnitTerminal=termtype;
             for i=1:numel(S.RemoteUnits)
                 S.RemoteUnits(i).RemoteTerminal=termtype;
             end
+        end
+        
+        function set.SlaveTerminals(S,termtype)
+            termtype=S.validTermType(termtype);
+            S.SlaveTerminals=termtype;
         end
     end
     
@@ -239,6 +239,19 @@ classdef superunit < obs.LAST_Handle
                     id=0;
                 end
             end
+        end
+        
+        function valid=validTermType(termtype)
+            % termtype can be abbreviated
+            if isempty(termtype)
+                termtype='none';
+            end
+            termoptions={'xterm','gnome-terminal','desktop','none'};
+            q=contains(termoptions,lower(termtype));
+            if ~any(q)
+                q=numel(termoptions);
+            end
+            valid = termoptions{q};
         end
     end
 end

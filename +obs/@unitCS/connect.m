@@ -73,11 +73,12 @@ function Unit=connect(Unit)
          mat2str(1:numel(Unit.Slave))));
 
     % this should be attempted only in the master, not in the slaves
-%     if Unit.checkWholeUnit
-%         Unit.GeneralStatus='ready';
-%     else
-%         Unit.GeneralStatus='initialization failed';
-%     end
-
+    if Unit.Master
+        if Unit.checkWholeUnit
+            Unit.GeneralStatus='ready';
+        else
+            Unit.GeneralStatus='initialization failed';
+        end
+    end
 
 end

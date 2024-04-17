@@ -35,6 +35,7 @@ function connectSlave(Unit,islaves)
             SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];
             M=S.Messenger;
             M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
+            M.query(sprintf('%s.Master=false;',SlaveUnitName));
 
             % Pass along Config descriptive (but semi-mandatory,unfortunately)
             %  parameters: .ProjName, .NodeNumber, .TimeZone
