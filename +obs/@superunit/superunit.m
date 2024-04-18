@@ -4,8 +4,8 @@ classdef superunit < obs.LAST_Handle
 
     properties
         UnitHosts  cell % list of hosts on which to spawn units (cell of char arrays)
-        UnitTerminal char ='none';
-        SlaveTerminals char ='none';
+        UnitTerminal char ='none'; % for all spawns, can be overriden individually
+        SlaveTerminals char ='none'; % ditto
         RemoteUnits obs.util.SpawnedMatlab; % array of SpawnedMatlabs;
         Logging logical =false; % create stdout and stderr log files. Must be set BEFORE connect
         LoggingDir char ; % directory where to log. Must be set BEFORE connect
@@ -62,16 +62,31 @@ classdef superunit < obs.LAST_Handle
         
         function set.UnitTerminal(S,termtype)
             termtype=S.validTermType(termtype);
-            S.UnitTerminal=termtype;
             for i=1:numel(S.RemoteUnits)
                 S.RemoteUnits(i).RemoteTerminal=termtype;
             end
+            S.UnitTerminal=termtype;
         end
         
         function set.SlaveTerminals(S,termtype)
             termtype=S.validTermType(termtype);
             S.SlaveTerminals=termtype;
         end
+        
+        function set.Logging(S,flag)
+            for i=1:numel(S.RemoteUnits)
+                S.RemoteUnits(i).Logging=flag;
+            end
+            S.Logging=flag;
+        end
+        
+        function set.LoggingDir(S,path)
+            for i=1:numel(S.RemoteUnits)
+                S.RemoteUnits(i).LoggingDir=path;
+            end
+            S.LoggingDir=path;
+        end
+        
     end
     
     methods
@@ -81,23 +96,27 @@ classdef superunit < obs.LAST_Handle
             if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
+            % first spawn serially all
             for i=1:numel(units)
                 j=units(i);
                 id=S.hostUnitId(S.UnitHosts{j});
                 try
                     S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000,[],13000)
-                    S.report('connecting to spawned session "%s"\n',S.RemoteUnits(j).Id')
-                    if S.RemoteUnits(j).connect
-                        S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
-                        S.send(sprintf(...
-                            'for i=1:numel(Unit.Slave),Unit.Slave{i}.RemoteTerminal=''%s'';end',...
-                            S.SlaveTerminals),j);
-                    else
-                        S.reportError('cannot connect to the master created on host %s',...
-                          S.UnitHosts{j})
-                    end
                 catch
                     S.reportError('cannot create Unit on host %s',S.UnitHosts{j})
+                end
+            end
+            % then try to connect
+            for i=1:numel(units)
+                S.report('connecting to spawned session "%s"\n',S.RemoteUnits(j).Id')
+                if S.RemoteUnits(j).connect
+                    S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
+                    S.send(sprintf(...
+                        'for i=1:numel(Unit.Slave),Unit.Slave{i}.RemoteTerminal=''%s'';end',...
+                        S.SlaveTerminals),j);
+                else
+                    S.reportError('cannot connect to the master created on host %s',...
+                        S.UnitHosts{j})
                 end
             end
         end
