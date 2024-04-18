@@ -101,6 +101,7 @@ classdef superunit < obs.LAST_Handle
                 j=units(i);
                 id=S.hostUnitId(S.UnitHosts{j});
                 try
+                    S.report('creating Master with Unit on %s\n',S.UnitHosts{j})
                     S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000,[],13000)
                 catch
                     S.reportError('cannot create Unit on host %s',S.UnitHosts{j})
@@ -108,6 +109,7 @@ classdef superunit < obs.LAST_Handle
             end
             % then try to connect
             for i=1:numel(units)
+                j=units(i);
                 S.report('connecting to spawned session "%s"\n',S.RemoteUnits(j).Id')
                 if S.RemoteUnits(j).connect
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
