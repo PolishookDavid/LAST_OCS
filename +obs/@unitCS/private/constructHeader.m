@@ -275,11 +275,11 @@ function HeaderCell=constructHeader(UnitObj,itel)
         
         I = I + 1;
         Info(I).Key = 'TRK_RA';
-        Info(I).Val = TrackingSpeed(1)./3600;  % [arcsec/s]
+        Info(I).Val = TrackingSpeed(1).*3600;  % [arcsec/s]
         
         I = I + 1;
         Info(I).Key = 'TRK_DEC';
-        Info(I).Val = TrackingSpeed(2)./3600;  % [arcsec/s]
+        Info(I).Val = TrackingSpeed(2).*3600;  % [arcsec/s]
     end
     
     % mount temperature, reading 1wire sensors on the power switches
