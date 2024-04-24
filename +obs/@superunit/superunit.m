@@ -110,6 +110,7 @@ classdef superunit < obs.LAST_Handle
             % then try to connect
             for i=1:numel(units)
                 j=units(i);
+                id=S.hostUnitId(S.UnitHosts{j});
                 S.report('connecting to spawned session "%s"\n',S.RemoteUnits(j).Id')
                 if S.RemoteUnits(j).connect
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
