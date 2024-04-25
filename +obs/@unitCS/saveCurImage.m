@@ -1,8 +1,9 @@
 function saveCurImage(UnitObj,itel,Path)
 % Save the last images to disk according the user's settings (unit version)
-% Also set LastImageSaved to true, until a new image is taken
+% Also set UnitObj.Camera{itel}.LastImageSaved = true, until a new image is taken
 % Inputs:
-%    - indices of the cameras whose images have to be saved
+%    - indices of the cameras whose images have to be saved (silent
+%             assumption, a telescope is one camera and one focuser)
 %    - optional path, if it needs to be different than the default for
 %                     science images
 %
@@ -64,7 +65,7 @@ function saveCurImage(UnitObj,itel,Path)
 
             FullPath = fullfile(Path,FileName);
 
-            HeaderCell=constructHeader(UnitObj,icam);
+            HeaderCell=constructTelescopeHeader(UnitObj,icam);
             UnitObj.report('Writing image %s to disk\n',FullPath);
 
             % prepend FILENAME to header

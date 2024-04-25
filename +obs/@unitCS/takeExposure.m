@@ -147,6 +147,16 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
         end
     end
     
+    % query the mount and the temperature sensor at this point, construct
+    %  .UnitHeader and dispatch it to the slaves. Let's hope for the time
+    %  being that this is faster than the time it takes to arm the camera
+    %  and retrieve an exposure, else the FITS file will be written with an
+    %  outdated header
+    Unit.constructUnitHeader;
+    for i=1:numel(Unit.Slave)
+    %   Unit.Slave{i}.Responder.send() % TODO! 
+    end
+    
     % restore the previous SaveOnDisk status if needed
      if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave
         for i=Cameras

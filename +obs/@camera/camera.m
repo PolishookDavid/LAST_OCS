@@ -46,9 +46,9 @@ classdef camera < inst.device
     
     % logging
     properties(Hidden)
-        LogFile             = '';          % FileName. If not provided, then if LogFileDir is not available then do not write LogFile.
+        LogFile             = '';      % FileName. If not provided, then if LogFileDir is not available then do not write LogFile.
         LogFileDir;
-        ConfigHeader struct = struct;     % structure containing additional header keywords with constants
+        ConfigHeader struct = struct;  % structure containing additional header keywords with constants
     end
     
     % save
