@@ -5,7 +5,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
     %  the result to the various slaves, rather than having each slave
     %  query the master multiple times.
     %
-    % Typically, this function is called by UitObj.takeExposure, and the
+    % Typically, this function is called by UnitObj.takeExposure, and the
     %  header reflects values read prior to the exposure. Temperatures
     %  won't change significantly, but the mount might fault during the
     %  exposure, and that won't be reflected in the FITS header
@@ -129,8 +129,18 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Descr = '';
         
 %  New J2000 considering nutation, aberration, refraction and pointing model
+%   There is a dependence on time here. Ideally, one would insert here the
+%   time at which the exposures are sarted, or ended, or the mean of the
+%   two. These exact times though are known only post facto in the slaves.
+%   In the previous implemenatation, all the mount data was queried by each
+%   slave at the time of saving the images, which caused an overhead of
+%   several seconds. To avoid it, in first approximation we use here JD at
+%   the time the this function is called. The assumptions are that: 1)
+%   astronomic motion corrections to the pointing are negligible on the
+%   scale of seconds, b) whenever we are tracking at sidereal rate, and
+%   the mount behaves normally, RA remains almost constant.
 
-        % FFU -read MetData from site metereology and pass it to classCommand
+        JD = celestial.time.julday();
         Aux = MountObj.classCommand(sprintf('pointingCorrection([],%.8f)',JD));
          
         % all the fields in Aux go into header, with this mapping:
@@ -174,17 +184,18 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Val = Aux.Dec_AppDist;
         Info(I).Descr = '';
         
-        % written by the slave unitCS.constructHeader, which retrieves
-        %  CameraInfo
-%         if ~isempty(Aux.Dec_J2000)
-%             I = I + 1;
-%             Info(I).Key = 'RA';
-%             Info(I).Val = Aux.RA_J2000 + TelOffset(1)/cosd(Aux.Dec_J2000);
-%         end
-%         
-%         I = I + 1;
-%         Info(I).Key = 'DEC';
-%         Info(I).Val = Aux.Dec_J2000 + TelOffset(2);
+        % pointing coordinates of the center wouldn't be needed by
+        % themselves, but we need them to be in UnitHeader, so that the
+        % slaves can sum to them the telescope offsets
+        I = I + 1;
+        Info(I).Key = 'RA_J2000';
+        Info(I).Val = Aux.RA_J2000;
+        Info(I).Descr = 'RA of the mount center';
+        
+        I = I + 1;
+        Info(I).Key = 'Dec_J2000';
+        Info(I).Val = Aux.Dec_J2000;
+        Info(I).Descr = 'Dec of the mount center';
         
         I = I + 1;
         Info(I).Key = 'M_AAZ'; % check intentions - just AZ, perhaps?
@@ -234,6 +245,8 @@ function HeaderCell=constructUnitHeader(UnitObj)
     catch
     end
     
+    % FFU -read MetData from site meteorology and pass it to classCommand
+
     % wrap it all up in HeaderCell
     N = numel(Info);
     HeaderCell = cell(N,3);

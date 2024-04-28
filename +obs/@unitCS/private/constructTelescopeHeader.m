@@ -15,8 +15,10 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
     
-    [CameraHeader, CameraInfo] = imageHeader(CameraObj);
+    [CameraHeader,CameraInfo] = imageHeader(CameraObj);
+    UnitHeader=UnitObj.UnitHeader;
     
+    CameraConfig = CameraObj.classCommand('Config');
     % get remaining info from mount and focuser 
     %  (The camera object is queried once more to get its eventual offset
     %  from RA and Dec, MountCameraDist. Moreover, JD is taken from the 
@@ -26,33 +28,39 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
 
     % TODO! derive ProjName,NodeNum,MountNum from UnitObj.UnitHeader to
     % construct JD
-%         I = I + 1;
-%         Info(I).Key = 'FULLPROJ';
-%         Info(I).Val = sprintf('%s.%02d.%02d.%02d',ProjName,NodeNum,MountNum,itel);
-%         Info(I).Descr = '';
+        ProjName=UnitHeader{strcmp(UnitHeader(:,1),'PROJNAME'),2};
+        NodeNum=UnitHeader{strcmp(UnitHeader(:,1),'NODENUMB'),2};
+        MountNum=UnitHeader{strcmp(UnitHeader(:,1),'MOUNTNUM'),2};
+        Lon=UnitHeader{strcmp(UnitHeader(:,1),'OBSLON'),2};
+        % Lat=UnitHeader{strcmp(UnitHeader(:,1),'OBSLAT'),2};
+        I = I + 1;
+        Info(I).Key = 'FULLPROJ';
+        Info(I).Val = sprintf('%s.%02d.%02d.%02d',ProjName,NodeNum,MountNum,itel);
+        Info(I).Descr = '';
 
         % TODO Lat, Lon from UnitObj.UnitHeader
-%         I = I + 1;
-%         Info(I).Key = 'LST';
-%         Ijd = find(strcmp({CameraInfo.Name},'JD'));
-%         JD  = CameraInfo(Ijd).Val;
-%         LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
-%         Info(I).Val = LST;
-%         Info(I).Descr = '';
-%         
-%         
-%         I = I + 1;
-%         DateObs       = convert.time(JD,'JD','StrDate');
-%         Info(I).Key = 'DATE-OBS';
-%         Info(I).Val = DateObs{1};
-%         Info(I).Descr = '';
-%
+        I = I + 1;
+        Info(I).Key = 'LST';
+        Ijd = find(strcmp({CameraInfo.Name},'JD'));
+        JD  = CameraInfo(Ijd).Val;
+        LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
+        Info(I).Val = LST;
+        Info(I).Descr = '';
+        
+        
+        I = I + 1;
+        DateObs       = convert.time(JD,'JD','StrDate');
+        Info(I).Key = 'DATE-OBS';
+        Info(I).Val = DateObs{1};
+        Info(I).Descr = '';
+
 
 % TODO M_RA from UnitHeader
-%         I = I + 1;
-%         Info(I).Key = 'M_HA';
-%         Info(I).Val = convert.minusPi2Pi(LST - M_RA);
-%         Info(I).Descr = '';
+        M_RA=UnitHeader{strcmp(UnitHeader(:,1),'M_RA'),2};
+        I = I + 1;
+        Info(I).Key = 'M_HA';
+        Info(I).Val = convert.minusPi2Pi(LST - M_RA);
+        Info(I).Descr = '';
         
     
     ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';
@@ -64,16 +72,20 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
     else
         TelOffset = [0 0];
     end
-    if ~isempty(Aux.Dec_J2000) % derive this from UnitHeader!
+    
+    %  Dec_J2000 and RA_J2000 are included on purpose in UnitHeader
+    Dec_J2000=UnitHeader{strcmp(UnitHeader(:,1),'Dec_J2000'),2};
+    RA_J2000=UnitHeader{strcmp(UnitHeader(:,1),'RA_J2000'),2};
+    if ~isempty(Dec_J2000)
         I = I + 1;
         Info(I).Key = 'RA';
-        Info(I).Val = Aux.RA_J2000 + TelOffset(1)/cosd(Aux.Dec_J2000);
+        Info(I).Val = RA_J2000 + TelOffset(1)/cosd(Dec_J2000);
         Info(I).Descr = '';
     end
     
     I = I + 1;
     Info(I).Key = 'DEC';
-    Info(I).Val = Aux.Dec_J2000 + TelOffset(2); % derive this from UnitHeader!
+    Info(I).Val = Dec_J2000 + TelOffset(2);
     Info(I).Descr = '';
 
     

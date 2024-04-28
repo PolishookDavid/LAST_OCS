@@ -115,12 +115,19 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
         end
     end
 
+    % check that all the requested cameras are able to take exposures (a
+    % bit superfluous perhaps). Do it in a preliminary loop, because we
+    % want to send the exposure command to all cameras as simulatneously as
+    % possible, without waiting for a query turnover
+    CamStatus=cell(1,max(Cameras));
+    for i=Cameras
+        CamStatus{i}=Unit.Camera{i}.classCommand('CamStatus;');
+    end
     % start acquisition on each of the local cameras, using nonblocking
     %  methods, and of the remote ones, using blind sends for maximum speed.
     %  This difference prevents the use of .classCommand() for both
     for i=Cameras
-        CamStatus=Unit.Camera{i}.classCommand('CamStatus;');
-        if strcmp(CamStatus,'idle')
+        if strcmp(CamStatus{i},'idle')
             if isa(Unit.Camera{i},'obs.remoteClass')
                 remotename=Unit.Camera{i}.RemoteName;
                 if Nimages>1 || InPar.LiveSingleImage
@@ -143,7 +150,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
             %         end
         else
             Unit.reportError('Camera %d status is "%s", cannot take exposures!',...
-                             i,CamStatus)
+                             i,CamStatus{i})
         end
     end
     
@@ -153,8 +160,16 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     %  and retrieve an exposure, else the FITS file will be written with an
     %  outdated header
     Unit.constructUnitHeader;
-    for i=1:numel(Unit.Slave)
-    %   Unit.Slave{i}.Responder.send() % TODO! 
+    
+    UnitName=inputname(1);
+    headerline=obs.util.tools.headerInputForm(Unit.UnitHeader);
+    % here we assume implicitly that we have one camera per Slave, and that
+    %  all Cameras are remote, because we want to use the Responder, for
+    %  setting Unit.UnitHeader with the eraliest possible callback. If we
+    %  were using the Camera{i}.Messenger, we would depend on the completion
+    %  of the exposure command
+    for i=Cameras
+       Unit.Slave{i}.Responder.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline)); 
     end
     
     % restore the previous SaveOnDisk status if needed
