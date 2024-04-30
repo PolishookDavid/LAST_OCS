@@ -43,10 +43,12 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
         InPar.WaitFinish logical   = false;
         InPar.ImType               = 'sci';
         InPar.Object               = NaN;
-        InPar.MinExpTimeForSave    = 5;
+        InPar.MinExpTimeForSave    = 0.75;
         InPar.LiveSingleImage      = false;
     end
         
+    Unit.reportDebug('entering takeExposure\n')
+    
     if isempty(Cameras)
         Cameras = (1:numel(Unit.Camera));
     end
@@ -126,6 +128,8 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     % start acquisition on each of the local cameras, using nonblocking
     %  methods, and of the remote ones, using blind sends for maximum speed.
     %  This difference prevents the use of .classCommand() for both
+    Unit.reportDebug('commanding cameras to expose\n')
+    
     for i=Cameras
         if strcmp(CamStatus{i},'idle')
             if isa(Unit.Camera{i},'obs.remoteClass')
@@ -165,7 +169,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     headerline=obs.util.tools.headerInputForm(Unit.UnitHeader);
     % here we assume implicitly that we have one camera per Slave, and that
     %  all Cameras are remote, because we want to use the Responder, for
-    %  setting Unit.UnitHeader with the eraliest possible callback. If we
+    %  setting Unit.UnitHeader with the earliest possible callback. If we
     %  were using the Camera{i}.Messenger, we would depend on the completion
     %  of the exposure command
     for i=Cameras

@@ -193,7 +193,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Descr = 'RA of the mount center';
         
         I = I + 1;
-        Info(I).Key = 'Dec_J2000';
+        Info(I).Key = 'DECJ2000';
         Info(I).Val = Aux.Dec_J2000;
         Info(I).Descr = 'Dec of the mount center';
         

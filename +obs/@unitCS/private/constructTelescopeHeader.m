@@ -74,7 +74,7 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
     end
     
     %  Dec_J2000 and RA_J2000 are included on purpose in UnitHeader
-    Dec_J2000=UnitHeader{strcmp(UnitHeader(:,1),'Dec_J2000'),2};
+    Dec_J2000=UnitHeader{strcmp(UnitHeader(:,1),'DECJ2000'),2};
     RA_J2000=UnitHeader{strcmp(UnitHeader(:,1),'RA_J2000'),2};
     if ~isempty(Dec_J2000)
         I = I + 1;

@@ -13,6 +13,8 @@ function saveCurImage(UnitObj,itel,Path)
 %  do, rather than constructing the filename, and the header, all by
 %  roundtrip queries. The image data anyway resides in the slave.
 
+    UnitObj.reportDebug('preparing to save image\n')
+
     if ~exist('itel','var')
         itel=[];
     end
@@ -86,6 +88,8 @@ function saveCurImage(UnitObj,itel,Path)
         end
     end
 
+    UnitObj.reportDebug('image saved\n')
+    
     % CameraObj.classCommand(['LogFile.write(' ...
     %    sprintf('Image: %s is written', CameraObj.classCommand('LastImageName') ')'])
 
