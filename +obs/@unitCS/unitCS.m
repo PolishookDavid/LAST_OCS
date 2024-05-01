@@ -119,7 +119,13 @@ classdef unitCS < obs.LAST_Handle
 %  a new one is created, causing hardware to be turned off immediately
 %  after it is turned on, if the specific delete() includes that.
             for i=1:numel(UnitObj.Slave)
-                delete(UnitObj.Slave{i})
+                UnitObj.Slave{i}.terminate
+                % originally I preferred to only delete the slave objects
+                %  in the master session, but it may lead to dangling
+                %  slaves, and to a cumbersome logic for deciding
+                %  whether to spawn new ones or to reconnect to the old
+                %  ones. I don't see anymore the point for that.
+                % delete(UnitObj.Slave{i})
             end
             delete(UnitObj.Mount);
             for i=1:numel(UnitObj.Camera)

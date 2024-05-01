@@ -26,7 +26,7 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
     
     I = 0;
 
-    % TODO! derive ProjName,NodeNum,MountNum from UnitObj.UnitHeader to
+    % derive ProjName,NodeNum,MountNum from UnitObj.UnitHeader to
     % construct JD
         ProjName=UnitHeader{strcmp(UnitHeader(:,1),'PROJNAME'),2};
         NodeNum=UnitHeader{strcmp(UnitHeader(:,1),'NODENUMB'),2};
@@ -38,10 +38,9 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
         Info(I).Val = sprintf('%s.%02d.%02d.%02d',ProjName,NodeNum,MountNum,itel);
         Info(I).Descr = '';
 
-        % TODO Lat, Lon from UnitObj.UnitHeader
         I = I + 1;
         Info(I).Key = 'LST';
-        Ijd = find(strcmp({CameraInfo.Name},'JD'));
+        Ijd = find(strcmp({CameraInfo.Name},'JD'),1);
         JD  = CameraInfo(Ijd).Val;
         LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
         Info(I).Val = LST;
@@ -55,7 +54,7 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
         Info(I).Descr = '';
 
 
-% TODO M_RA from UnitHeader
+% M_RA from UnitHeader
         M_RA=UnitHeader{strcmp(UnitHeader(:,1),'M_RA'),2};
         I = I + 1;
         Info(I).Key = 'M_HA';
