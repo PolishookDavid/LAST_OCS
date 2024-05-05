@@ -29,6 +29,7 @@ classdef unitCS < obs.LAST_Handle
         MountPowerOutput double=[]; % switch output controlling the mount
         MountNumber    int16   = 99;  % Mount number 1..12 - 99=unknown (currently taken from Id)
         UnitHeader;    % cell with additional FITS header keywords provided by the master
+        AbortActivity logical =false; % set this to true with a callback to stop scripts
     end
 
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle)

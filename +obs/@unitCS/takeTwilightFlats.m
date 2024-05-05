@@ -91,7 +91,7 @@ Counter = 0;
 I = 0;
 AttemptTakeFlat = true;
 ListOfFlatFiles = struct('List',cell(1,Ncam));
-while AttemptTakeFlat
+while AttemptTakeFlat && ~UnitObj.AbortActivity
     I = I + 1;
     
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
@@ -124,7 +124,7 @@ while AttemptTakeFlat
             % start twilight flat sequemce
             
             ContFlat = true;
-            while ContFlat
+            while ContFlat && ~UnitObj.AbortActivity
                 % take flat images
                 Counter = Counter + 1;
         

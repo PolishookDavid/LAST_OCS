@@ -18,6 +18,7 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate)
     remedy=false;
 
     U.report('Checking definitions and connections of unit %s:\n',U.Id)
+    U.GeneralStatus='Checking sanity of unit';
 
     % check communication with slaves
     for i=1:numel(U.Slave)

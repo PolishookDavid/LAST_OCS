@@ -10,6 +10,7 @@ function operateUnit(Unit, ToFocus)
 % Keep a log.
 %
 % Written by David Polishook, Jan 2023
+% Sanitization in progress by Enrico Segre, May 2024
 
 arguments
     Unit
@@ -30,6 +31,7 @@ PauseTimeForTargetsAvailability = 5.*60; % sec
 SlewingTimeout                  = 60;    % sec
 CamerasToUse = zeros(1,4);
 
+Unit.GeneralStatus='Operation initialization';
 
 % Connect the mount if already connected.
 RC1=Unit.Camera{1}.classCommand('CamStatus');
@@ -102,10 +104,10 @@ Lon = M.classCommand('MountPos(2)');
 Lat = M.classCommand('MountPos(1)');
 Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 % Decide if to run takeTwilightFlats
-while (Sun.Alt*RAD > MaxSunAltForFlat)
+while (Sun.Alt*RAD > MaxSunAltForFlat)  && ~Unit.AbortActivity
     %fprintf(Sun.Alt)
     fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
-    UnitObj.GeneralStatus='waiting for sunset';
+    Unit.GeneralStatus='waiting for sunset';
     % Wait for 30 seconds
     pause(30);
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
@@ -139,7 +141,7 @@ if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
             Unit.Camera{IFocuser}.classCommand('Temperature=-5');
             fprintf('Setting the camera temperature to -5deg (default).\n')
         end
-	end
+    end
  
     
     fprintf('Taking flats\n')
@@ -150,10 +152,12 @@ end
 
 % Run focus loop
 if (ToFocus)
+   Unit.GeneralStatus='focusing the telescopes';
    % Check Sun altitude to know when to start focus loop
    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
-   while (Sun.Alt*RAD > MaxSunAltForFocus)
+   while (Sun.Alt*RAD > MaxSunAltForFocus) && ~Unit.AbortActivity
       fprintf('Sun too high to focus - wait, or use ctrl+c to stop the method\n')
+      Unit.GeneralStatus='waiting for dark to focus the telescopes';
       % Wait for 30 seconds
       pause(30);
       Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
@@ -162,7 +166,7 @@ if (ToFocus)
    % Send mount to meridian at dec 60 deg, to avoid moon.
    Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
    fprintf('Sent mount to focus coordinates\n')
-   
+   Unit.GeneralStatus='mount sent to focusing coordinates';
    
    % TODO: should try to run focusByTemperature for a better initial guess   
    %for IFocuser=[1,2,3,4]
@@ -207,163 +211,11 @@ else
 end
 
 
-
-
-
-
-% observe
-%obs.util.observation.loopOverTargets(Unit,'NLoops',1,'CoordFileName','/home/ocs/target_coordinates_sne.txt')
-
 if Unit.checkWholeUnit
     Unit.GeneralStatus='ready';
 else
     Unit.GeneralStatus='not ready';
 end
 
-% Reached here, 7/03/2023
-return %%%
-
-
-
-
-
-
-
-
-
-
-
-
-
-T = celestial.Targets.createList('RA',[289.16 89.19 227.28 212.59].','Dec',[61.6,48.1,52.5,44.2].','MaxNobs',500);
-T.write('~/Desktop/latetime_SNe.mat');
-fprintf('Read target list\n')
-
-[~,~,Ind] = T.calcPriority(2451545.5,'fields_cont');
-
-%for I=1:1:length(T.RA)
-%
-
-
-
-% % Keep the last time of focusing separately for each telescope.
-% UnitCS.LastFocusTime(1:4) = celestial.time.julday;
-% UnitCS.LastFocusTemp(1:4) = XXX;
-% 
-% Start loop as long as run criteria are true
-TargetListLoop = true;
-TargetCounter = 0;
-
-while(TargetListLoop)
-   % Read targets.txt file
-   T = celestial.Targets;
-   % This line should be replaced with a proper T.readTargetList DP Mar 1, 2023
-   T.generateTargetList('last');
-   fprintf('Read target list\n')
-
-   % Analize target file: decide coordinate shift, camera parameters.
-
-   % This line should be replaced with T.calcPriority
-   Ind = find(T.RA < 70 & T.RA > 60 & T.Dec > 40 & T.Dec < 50);
-   if (isempty(Ind))
-      % If failed to read target file run F6.
-      fprintf('No visible targets - wait for 1 minute, or use ctrl+c to stop the method\n')
-      pause(60);
-   else
-      % Send mount to coordinates.
-      TargetCounter = TargetCounter + 1;
-      if (TargetCounter <= length(Ind))
-         RA = T.RA(Ind(TargetCounter));
-         Dec = T.Dec(Ind(TargetCounter));
-         % Send mount to coordinates.
-         fprintf('Slew to target %d: %s\n', TargetCounter, T.TargetName{Ind(TargetCounter)})
-         RC = Unit.Mount.goToTarget(RA,Dec);
-   
-         if (RC)
-            % Take exposures
-            CamerasToUse = [1,2,3,4]; % Temp
-            ExpTime = 20; % seconds  % Temp
-            ImNum = 2;               % Temp
-            fprintf('Taking exposure, ExpTime=%.2f x ImNum=%d\n', ExpTime, ImNum)
-            Unit.takeExposure(CamerasToUse, ExpTime, ImNum);
-            ReadoutTime = 3;
-            VisitPreparingTime = 20;
-   
-            % Pause for exposure
-            pause(VisitPreparingTime+(ExpTime + ReadoutTime)*ImNum);
-         end
-      else
-         fprintf('Target list was observed\n')
-         return
-      end
-   end
-
-      % Go to loop's start
-      
-%    RC = Unit.analyzeTargetList;
-%    if (~RC)
-%       % If failed to read target file run F6.
-%    end
-%    
-%    % Check if the targets are observable.
-%    [RA, Dec, Cameras, ExpTime, ImNum] = Unit.checkTargetAvailability;
-% 
-%    % If no target matches the conditions, wait for 10 minutes and go to the loop’s start.
-%    while (isemprty(RA))
-%       pause(PauseTimeForTargetsAvailability)
-%       [RA, Dec, Cameras, ExpTime, ImNum] = Unit.checkTargetAvailability;
-%       
-%    end
-%    
-%    % Send mount to coordinates.
-%    Unit.Mount.goToTarget(RA,Dec);
-% 
-%    % Pause for slewing
-% 
-%    % Check Astrometry
-%    RC = Unit.checkAstrometry;
-%       
-%    if (~RC)
-%       % If failed, run F7.
-%    end
-%       
-%    % Take exposures.
-%    Unit.takeExposure(CamerasToUse, ExpTime, ImNum);
-%       
-%    % Pause for exposure
-%       
-%    % Check images are being taken with usable quality, while taking exposures.
-%    Unit.checkSequence
-% 
-%    if (~RC)
-%       % If failed, run F8.
-%    end
-%       
-%    % Pause until the sequence (ExpTime x ImNum) is done. Use: UnitCS.waitTilFinish
-% 
-% 
-%    % Keep track for cycle number being taken: UnitCS.TargetCycle(Index)=+1
-% 
-%    % Check if to shutdown due to sunrise, by checking the Sun altitude.
-%    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
-%    if (Sun.Alt*RAD > MaxSunAltForObs)
-%       TargetListLoop = false;
-%       UnitCS.shutdown
-%       % Pause for shutdown
-%       pause()
-%    else
-%       % If Sun is low enough: continue the loop.
-%       
-%       % Check if to redo focus by comparing current temperature to UnitCS.LastFocusTemp(1:4).
-%       % Calculate new focus by temperature change
-% 
-%       % Go to loop’s beginning.
-%    end
-end
-% 
-% % Save log
-% Unit.SubmitLogReport
-% 
-
-
-
+% at this point we're ready for observing. My understanding is that the
+%  normal nightly workflow involves calling obs.util.obsByPtiority2 now

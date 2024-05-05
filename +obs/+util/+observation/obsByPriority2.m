@@ -5,7 +5,8 @@ function obsByPriority2(Unit, Args)
     % records all obtained observations in log file
     %
     % The best way to interrupt the observations is creating the file
-    % ~/abort_obs
+    % ~/abort_obs, or to set with a callback the hidden property
+    % Unit.AbortActivity=true
     %
     % touch ~/abort_and_shutdown will interrupt the observations and
     % shutdown the unit
@@ -119,7 +120,7 @@ function obsByPriority2(Unit, Args)
     
     OperateBool = true;
     
-    while OperateBool
+    while OperateBool && ~Unit.AbortActivity
         
         if ~Args.Simulate
             JD = celestial.time.julday;
@@ -166,14 +167,14 @@ function obsByPriority2(Unit, Args)
             
         end
         
-        if ~OperateBool
+        if ~OperateBool || Unit.AbortActivity
             break
         end          
         
         if ~Args.Simulate
             % check if end script or shutdown mount or sunrise
             OperateBool = checkAbortFile(Unit, JD, Args.Shutdown);
-            if ~OperateBool
+            if ~OperateBool || Unit.AbortActivity
                 break
             end            
         end
@@ -243,6 +244,7 @@ function obsByPriority2(Unit, Args)
             pause(2);
             if ~Unit.readyToExpose('Itel',Args.Itel,'Wait',true, 'Timeout',Timeout)
                 fprintf('Cameras not ready after timeout - abort.\n\n')
+                Unit.GeneralStatus='Cameras not ready after timeout - abort';
                 break;
             end
         end
