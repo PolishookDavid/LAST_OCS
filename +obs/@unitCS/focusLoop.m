@@ -218,6 +218,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     FocVal = nan(Nfocus,Nsp,Ncam);
     for Ifocus=1:Nfocus
+        UnitObj.GeneralStatus=sprintf('Focus loop step %d/%d',Ifocus, Nfocus);
         for Icam=1:Ncam
             UnitObj.report('Focuser %d to position: %.0f (#%d out of %d)\n',...
                             itel(Icam), FocusPosCam(Ifocus,Icam), Ifocus, Nfocus)
@@ -282,6 +283,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
                 %  a random number
                 FocVal(Ifocus,:,Icam)=5*rand(1,Nsp);
             end
+            CamObj{Icam}.classCommand(sprintf('LastImageFWHM=%f;',FocVal(Ifocus,:,Icam)));
         end
    
         if InPar.Plot
