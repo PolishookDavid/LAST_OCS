@@ -3,6 +3,8 @@ function [Success, Result] = getFocusGuess(UnitObj, itel, Args)
     % off. Run it if the initial guess is too bad for focusTel.
     % Input  : - The unit object.
     %          - focuser number 1,2,3, or 4.
+    % mastrolindo status: given the absence of many .classCommand, this may
+    %                     have run only in slaves
 
     arguments
         UnitObj
@@ -14,6 +16,8 @@ function [Success, Result] = getFocusGuess(UnitObj, itel, Args)
         Args.Verbose logical     = true;
         Args.Plot logical        = true;
     end
+    
+    UnitObj.GeneralStatus='running coarse focusing loop';
     
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
@@ -64,7 +68,7 @@ function [Success, Result] = getFocusGuess(UnitObj, itel, Args)
     ResTable = nan(Args.MaxIter,2);  % [FocPos, ACFrac]
     Cont     = true;
     Counter  = 0;
-    while Cont && Counter<Args.MaxIter && FocPos> Limits(1)
+    while Cont && Counter<Args.MaxIter && FocPos> Limits(1) && ~UnitObj.AbortActivity
         Counter        = Counter + 1;
         
         Result.Counter = Counter;
@@ -132,7 +136,7 @@ function [Success, Result] = getFocusGuess(UnitObj, itel, Args)
             end
         end
             
-        if Cont
+        if Cont && ~UnitObj.AbortActivity
             % move focus to: FocPos
             if maxACFrac>0.6
                 FocPos = FocPos - Args.StepSize/2;
@@ -165,6 +169,9 @@ function [Success, Result] = getFocusGuess(UnitObj, itel, Args)
     
     % restore saving image flag
     CameraObj.SaveOnDisk=CurrentSaveImage;
+    
+    UnitObj.GeneralStatus='ready';
+
 end
    
 

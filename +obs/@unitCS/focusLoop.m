@@ -77,6 +77,8 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 % By: Eran Ofek          April 2020 ; complete rev. Enrico Segre August 2021
 % Example: [FocRes] = Unit.focusLoop(1) 
 
+    UnitObj.GeneralStatus='running focusing loop';
+
     if nargin<2
         itel=[];
     end
@@ -366,7 +368,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     end
     
     % restore whatever was the previous ImType for the cameras
-    % This dosen't really do anything, ImType is determined by takeExposure
+    % This doesn't really do anything, ImType is determined by takeExposure
     for Icam=1:Ncam
         CamObj{Icam}.classCommand('ImType=''%s'';',previousImType{Icam});
     end
@@ -374,3 +376,5 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
     Res.Az  = MountObj.Az;
     Res.Alt = MountObj.Alt;
     Res.AM  = celestial.coo.hardie(pi./2 - Res.Alt.*pi/180);
+    
+    UnitObj.GeneralStatus='ready'; % well, really "ready" could be checked....
