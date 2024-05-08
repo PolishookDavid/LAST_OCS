@@ -98,7 +98,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
 %                                              jsonencode(Args) ''') )']);
             % I can exploit this contraption, using namedargs2cell(Args)
             UnitObj.Slave{i}.Messenger.send(['NVargs=namedargs2cell(jsondecode(''' ...
-                                             jsonencode(Args) ''') );'])
+                                             jsonencode(Args) ''') );']);
             UnitObj.Slave{i}.Messenger.send([UnitName '.focusTel(' ...
                                              num2str(i) ',NVargs{:} )']);
         end

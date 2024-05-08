@@ -106,7 +106,8 @@ Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 % Decide if to run takeTwilightFlats
 while (Sun.Alt*RAD > MaxSunAltForFlat)  && ~Unit.AbortActivity
     %fprintf(Sun.Alt)
-    fprintf('Sun too high - wait, or use ctrl+c to stop the method\n')
+    fprintf('Sun at %.1f°, too high - wait, or use ctrl+c to stop the method\n',...
+        Sun.Alt*RAD)
     Unit.GeneralStatus='waiting for sunset';
     % Wait for 30 seconds
     pause(30);
@@ -147,7 +148,7 @@ if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
     fprintf('Taking flats\n')
     Unit.takeTwilightFlats
 else
-    fprintf('Sun too low, skipping twilight flats\n')
+    fprintf('Sun at %.1f°, too low, skipping twilight flats\n',Sun.Alt*RAD)
 end
 
 % Run focus loop
@@ -156,7 +157,8 @@ if (ToFocus)
    % Check Sun altitude to know when to start focus loop
    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
    while (Sun.Alt*RAD > MaxSunAltForFocus) && ~Unit.AbortActivity
-      fprintf('Sun too high to focus - wait, or use ctrl+c to stop the method\n')
+      fprintf('Sun at %.1f°, too high to focus - wait, or use ctrl+c to stop the method\n',...
+              Sun.Alt*RAD)
       Unit.GeneralStatus='waiting for dark to focus the telescopes';
       % Wait for 30 seconds
       pause(30);
