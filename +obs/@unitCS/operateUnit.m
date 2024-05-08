@@ -183,7 +183,7 @@ if (ToFocus)
     % Check success:
    if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
          round(Unit.Mount.HA,0)  > FocusHA-1  && round(Unit.Mount.HA,0)  < FocusHA+1))
-      fprintf('Mount failed to reach requested coordinates - abort (cable streaching issue?)\n');
+      fprintf('Mount failed to reach requested coordinates - abort (cable stretching issue?)\n');
       Unit.shutdown;
       return;
    end
@@ -199,7 +199,7 @@ if (ToFocus)
    for CameraInx=1:1:4
        CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusTelStartTime, FocusLoopTimeout);
    end
-   if(~prod(CamerasToUse))
+   if ~prod(CamerasToUse)
        % Report the focus status
        fprintf('Focuser1 %d, Focuser2 %d, Focuser3 %d, Focuser4 %d\n', CamerasToUse)
    else

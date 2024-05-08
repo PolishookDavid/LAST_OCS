@@ -1,6 +1,10 @@
 classdef superunit < obs.LAST_Handle
     % Spawned matlab sessions object, including messengers for dual
     % communication
+    % Some conventions are tacitly assumed to be enforced throughout the
+    %  codebase: unitCS objects in the sessions are always called 'Unit',
+    %  have always a property Unit.AbortActivity which can be set to true
+    %  asynchronously in order to abort long operations, and so on
 
     properties
         UnitHosts  cell % list of hosts on which to spawn units (cell of char arrays)
@@ -35,7 +39,8 @@ classdef superunit < obs.LAST_Handle
         end
         
     end
-    
+
+
     methods
         % setters of properties which need further propagation
         function set.UnitHosts(S,UnitHosts)
@@ -241,6 +246,40 @@ classdef superunit < obs.LAST_Handle
                 end
             end
         end
+        
+        function command=commandExecuting(S,units)
+            % use the Responder to check with a callback if the unit is
+            %  running a command sent via the Messenger, i.e. if it is busy
+            %  with an interruptible command. An empty result means that
+            %  the unit is free to receive listener commands (that however
+            %  does not imply that the session is not busy with a command
+            %  sent on the Responder, which is unfortunately
+            %  uninterruptible)
+            if ~exist('units','var') || isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            command=S.queryCallback('MasterMessenger.ExecutingCommand',units);
+        end
+        
+        % shotcuts to send specific Unit commands
+        
+        function success=abortActivity(S,units)
+            % set via callabck Unit.AbortActivity=true, so that long
+            %  commands which take that property into account can abort
+            %  (provided that they have been started either interactively
+            %  at matlab prompt or evaluated by MasterMessenger, which is a
+            %  Listener)
+            if ~exist('units','var') || isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            S.sendCallback('Unit.AbortActivity=true;',units);
+            success=S.queryCallback('Unit.AbortActivity',units);
+        end
+        
+        % shall we make also shortcuts for Unit.connect, Unit.shutdown, and
+        %  other common operative activities? Instinctively I'd say not at
+        %  this level, because they are at another level of specificity,
+        %  and many have options. Or?
         
     end
 
