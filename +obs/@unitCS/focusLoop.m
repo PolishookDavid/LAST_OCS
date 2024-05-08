@@ -204,6 +204,7 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     % go to focus start position (which accounts for backlash)
     if ~UnitObj.readyToExpose('Itel',itel, 'Wait',true)
+        UnitObj.GeneralStatus='Unit not ready for focus loop';
         return
     end
     for Icam=1:Ncam

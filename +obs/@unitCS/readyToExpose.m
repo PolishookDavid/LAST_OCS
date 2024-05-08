@@ -5,7 +5,8 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     %            'Itel' - List of telescopes to check. If empty use (1:1:4).
     %                   Default is [].
     %            'Wait' - A logical indicating if to wait till the system is
-    %                   ready. Default is false.
+    %                   ready. Default is false. Effective only if
+    %                   EarlyReturn is false.
     %            'Timeout' - Time out for waiting. Default is 20 [s].
     %            'ClearMountFaults' - A logical indicating if to clear mount
     %                   faults. Default is true.
@@ -14,9 +15,14 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     %                   Default is true(1,3).
     %            'GetCoolingPower' - A logical indicating if to get the
     %                   camera cooling power. Default is false.
+    %            'EarlyReturn' - return with Ready=false as soon as the
+    %                   first component was found not ready, without checking
+    %                   further. The Status report will then be partial.
+    %                   If EarlyReturn=true, 'Wait' is not honored.
+    %                   Default is true.
     % Output : - A logical indicating if the requested components are ready.
     %          - A status structure.
-    % Author : Eran Ofek (Apr 2022)
+    % Author : Eran Ofek (Apr 2022) revised Enrico Segre (May 2024)
     % Example: [ready,stat]=P.readyToExpose('Test',[0 0 1])
     %          [ready,stat]=P.readyToExpose('Test',[1 0 1],'GetCoolingPower',true);
     %          [ready,stat]=P.readyToExpose('Test',[1 0 1],'GetCoolingPower',true, 'ClearMountFaults',false);
@@ -25,12 +31,12 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     arguments
         Unit
         Args.Itel                        = [];
-        Args.Wait logical                = false; 
-        Args.Timeout                     = 20;
-        Args.ClearMountFaults logical    = true;
-        Args.Test                        = [true, true, true];  % test: mount, focuser, camera
-        Args.GetCoolingPower logical     = false;
-        Args.Verbose logical             = false;
+        Args.Wait (1,1) logical          = false; 
+        Args.Timeout (1,1)           double  = 20;
+        Args.ClearMountFaults (1,1) logical  = true;
+        Args.Test    (1,3) logical           = [true, true, true];  % test: mount, focuser, camera
+        Args.GetCoolingPower (1,1) logical   = false;
+        Args.EarlyReturn (1,1) logical       = true;
     end
     SEC_IN_DAY = 86400;
 
@@ -39,9 +45,8 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     end
     Ncam = numel(Args.Itel);
 
-
     Ready = false;
-    Fault = false;
+    SlaveFault = false;
     T0    = now;
 
     Status=struct('mount','','camera',{cell(1,Ncam)},...
@@ -50,22 +55,21 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     CameraId = nan(1,Ncam);
 
     WaitCounter = 0;
-    while (Args.Wait || WaitCounter==0) && ~Ready && ((now-T0).*SEC_IN_DAY)<Args.Timeout
+    while (Args.Wait || WaitCounter==0) && ~Ready && ...
+            ((now-T0)*SEC_IN_DAY)<Args.Timeout && ~(SlaveFault && Args.EarlyReturn)
         WaitCounter = WaitCounter + 1;
-        if Args.Verbose
-            WaitCounter
-        end
+        Unit.report('checking for slaves of unit %s ready, #%d\n',Unit.Id,WaitCounter)
         for It=1:Ncam
             SlaveID = Unit.Slave{Args.Itel(It)}.classCommand('Id');
             if isempty(SlaveID)
                 CameraId(It) = NaN;
-                Fault = true;
+                SlaveFault = true;
             else
                 TmpID = Unit.Camera{Args.Itel(It)}.classCommand('Id');
                 % e.g., '82-1-3'
                 if isempty(TmpID)
                     CameraId(It) = NaN;
-                    Fault = true;
+                    SlaveFault = true;
                 else
                     SpID = split(TmpID, '_');
                     if numel(SpID)==3
@@ -73,18 +77,22 @@ function [Ready,Status]=readyToExpose(Unit, Args)
                     else
                         % Assume no communication with slave
                         CameraId(It) = NaN;
-                        Fault = true;
+                        SlaveFault = true;
                     end
                 end
+            end
+            if SlaveFault && Args.EarlyReturn
+                break
             end
         end
 
         CommSlavesOK = ~any(isnan(CameraId));
 
-        if CommSlavesOK
+        if CommSlavesOK || ~Args.EarlyReturn
             % Slaves are responsive - check mount
 
             if Args.Test(1)
+                Unit.report('checking if mount is in a good status\n')
                 MountOK = false;
                 Counter = 0;
                 while ~MountOK && Counter<2
@@ -97,7 +105,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
                             MountOK = false;
 
                             % try to clear faults
-                            if Args.ClearMountFaults
+                            if Args.ClearMountFaults && strcmp(Status.mount,'fault')
                                 Unit.Mount.clearFaults;
                             end
                     end
@@ -106,9 +114,10 @@ function [Ready,Status]=readyToExpose(Unit, Args)
                 MountOK = true;
             end
 
-            if MountOK
+            if MountOK || ~Args.EarlyReturn
                 % Mount is ok - check the focusers
                 if Args.Test(2)
+                    Unit.report('checking if focusers are idle\n')
                     FocuserReady = false(1, Ncam);
                     for Icam=1:1:Ncam
                         Status.focuser{Icam} = Unit.Focuser{Args.Itel(Icam)}.classCommand('Status;');
@@ -118,10 +127,11 @@ function [Ready,Status]=readyToExpose(Unit, Args)
                     FocuserReady = true(1, Ncam);
                 end
 
-                if all(FocuserReady)
+                if all(FocuserReady) || ~Args.EarlyReturn
                     % focusers are ready - check camera
                     CameraReady = false(1, Ncam);
                     if Args.Test(3)
+                        Unit.report('checking if cameras are idle\n')
                         for Icam=1:1:Ncam
                             Status.camera{Icam} = Unit.Camera{Args.Itel(Icam)}.classCommand('CamStatus;');
                             CameraReady(Icam)   = strcmp(Status.camera{Icam}, 'idle');
