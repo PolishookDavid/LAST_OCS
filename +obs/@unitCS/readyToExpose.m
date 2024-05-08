@@ -56,7 +56,8 @@ function [Ready,Status]=readyToExpose(Unit, Args)
 
     WaitCounter = 0;
     while (Args.Wait || WaitCounter==0) && ~Ready && ...
-            ((now-T0)*SEC_IN_DAY)<Args.Timeout && ~(SlaveFault && Args.EarlyReturn)
+            ((now-T0)*SEC_IN_DAY)<Args.Timeout && ...
+            ~(SlaveFault && Args.EarlyReturn) && ~Unit.AbortActivity
         WaitCounter = WaitCounter + 1;
         Unit.report('checking for slaves of unit %s ready, #%d\n',Unit.Id,WaitCounter)
         for It=1:Ncam

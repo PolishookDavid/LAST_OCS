@@ -219,6 +219,9 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 
     FocVal = nan(Nfocus,Nsp,Ncam);
     for Ifocus=1:Nfocus
+        if UnitObj.AbortActivity
+            break
+        end
         UnitObj.GeneralStatus=sprintf('Focus loop step %d/%d',Ifocus, Nfocus);
         for Icam=1:Ncam
             UnitObj.report('Focuser %d to position: %.0f (#%d out of %d)\n',...
