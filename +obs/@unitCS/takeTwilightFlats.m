@@ -111,7 +111,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
             getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun,...
                                Args.LiveMode);
             MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime,...
-                                               Args.MeanFun, Args.LiveMode);
+                                               Args.MeanFun, Args.LiveMode)
 
             % DEBUG
             %MeanValPerSec = 670
@@ -174,6 +174,17 @@ function takeTwilightFlats(UnitObj, Itel, Args)
                         AttemptTakeFlat  = false;
                     end
                 end
+            elseif MeanValAtMax<Args.MinFlatLimit
+                
+                UnitObj.GeneralStatus='too dark for flats - skipping';
+                % well, theoretically we could decide to make flats before
+                % morning, then we could wait for dawn... but it's not what
+                % we do
+                
+                UnitObj.report('Estimated exposure time > %g sec, skipping \n',...
+                    max(Args.ExpTimeRange));
+                
+                break
             else
 
                 UnitObj.GeneralStatus='too bright for flats - waiting';
