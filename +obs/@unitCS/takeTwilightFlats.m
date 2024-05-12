@@ -202,7 +202,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 
             if Counter==0
                 % else for (Sun.Alt.*RAD)>Args.MinSunAlt && (Sun.Alt.*RAD)<Args.MaxSunAlt
-                pause(Args.WaitTimeCheck);
+                UnitObj.abortablePause(Args.WaitTimeCheck);
             end
         end
     end
