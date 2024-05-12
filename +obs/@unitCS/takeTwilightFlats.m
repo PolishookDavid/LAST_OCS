@@ -1,7 +1,7 @@
 function takeTwilightFlats(UnitObj, Itel, Args)
 % *** Mastrolindo status: works, but needs serious redesign, see below.
 %
-% Obtain a series of twiligh flat images using a LAST pier system.
+% Obtain a series of twilight flat images using a LAST pier system.
 % Package: +obs.unitCS
 % Description: Obtain a series of Twiligh flat images automatically. The
 %              exposure time is selected based on sky brightness.
@@ -21,11 +21,12 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 %               'WaitTimeCheck'  [30]
 %               'Plot'           true
 %               'LiveMode'       false
+%               'MaxNumFlats'    20
 %
 % Output : - none, but flat images are saved on disk, TODO in the directories
 %  specified by each camera's Config.FlatDBDir
-%     By :
-% Example: P.take_twilight_flat();
+% 
+% Example: Unit.takeTwilightFlats();
 %
 % Notes: I made it sort of work with mastrolindo, but code should be
 %  revised:
@@ -56,6 +57,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
         Args.PrepMasterFlat logical = false;
 
         Args.AbortFile            = '~/stopFF';
+        Args.MaxNumFlats          = 20;
 
     end
 
@@ -68,7 +70,6 @@ function takeTwilightFlats(UnitObj, Itel, Args)
     RAD = 180./pi;
 
     M = UnitObj.Mount;
-    C = UnitObj.Camera(Itel);
 
     UnitObj.GeneralStatus='taking flats';
 
@@ -77,7 +78,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
     %  SaveOnDisk=false
     for icam=1:Ncam
         % set ImType to flat
-        UnitObj.Camera{icam}.classCommand(['ImType =''' Args.ImType ''';']);
+        UnitObj.Camera{Itel(icam)}.classCommand(['ImType =''' Args.ImType ''';']);
     end
 
     Lon = M.classCommand('MountPos(2)');
@@ -89,7 +90,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
     I = 0;
     AttemptTakeFlat = true;
     ListOfFlatFiles = struct('List',cell(1,Ncam));
-    while AttemptTakeFlat && ~UnitObj.AbortActivity
+    while AttemptTakeFlat && ~UnitObj.AbortActivity && Counter<Args.MaxNumFlats
         I = I + 1;
 
         Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
@@ -104,14 +105,15 @@ function takeTwilightFlats(UnitObj, Itel, Args)
             pause(3);
             [RA, Dec] = getCooForFlat(Lon, Lat, Args.EastFromZenith);
 
-            % set telescope coordinates
-            UnitObj.Mount.goToTarget(RA,Dec);
+            % set initial telescope coordinates
+            UnitObj.Mount.report('slewing to RA=%.2f, Dec=%.2f\n',RA,Dec)
+            UnitObj.Mount.goToTarget2(RA,Dec);
 
             % estimate mean count rate in images
             getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun,...
                                Args.LiveMode);
             MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime,...
-                                               Args.MeanFun, Args.LiveMode)
+                                               Args.MeanFun, Args.LiveMode);
 
             % DEBUG
             %MeanValPerSec = 670
@@ -124,7 +126,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
                 % start twilight flat sequence
 
                 ContFlat = true;
-                while ContFlat && ~UnitObj.AbortActivity
+                while ContFlat && ~UnitObj.AbortActivity && Counter<Args.MaxNumFlats
                     % take flat images
                     Counter = Counter + 1;
 
@@ -134,7 +136,8 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 
                     RA  = RA  + (rand(1,1)-0.5).*2.*Args.RandomShift;
                     Dec = Dec + (rand(1,1)-0.5).*2.*Args.RandomShift;
-                    UnitObj.Mount.goToTarget(RA,Dec);
+                    UnitObj.Mount.report('slewing to RA=%.2f, Dec=%.2f\n',RA,Dec)
+                    UnitObj.Mount.goToTarget2(RA,Dec);
                     UnitObj.Mount.waitFinish;
 
                     % estimated exp time
@@ -147,7 +150,8 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 
                     UnitObj.takeExposure(Itel, EstimatedExpTime, 1, ...
                         'ImType','twflat','LiveSingleImage',Args.LiveMode);
-                    UnitObj.readyToExpose('Itel',Itel, 'Wait',true, 'Timeout',EstimatedExpTime+20);
+                    UnitObj.readyToExpose('Itel',Itel, 'Wait',true, ...
+                              'Test',[0 0 1], 'Timeout',EstimatedExpTime+20);
 
                     for Icam=1:1:Ncam
                         ListOfFlatFiles(Icam).List{Counter} = ...
@@ -205,7 +209,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 
     % returm ImType to default value and restore SaveOnDisk
     for icam=1:Ncam
-        C{icam}.classCommand('ImType = ''sci'';');
+        UnitObj.Camera{Itel(icam)}.classCommand('ImType = ''sci'';');
     end
 
     % prep a master flat image
@@ -220,7 +224,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
             DirDark = Config.CalibDarkDir;
             SaveDir = Config.CalibFlatDir;
 
-            [FoundAll,MostRecentFile,MostRecentRep] = searchNewFilesInDir(DirDark,...
+            [~,MostRecentFile,MostRecentRep] = searchNewFilesInDir(DirDark,...
                             '*_dark_proc_*Image_*', '_Image_', {'_Mask_'});
 
             MasterDarkImageFileName = sprintf('%s%s%s',DirDark, filesep, MostRecentFile);
@@ -255,7 +259,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
     end
 
     UnitObj.GeneralStatus='ready';
-    Unit.AbortActivity=false; % restore, we got here because true
+    UnitObj.AbortActivity=false; % restore, we got here because true
 end
 
 
@@ -269,20 +273,20 @@ function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun,
     % save off
     SavingState = false(1,Ncam);
     for icam=1:Ncam
-        SavingState(icam) = UnitObj.Camera{icam}.classCommand('SaveOnDisk;');
-        UnitObj.Camera{icam}.classCommand('SaveOnDisk = false;');
+        SavingState(icam) = UnitObj.Camera{Itel(icam)}.classCommand('SaveOnDisk;');
+        UnitObj.Camera{Itel(icam)}.classCommand('SaveOnDisk = false;');
     end
     
     UnitObj.takeExposure(Itel, TestExpTime, 1, 'LiveSingleImage',LiveMode);
     
-    UnitObj.readyToExpose('Itel',Itel, 'Wait',true);
+    UnitObj.readyToExpose('Itel',Itel, 'Wait',true,'Timeout',2*TestExpTime+10);
                     
     MeanValPerSec = getMeanVal(UnitObj,  Itel, MeanFun, TestExpTime);
     
     % save on
     for icam=1:Ncam
         if SavingState(icam)
-            UnitObj.Camera{icam}.classCommand('SaveOnDisk = true;');
+            UnitObj.Camera{Itel(icam)}.classCommand('SaveOnDisk = true;');
         end
     end
     

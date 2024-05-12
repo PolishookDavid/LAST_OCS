@@ -1,5 +1,5 @@
 function [Ready,Status]=readyToExpose(Unit, Args)
-    % readyToExpose1
+    % readyToExpose
     % Input  : - An obs.unitCS object
     %          * ...,key,val,...
     %            'Itel' - List of telescopes to check. If empty use (1:1:4).
@@ -41,7 +41,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
     SEC_IN_DAY = 86400;
 
     if isempty(Args.Itel)
-        Args.Itel = (1:1:4);
+        Args.Itel = 1:numel(Unit.Camera);
     end
     Ncam = numel(Args.Itel);
 
@@ -59,7 +59,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
             ((now-T0)*SEC_IN_DAY)<Args.Timeout && ...
             ~(SlaveFault && Args.EarlyReturn) && ~Unit.AbortActivity
         WaitCounter = WaitCounter + 1;
-        Unit.report('checking for slaves of unit %s ready, #%d\n',Unit.Id,WaitCounter)
+        Unit.report('checking if slaves of unit %s are ready, #%d\n',Unit.Id,WaitCounter)
         for It=1:Ncam
             SlaveID = Unit.Slave{Args.Itel(It)}.classCommand('Id');
             if isempty(SlaveID)
