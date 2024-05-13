@@ -1,9 +1,9 @@
-function operateUnit(Unit, ToFocus)
+function operateUnit(Unit, Args)
 % Operate a single mount during a single night.
 % Operate the cameras and focusers.
 % Operating following a single ‘start’ command.
 % Automatically calibrate the system (focus, pointing, flat, etc.)
-% Do not focus if ToFocus = false;
+% Do not focus if Args.Focus = false;
 % Observe different fields of view with different observing parameters according to a given input.
 % Stop observations due to defined stopping criteria.
 % Automatically solve basic problems.
@@ -14,22 +14,22 @@ function operateUnit(Unit, ToFocus)
 
 arguments
     Unit
-    ToFocus = true;
+    Args.Focus = true;
+    Args.MaxConnectionTrials             = 3;
+    Args.MinSunAltForFlat                = -8;    % degrees
+    Args.MaxSunAltForFlat                = -2;    % degrees
+    Args.MaxSunAltForObs                 = -12;   % degrees
+    Args.MaxSunAltForFocus               = -9.5;    % degrees
+    Args.FocusLogsDirectory              = '/home/ocs';
+    Args.FocusDec                        = 60;    % degrees
+    Args.FocusHA                         = 0;     % degrees
+    Args.FocusLoopTimeout                = 300;   % 5 minutes
+    Args.PauseTimeForTargetsAvailability = 5.*60; % sec
+    Args.SlewingTimeout                  = 60;    % sec
+    Args.CamerasToUse                    = 1:numel(Unit.Camera);
 end
 
 RAD = 180./pi;
-MaxConnectionTrials             = 3;
-MinSunAltForFlat                = -8;    % degrees
-MaxSunAltForFlat                = -2;    % degrees
-MaxSunAltForObs                 = -12;   % degrees
-MaxSunAltForFocus               = -9.5;    % degrees
-FocusLogsDirectory              = '/home/ocs';
-FocusDec                        = 60;    % degrees
-FocusHA                         = 0;     % degrees
-FocusLoopTimeout                = 300;   % 5 minutes
-PauseTimeForTargetsAvailability = 5.*60; % sec
-SlewingTimeout                  = 60;    % sec
-CamerasToUse = zeros(1,4);
 
 Unit.GeneralStatus='Operation initialization';
 
@@ -49,7 +49,7 @@ end
 % Check all systems (mount, cameras, focusers, computers, computer disk space) are operating and ready.
 RC = Unit.checkWholeUnit(0,1);
 TrialsInx = 1;
-while (~RC && TrialsInx < MaxConnectionTrials)
+while (~RC && TrialsInx < Args.MaxConnectionTrials)
    % If failed, try to reconnect.
    TrialsInx = TrialsInx + 1;
    fprintf('If failed, try to shutdown and reconnect\n');
@@ -69,20 +69,20 @@ end
 
 fprintf('~~~~~~~~~~~~~~~~~~~~~\n\n')
 
-% Send mount to home if at Park Position.
+% Send mount to home if at Park Position (actually, nowadays unnecessary)
 if (strcmp(Unit.Mount.Status,'disabled'))
    Unit.Mount.home
    fprintf('Mount moves to home position\n')
    % Wait for slewing to complete
    Timeout = 0;
-   while(Unit.Mount.isSlewing && Timeout < SlewingTimeout)
+   while(Unit.Mount.isSlewing && Timeout < Args.SlewingTimeout && ~Unit.AbortActivity)
       pause(1);
       Timeout = Timeout + 1;
    end
    
    % Check home success:
    if (round(Unit.Mount.Alt,0) ~= 60 || round(Unit.Mount.Az,0) ~= 180)
-      fprintf('Mount failed to reach home - abort (cable streaching issue?)\n');
+      fprintf('Mount failed to reach home - abort (cable stretching issue?)\n');
       Unit.shutdown;
       return;
    end
@@ -104,18 +104,18 @@ Lon = M.classCommand('MountPos(2)');
 Lat = M.classCommand('MountPos(1)');
 Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 % Decide if to run takeTwilightFlats
-while (Sun.Alt*RAD > MaxSunAltForFlat)  && ~Unit.AbortActivity
+while (Sun.Alt*RAD > Args.MaxSunAltForFlat)  && ~Unit.AbortActivity
     %fprintf(Sun.Alt)
     fprintf('Sun at %.1f°, too high - wait, or use ctrl+c to stop the method\n',...
         Sun.Alt*RAD)
     Unit.GeneralStatus='waiting for sunset';
     % Wait for 30 seconds
-    pause(30);
+    Unit.abortablePause(30);
     Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
 end
 
 % Take Flat Field.
-if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
+if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat)
     
     % increase chip temperature if it is too hot
     temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
@@ -130,21 +130,20 @@ if (Sun.Alt*RAD > MinSunAltForFlat && Sun.Alt*RAD < MaxSunAltForFlat)
     end
 	fprintf('\nThe temperature is %.1f deg.\n', Temp)
 
-    for IFocuser=[1 2 3 4]
+    for Icam=Args.CamerasToUse
         
         if Temp>35
-            Unit.Camera{IFocuser}.classCommand('Temperature=5');
+            Unit.Camera{Icam}.classCommand('Temperature=5');
             fprintf('Setting the camera temperature to +5deg.\n')
         elseif Temp>30
-            Unit.Camera{IFocuser}.classCommand('Temperature=0');
+            Unit.Camera{Icam}.classCommand('Temperature=0');
             fprintf('Setting the camera temperature to 0deg.\n')
         else
-            Unit.Camera{IFocuser}.classCommand('Temperature=-5');
+            Unit.Camera{Icam}.classCommand('Temperature=-5');
             fprintf('Setting the camera temperature to -5deg (default).\n')
         end
     end
- 
-    
+   
     fprintf('Taking flats\n')
     Unit.takeTwilightFlats
 else
@@ -152,21 +151,21 @@ else
 end
 
 % Run focus loop
-if (ToFocus)
+if (Args.Focus)
    Unit.GeneralStatus='focusing the telescopes';
    % Check Sun altitude to know when to start focus loop
    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
-   while (Sun.Alt*RAD > MaxSunAltForFocus) && ~Unit.AbortActivity
+   while (Sun.Alt*RAD > Args.MaxSunAltForFocus) && ~Unit.AbortActivity
       fprintf('Sun at %.1f°, too high to focus - wait, or use ctrl+c to stop the method\n',...
               Sun.Alt*RAD)
       Unit.GeneralStatus='waiting for dark to focus the telescopes';
       % Wait for 30 seconds
-      pause(30);
+      Unit.abortablePause(30);
       Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
    end
     
    % Send mount to meridian at dec 60 deg, to avoid moon.
-   Unit.Mount.goToTarget(FocusHA,FocusDec,'ha')
+   Unit.Mount.goToTarget(Args.FocusHA,Args.FocusDec,'ha')
    fprintf('Sent mount to focus coordinates\n')
    Unit.GeneralStatus='mount sent to focusing coordinates';
    
@@ -181,10 +180,9 @@ if (ToFocus)
    %end
     
    
-   
-    % Check success:
-   if (~(round(Unit.Mount.Dec,0) > FocusDec-1 && round(Unit.Mount.Dec,0) < FocusDec+1 && ...
-         round(Unit.Mount.HA,0)  > FocusHA-1  && round(Unit.Mount.HA,0)  < FocusHA+1))
+   % Check success:
+   if (~(round(Unit.Mount.Dec,0) > Args.FocusDec-1 && round(Unit.Mount.Dec,0) < Args.FocusDec+1 && ...
+         round(Unit.Mount.HA,0)  > Args.FocusHA-1  && round(Unit.Mount.HA,0)  < Args.FocusHA+1))
       fprintf('Mount failed to reach requested coordinates - abort (cable stretching issue?)\n');
       Unit.shutdown;
       return;
@@ -192,20 +190,20 @@ if (ToFocus)
     
    % Make a focus run
    FocusTelStartTime = celestial.time.julday;
-   Unit.focusTel;
+   Unit.focusTel(Args.CamerasToUse);
     
    % Wait for 1 minute before start checking if the focus run concluded
-   pause(60)
+   Unit.abortablePause(60)
     
    % Check the focusTel success
-   for CameraInx=1:1:4
-       CamerasToUse(CameraInx) = Unit.checkFocusTelSuccess(CameraInx, FocusTelStartTime, FocusLoopTimeout);
-   end
-   if ~prod(CamerasToUse)
-       % Report the focus status
-       fprintf('Focuser1 %d, Focuser2 %d, Focuser3 %d, Focuser4 %d\n', CamerasToUse)
-   else
-       fprintf('Focus succeeded for all 4 telescopes\n')
+   FocusSucceded=false(1,numel(Unit.Camera));
+   for Icam=Args.CamerasToUse
+       FocusSucceded(Icam) = Unit.checkFocusTelSuccess(Icam, FocusTelStartTime, Args.FocusLoopTimeout);
+       if FocusSucceded(Icam)
+           fprintf('Focusing telescope %d succeeded\n',Icam);
+       else
+           fprintf('Focusing telescope %d FAILED!\n',Icam);
+       end           
    end
    
 else
