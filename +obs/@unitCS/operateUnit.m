@@ -34,12 +34,13 @@ RAD = 180./pi;
 
 Unit.GeneralStatus='Operation initialization';
 
-% Connect the mount if not already connected.
-RC1=Unit.Camera{1}.classCommand('CamStatus');
-RC2=Unit.Camera{2}.classCommand('CamStatus');
-RC3=Unit.Camera{3}.classCommand('CamStatus');
-RC4=Unit.Camera{4}.classCommand('CamStatus');
-if(isempty(RC1) && isempty(RC2) && isempty(RC3) && isempty(RC4))
+% Connect the unit if not already connected. As indicator, check if Cameras
+%  have a status. Debatable whether to use other indicators as well
+disconnected=true;
+for i=Args.CamerasToUse
+    disconnected=disconnected & isempty(Unit.Camera{i}.classCommand('CamStatus'));
+end
+if disconnected
    Unit.connect
 else
    fprintf('Observing Unit is already connected\n')
@@ -48,22 +49,23 @@ end
 % No need to wait
 
 % Check all systems (mount, cameras, focusers, computers, computer disk space) are operating and ready.
-RC = Unit.checkWholeUnit(0,1);
+RC = Unit.checkWholeUnit(0,1,Args.CamerasToUse);
 TrialsInx = 1;
 while (~RC && TrialsInx < Args.MaxConnectionTrials)
    % If failed, try to reconnect.
    TrialsInx = TrialsInx + 1;
-   fprintf('If failed, try to shutdown and reconnect\n');
+   % fprintf('If failed, try to shutdown and reconnect\n');
    % Shutdown
-   Unit.shutdown
+   % Unit.shutdown
    % connect
-   Unit.connect
-   RC = Unit.checkWholeUnit(0,1);
+   % Unit.connect
+   fprintf('unit check failed, trying again\n');
+   RC = Unit.checkWholeUnit(0,1,Args.CamerasToUse);
 end
 
 % Abort if failed
 if (~RC)
-   fprintf('A reoccuring connection problem - abort\n');
+   fprintf('A reoccuring connection problem - shutting down and aborting\n');
    Unit.shutdown;
    return;
 end
