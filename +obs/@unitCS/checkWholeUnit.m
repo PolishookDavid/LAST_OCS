@@ -1,4 +1,4 @@
-function [ok,remedy]=checkWholeUnit(U,full,remediate)
+function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
 % Perform several sanity tests and checks on the objects of the unit,
 %  check the connection status with the hardware,
 %  report and optionally attempt to solve problems.
@@ -8,12 +8,19 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate)
 % -full [default false], try some operative tests (nudge focusers, take images);
 %   takes longer
 % -remediate [default false], try to apply some remedies
+% -itel [default empty] telescopes to check (it is acceptable to operate an
+%   unit with missing telescopes). If empty, all telescopes of the unit.
     arguments
         U obs.unitCS
         full logical =false; % test full operation, e.g. move focusers, take images
         remediate logical = false; % attempt remediation actions
+        itel = []; % which telescopes to check
     end
 
+    if isempty(itel)
+        itel=1:numel(U.Camera);
+    end
+    
     ok=true;
     remedy=false;
 
@@ -53,19 +60,19 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate)
     end
     
     % check cameras
-    okc=false(1,numel(U.Camera));
+    okc=false(1,numel(itel));
     remedyC=okc;
     if ok
-        for i=1:numel(U.Camera)
+        for i=itel
             [okc(i),remedyC(i)]=U.checkCamera(i,full,remediate);
         end
     end
 
     % check focusers
-    okf=false(1,numel(U.Focuser));
+    okf=false(1,numel(itel));
     remedyF=okf;
     if ok
-        for i=1:numel(U.Focuser)
+        for i=itel
             [okf(i),remedyF(i)]=U.checkFocuser(i,full,remediate);
         end
     end

@@ -1,4 +1,5 @@
 function [Res] = focusLoop(UnitObj,itel,varargin)
+% OBSOLESCED
 % Execute focus loop on LAST telescope
 % Package: +obs.util.tools
 % Description: Obtain an image with each focus value, and measure the FWHM
@@ -75,6 +76,9 @@ function [Res] = focusLoop(UnitObj,itel,varargin)
 %            .Alt         - Mount Alt [deg]
 %            .AM          - Mount airmass []
 % By: Eran Ofek          April 2020 ; complete rev. Enrico Segre August 2021
+%                        May 2024 some adaptations for gledmagicwater
+%                        begun, before understanding that the method is
+%                        obsolete
 % Example: [FocRes] = Unit.focusLoop(1) 
 
     UnitObj.GeneralStatus='running focusing loop';

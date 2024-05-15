@@ -1,10 +1,11 @@
 function operateUnit(Unit, Args)
-% Operate a single mount during a single night.
-% Operate the cameras and focusers.
-% Operating following a single ‘start’ command.
-% Automatically calibrate the system (focus, pointing, flat, etc.)
+% Purpose: perform all operations necessary to start operating an unit.
+%          Connect hardware, check and attempt reconnection, take flats if
+%          at twilight, focus the telescopes if it is dark enough
+%
 % Do not focus if Args.Focus = false;
-% Observe different fields of view with different observing parameters according to a given input.
+% [Observe different fields of view with different observing parameters
+%  according to a given input.]
 % Stop observations due to defined stopping criteria.
 % Automatically solve basic problems.
 % Keep a log.
@@ -33,7 +34,7 @@ RAD = 180./pi;
 
 Unit.GeneralStatus='Operation initialization';
 
-% Connect the mount if already connected.
+% Connect the mount if not already connected.
 RC1=Unit.Camera{1}.classCommand('CamStatus');
 RC2=Unit.Camera{2}.classCommand('CamStatus');
 RC3=Unit.Camera{3}.classCommand('CamStatus');
@@ -145,7 +146,8 @@ if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat)
     end
    
     fprintf('Taking flats\n')
-    Unit.takeTwilightFlats
+    Unit.takeTwilightFlats(Args.CamerasToUse,'MinSunAlt',Args.MinSunAltForFlat,...
+                           'MaxSunAlt',Args.MaxSunAltForFlat);
 else
     fprintf('Sun at %.1f°, too low, skipping twilight flats\n',Sun.Alt*RAD)
 end

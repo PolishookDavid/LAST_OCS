@@ -139,7 +139,7 @@ function obsByPriority2(Unit, Args)
             if ~Args.Simulate
                 % check if end script or shutdown mount
                 OperateBool = checkAbortFile(Unit, JD, Args.Shutdown);
-                if ~OperateBool
+                if ~OperateBool || Unit.AbortActivity
                     break
                 end
             end
@@ -194,7 +194,7 @@ function obsByPriority2(Unit, Args)
                 pause(1)
                 JD = JD + 120*sec2day;
             else
-                pause(120)
+                Unit.abortablePause(120)
             end
             continue
         end
