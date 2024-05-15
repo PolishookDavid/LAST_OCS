@@ -120,7 +120,7 @@ classdef superunit < obs.LAST_Handle
                 if S.RemoteUnits(j).connect
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
                     S.send(sprintf(...
-                        'for i=1:numel(Unit.Slave),Unit.Slave{i}.RemoteTerminal=''%s'';end',...
+                        'for i=1:numel(Unit.Slave),Unit.Slave(i).RemoteTerminal=''%s'';end',...
                         S.SlaveTerminals),j);
                 else
                     S.reportError('cannot connect to the master created on host %s',...
@@ -210,7 +210,7 @@ classdef superunit < obs.LAST_Handle
             %  - this is serial, the next command is sent only after
             %    the previous reply has arrived
             %  - a query command which involves another callback may fail
-            %    I.e., a query about Unit.Slave{i}.Status
+            %    I.e., a query about Unit.Slave(i).Status
             %
             % Use case:
             %   S.send('GeneralStatus=''busy'';pause(20);GeneralStatus=''free'';')

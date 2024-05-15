@@ -176,7 +176,7 @@ if (Args.Focus)
    %    try
             % TODO: should try to run focusByTemperature for a
             % better initial guess
-            %Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);
+            %Unit.Slave(IFocuser).Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);
         % catch % won't work if last focus loop was not successful
         %end
    %end

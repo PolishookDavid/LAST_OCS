@@ -226,7 +226,7 @@ function obsByPriority2(Unit, Args)
             
             for IFocuser=Args.Itel
                 % TODO: 'Unit' should not be hard coded
-                Unit.Slave{IFocuser}.Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);    
+                Unit.Slave(IFocuser).Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);    
                            
                 if Temp>35
                     Unit.Camera{IFocuser}.classCommand('Temperature=5');

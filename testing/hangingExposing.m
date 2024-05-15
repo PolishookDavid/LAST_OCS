@@ -1,7 +1,7 @@
 % testing slave hangs on exposure after having merged with multimessenger
 for i=1:2
-    if any(strcmp(Unit.Slave{i}.Status,{'dead','disconnected'}))
-        Unit.Slave{i}.kill;
+    if any(strcmp(Unit.Slave(i).Status,{'dead','disconnected'}))
+        Unit.Slave(i).kill;
         Unit.connectSlave(i);
     end
 end

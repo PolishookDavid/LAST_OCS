@@ -36,7 +36,7 @@ classdef unitCS < obs.LAST_Handle
         %these are set only when reading the configuration
         LocalTelescopes % indices of the local telescopes
         RemoteTelescopes='{}'; % evaluates to a cell, indices of the telescopes assigned to each slave
-        Slave cell; % handles to SpawnedMatlad sessions
+        Slave obs.util.SpawnedMatlab; % handles to SpawnedMatlad sessions
         Temperature double; % temperature reading from the IPswitch 1wire sensors
         GeneralStatus string = "disconnected"; % description, for superunit monitoring
         Master logical = true; % spawned slaves will be set false, to prevent calling whole unit methods in them
@@ -105,9 +105,9 @@ classdef unitCS < obs.LAST_Handle
             end
             
             % create slaves for spawned sessions running remote telescopes
-            UnitObj.Slave=cell(1,numel(UnitObj.RemoteTelescopes));
+            %UnitObj.Slave=cell(1,numel(UnitObj.RemoteTelescopes));
             for i=1:numel(UnitObj.RemoteTelescopes)
-                UnitObj.Slave{i}=obs.util.SpawnedMatlab(sprintf('%s_slave_%d',UnitObj.Id,i));
+                UnitObj.Slave(i)=obs.util.SpawnedMatlab(sprintf('%s_slave_%d',UnitObj.Id,i));
             end
         end
         
@@ -120,13 +120,13 @@ classdef unitCS < obs.LAST_Handle
 %  a new one is created, causing hardware to be turned off immediately
 %  after it is turned on, if the specific delete() includes that.
             for i=1:numel(UnitObj.Slave)
-                UnitObj.Slave{i}.terminate
+                UnitObj.Slave(i).terminate
                 % originally I preferred to only delete the slave objects
                 %  in the master session, but it may lead to dangling
                 %  slaves, and to a cumbersome logic for deciding
                 %  whether to spawn new ones or to reconnect to the old
                 %  ones. I don't see anymore the point for that.
-                % delete(UnitObj.Slave{i})
+                % delete(UnitObj.Slave(i))
             end
             delete(UnitObj.Mount);
             for i=1:numel(UnitObj.Camera)

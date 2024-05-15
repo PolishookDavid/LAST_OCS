@@ -15,7 +15,7 @@ function connectSlave(Unit,islaves)
     
     for i=1:numel(islaves)
         Unit.report('spawning slave %d\n',islaves(i))
-        S=Unit.Slave{islaves(i)};
+        S=Unit.Slave(islaves(i));
         S.MessengerLocalPort = []; % arbitrary port numbers, but for definiteness
         S.MessengerRemotePort= 8500+islaves(i);
         S.ResponderLocalPort = [];
@@ -29,7 +29,7 @@ function connectSlave(Unit,islaves)
     end
     
     for i=1:numel(islaves)
-        S=Unit.Slave{islaves(i)};
+        S=Unit.Slave(islaves(i));
         % create a slave unitCS object and populate it
         if spawned(i) && S.connect
             SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];

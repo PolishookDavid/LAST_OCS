@@ -3,7 +3,7 @@ function focusByTemperature(UnitObj, itel, Args)
 %
 % Written by Nora, Jan 2023
 % in slave window: P.focusByTemperature(1)
-% in Master: for i=[1,2,3,4], P.Slave{i}.Messenger.send(['P.focusByTemperature(' num2str(i) ')']); end
+% in Master: for i=[1,2,3,4], P.Slave(i).Messenger.send(['P.focusByTemperature(' num2str(i) ')']); end
 
 
     arguments

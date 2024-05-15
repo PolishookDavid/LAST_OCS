@@ -173,7 +173,7 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     %  were using the Camera{i}.Messenger, we would depend on the completion
     %  of the exposure command
     for i=Cameras
-       Unit.Slave{i}.Responder.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline)); 
+       Unit.Slave(i).Responder.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline)); 
     end
     
     % restore the previous SaveOnDisk status if needed

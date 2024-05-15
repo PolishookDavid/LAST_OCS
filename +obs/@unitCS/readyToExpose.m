@@ -61,7 +61,7 @@ function [Ready,Status]=readyToExpose(Unit, Args)
         WaitCounter = WaitCounter + 1;
         Unit.report('checking if slaves of unit %s are ready, #%d\n',Unit.Id,WaitCounter)
         for It=1:Ncam
-            SlaveID = Unit.Slave{Args.Itel(It)}.classCommand('Id');
+            SlaveID = Unit.Slave(Args.Itel(It)).classCommand('Id');
             if isempty(SlaveID)
                 CameraId(It) = NaN;
                 SlaveFault = true;
