@@ -65,7 +65,7 @@ function [ok,remedy]=checkFocuser(U,focnum,full,remediate)
          end
     end
 
-    if ok && full
+    if ok && full && ~U.AbortActivity
         % nudge the focuser
         p=U.Focuser{focnum}.classCommand('Pos');
         nudge=200;
@@ -74,12 +74,12 @@ function [ok,remedy]=checkFocuser(U,focnum,full,remediate)
         end
         U.report('trying to move focuser %d of %d steps\n',focnum,nudge)
         U.Focuser{focnum}.classCommand('RelPos=%d;',nudge);
-        pause(5)
+        U.abortablePause(5)
         p1=U.Focuser{focnum}.classCommand('Pos');
         U.report('  focuser moved of %d steps\n',p1-p)
         U.report('trying to move focuser %d of %d steps\n',focnum,-nudge)
         U.Focuser{focnum}.classCommand('RelPos=%d;',-nudge);
-        pause(5)
+        U.abortablePause(5)
         p2=U.Focuser{focnum}.classCommand('Pos');
         U.report('  focuser moved of %d steps\n',p2-p1)
         status=U.Focuser{focnum}.classCommand('Status');

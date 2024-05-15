@@ -90,12 +90,6 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         %  appositely inspected post-facto
         for i=itel
             % To pass Args, jencode them and tell the slave to jdecode
-            % Nuisance: focusTelInSlave has to be public for the following
-            %  to work, I'd like to make it private. But OTOH we can't call
-            %  directly focusTel with Args as third argument
-%             UnitObj.Slave(i).Messenger.send([UnitName '.focusTelInSlave(' ...
-%                                              num2str(i) ',jsondecode(''' ...
-%                                              jsonencode(Args) ''') )']);
             % I can exploit this contraption, using namedargs2cell(Args)
             UnitObj.Slave(i).Messenger.send(['NVargs=namedargs2cell(jsondecode(''' ...
                                              jsonencode(Args) ''') );']);

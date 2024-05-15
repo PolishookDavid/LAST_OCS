@@ -4,7 +4,10 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
 
     % Focus a single telescope, in a slave controlling the physical objects
     %   This routine can adaptively focus a single telescope, or set its
-    %   focus position by a temperature-focus relation. 
+    %   focus position by a temperature-focus relation.
+    
+    % To abort prematurely, the master has to set (via a callback,
+    % messaging on the responder UnitObj.AbortActivity=true
     
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
@@ -35,7 +38,9 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % disable automatic saving (won't work in callback)
     CurrentSaveImage=CameraObj.SaveOnDisk;
     CameraObj.SaveOnDisk=false;
-    % restore it at the end
+    CurrentComputeFWHM=CameraObj.ComputeFWHM;
+    CameraObj.ComputeFWHM=false;
+    % restore them at the end
     
     % wait till camera is ready
     CameraObj.waitFinish;
@@ -124,7 +129,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     ResTable = nan(Args.MaxIter,4);  % % [FocPos, FWHM, Nstars, FlagGood]
     Cont     = true;
     Counter  = 0;
-    while Cont && Counter<Args.MaxIter
+    while Cont && Counter<Args.MaxIter && ~UnitObj.AbortActivity
         Counter        = Counter + 1;
         
         Result.Counter = Counter;
@@ -145,6 +150,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 
         % measure focus value
         [FWHM, Nstars] = imUtil.psf.fwhm_fromBank(Image, 'HalfSize',Args.ImageHalfSize);
+        CameraObj.LastImageFWHM=FWHM; % so it is set even if CameraObj.ComputeFWHM=false
         FWHM  = min(25, FWHM); % very large values not reliable, as fwhm_fromBank doesn't work for donuts
         
         % adding outlier on purpose. delete after testing!
@@ -223,7 +229,6 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         end
     end
      
-    
                 
     % truncate not used pre allocated matrix
     ResTable = ResTable(1:Counter,:);
@@ -339,8 +344,9 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % go back to previous imgtype
     CameraObj.ImType = previousImgType;
     
-    % restore saving image flag
+    % restore saving image and compute FWHM flags
     CameraObj.SaveOnDisk=CurrentSaveImage;
+    CameraObj.ComputeFWHM=CurrentComputeFWHM;
     
     %--- move focuser to: BacklashPos
     FocuserObj.Pos = BacklashPos;
@@ -389,6 +395,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     PlotName = string(PlotDir)+'/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png';
     saveas(gcf,PlotName)
 
+    % restore UnitObj.AbortActivity = false, to be on the safe side
+    UnitObj.AbortActivity=false;
 end
 
 

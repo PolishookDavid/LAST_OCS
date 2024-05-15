@@ -84,7 +84,7 @@ function [ok,remedy]=checkMount(U,full,remediate)
         end
     end
 
-    if ok && full
+    if ok && full && ~U.AbortActivity
         % nudge the mount, perhaps? really?
         U.report('trying to change HA and Dec of 1°\n')
         HA=U.Mount.HA;
@@ -96,7 +96,7 @@ function [ok,remedy]=checkMount(U,full,remediate)
         U.report('  deviations: HA %f", Dec %f"\n',HAdiff*3600,Decdiff*3600)
         ok=abs(HAdiff)<0.01 & abs(Decdiff)<0.01 & strcmp(U.Mount.Status,'idle');
         % what would be the remediation otherwise?
-        if ok
+        if ok  && ~U.AbortActivity
             % revert the mount to original position and check again
             U.report('moving back the mount to original position\n')
             U.Mount.goTo(HA,Dec,'ha')
@@ -106,7 +106,7 @@ function [ok,remedy]=checkMount(U,full,remediate)
             U.report('  deviations: HA %f", Dec %f"\n',HAdiff*3600,Decdiff*3600)
             ok=abs(HAdiff)<0.01 & abs(Decdiff)<0.01 & strcmp(U.Mount.Status,'idle');
             % what would be the remediation otherwise?
-            if ok
+            if ok  && ~U.AbortActivity
                 % set the mount in tracking
                 U.report('setting the mount in tracking mode\n')
                 U.Mount.track

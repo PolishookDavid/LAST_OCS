@@ -32,7 +32,7 @@ FocusLogBaseFileName = ['log_focusTel_M',HostName(6),'C',int2str(CameraInx),'.tx
 FocusLogDirFileName = [pipeline.last.constructCamDir(CameraInx,'SubDir','log'),'/', FocusLogBaseFileName];
 while (~exist(FocusLogDirFileName, 'file') && Timeout < FocusLoopTimeout)
    % Wait until file exist or reaching timeout
-   pause(10);
+   Unit.abortablePause(10);
    Timeout = (celestial.time.julday-FocusTelStartTime)*24*3600;
 end
 if(~exist(FocusLogDirFileName, 'file'))
@@ -42,7 +42,7 @@ else
    FocusLog = load(FocusLogDirFileName);
    % Wait 10 seconds as long as the log was written before the focusloop start run time (i.e. it's an old log)
    while (FocusTelStartTime > FocusLog(Col.JD) && Timeout < FocusLoopTimeout)
-      pause(10);
+      Unit.abortablePause(10);
       %Timeout = Timeout + 10;
       Timeout = (celestial.time.julday-FocusTelStartTime)*24*3600;
       FocusLog = load(FocusLogDirFileName);

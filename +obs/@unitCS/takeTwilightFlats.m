@@ -1,5 +1,6 @@
 function takeTwilightFlats(UnitObj, Itel, Args)
-% *** Mastrolindo status: works, but needs serious redesign, see below.
+% *** Mastrolindo status: "works, but needs serious redesign, see below."
+%    Redesigning for gledmagicwater, May 2024, apparently works.
 %
 % Obtain a series of twilight flat images using a LAST pier system.
 % Package: +obs.unitCS

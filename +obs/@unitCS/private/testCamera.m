@@ -51,21 +51,21 @@ function ok=testCamera(U,camnum,full)
             ok=false;
         end
     end
-    if ok && full
+    if ok && full  && ~U.AbortActivity
         U.report('attempting to take a single image with camera %d\n',camnum)
         U.takeExposure(camnum,1);
-        pause(13) % should be sufficient for switching mode, readout
+        U.abortablePause(13) % should be sufficient for switching mode, readout
         ok=U.Camera{camnum}.classCommand('ProgressiveFrame')==1;
         if isempty(U.Camera{camnum}.classCommand('LastImageName')) && ...
            U.Camera{camnum}.classCommand('SaveOnDisk')
             U.report('image was not saved on disk. Check if disks are mounted\n')
             U.report('  or if paths in obs.camera config file are correct\n')
         end
-        if ~isempty(ok) && ok
+        if ~isempty(ok) && ok  && ~U.AbortActivity
             U.report('acquisition of a single image with camera %d successful\n',camnum)
             U.report('  attempting to take three contiguous images with camera %d\n',camnum)
             U.takeExposure(camnum,5,3);
-            pause(30) % should be sufficient for switching mode, readout
+            U.abortablePause(30) % should be sufficient for switching mode, readout
             ok=U.Camera{camnum}.classCommand('ProgressiveFrame')==3;
             if ok
                 U.report('acquisition of 3 images with camera %d successful\n',camnum)

@@ -3,34 +3,52 @@ function operateUnit(Unit, Args)
 %          Connect hardware, check and attempt reconnection, take flats if
 %          at twilight, focus the telescopes if it is dark enough
 %
-% Do not focus if Args.Focus = false;
 % [Observe different fields of view with different observing parameters
 %  according to a given input.]
 % Stop observations due to defined stopping criteria.
 % Automatically solve basic problems.
 % Keep a log.
 %
+% Default key-value arguments:
+%
+%     CamerasToUse                    = 1:numel(Unit.Camera);
+%     MaxConnectionTrials             = 3;    % try to reconnect if not ready
+%     Focus                           = true; % run focus loop after flats
+%     MaxNumFlats                     = 20;
+%     MinSunAltForFlat                = -8;    % degrees
+%     MaxSunAltForFlat                = -2;    % degrees
+%   %  MaxSunAltForObs                 = -12;   % degrees
+%     MaxSunAltForFocus               = -9.5;    % degrees
+%     FocusLogsDirectory              = '/home/ocs';
+%     FocusDec                        = 60;    % degrees
+%     FocusHA                         = 0;     % degrees
+%     FocusLoopTimeout                = 300;   % 5 minutes
+%   %  PauseTimeForTargetsAvailability = 5.*60; % sec
+%     SlewingTimeout                  = 60;    % sec
+
 % Written by David Polishook, Jan 2023
 % Sanitization in progress by Enrico Segre, May 2024
 
 arguments
     Unit
-    Args.Focus = true;
-    Args.MaxConnectionTrials             = 3;
+    Args.CamerasToUse                    = 1:numel(Unit.Camera);
+    Args.SlewingTimeout                  = 60;    % sec
+    Args.MaxConnectionTrials             = 2;
     Args.MinSunAltForFlat                = -8;    % degrees
     Args.MaxSunAltForFlat                = -2;    % degrees
-    Args.MaxSunAltForObs                 = -12;   % degrees
+    Args.MaxNumFlats                     = 20;
+    Args.Focus = true;
     Args.MaxSunAltForFocus               = -9.5;    % degrees
     Args.FocusLogsDirectory              = '/home/ocs';
     Args.FocusDec                        = 60;    % degrees
     Args.FocusHA                         = 0;     % degrees
     Args.FocusLoopTimeout                = 300;   % 5 minutes
-    Args.PauseTimeForTargetsAvailability = 5.*60; % sec
-    Args.SlewingTimeout                  = 60;    % sec
-    Args.CamerasToUse                    = 1:numel(Unit.Camera);
+    % Args.PauseTimeForTargetsAvailability = 5.*60; % sec
+    % Args.MaxSunAltForObs                 = -12;   % degrees
 end
 
 RAD = 180./pi;
+UnitName=inputname(1);
 
 Unit.GeneralStatus='Operation initialization';
 
@@ -41,14 +59,13 @@ for i=Args.CamerasToUse
     disconnected=disconnected & isempty(Unit.Camera{i}.classCommand('CamStatus'));
 end
 if disconnected
-   Unit.connect
+   Unit.connect;
 else
    fprintf('Observing Unit is already connected\n')
 end
 
-% No need to wait
-
-% Check all systems (mount, cameras, focusers, computers, computer disk space) are operating and ready.
+% Check all systems (mount, cameras, focusers, computers, 
+%   computer disk space(??)) are operating and ready.
 RC = Unit.checkWholeUnit(0,1,Args.CamerasToUse);
 TrialsInx = 1;
 while (~RC && TrialsInx < Args.MaxConnectionTrials)
@@ -65,14 +82,15 @@ end
 
 % Abort if failed
 if (~RC)
-   fprintf('A reoccuring connection problem - shutting down and aborting\n');
+   fprintf('Recurring connection problem - shutting down and aborting\n');
    Unit.shutdown;
    return;
 end
 
 fprintf('~~~~~~~~~~~~~~~~~~~~~\n\n')
 
-% Send mount to home if at Park Position (actually, nowadays unnecessary)
+% Send mount to home if at Home Position (actually, nowadays unnecessary)
+Unit.GeneralStatus='homing mount';
 if (strcmp(Unit.Mount.Status,'disabled'))
    Unit.Mount.home
    fprintf('Mount moves to home position\n')
@@ -93,6 +111,7 @@ end
 
 % Track on.
 Unit.Mount.track;
+pause(1)
 % Check success.
 if (Unit.Mount.TrackingSpeed(1) == 0)
    fprintf('Mount failed to track - abort\n');
@@ -119,7 +138,7 @@ end
 
 % Take Flat Field.
 if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat)
-    
+    Unit.GeneralStatus='setting camera temperatures';
     % increase chip temperature if it is too hot
     temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
     temp2 = Unit.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
@@ -133,29 +152,29 @@ if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat)
     end
 	fprintf('\nThe temperature is %.1f deg.\n', Temp)
 
-    for Icam=Args.CamerasToUse
-        
+    for Icam=Args.CamerasToUse        
         if Temp>35
-            Unit.Camera{Icam}.classCommand('Temperature=5');
+            Unit.Camera{Icam}.classCommand('Temperature=5;');
             fprintf('Setting the camera temperature to +5deg.\n')
         elseif Temp>30
-            Unit.Camera{Icam}.classCommand('Temperature=0');
+            Unit.Camera{Icam}.classCommand('Temperature=0;');
             fprintf('Setting the camera temperature to 0deg.\n')
         else
-            Unit.Camera{Icam}.classCommand('Temperature=-5');
+            Unit.Camera{Icam}.classCommand('Temperature=-5;');
             fprintf('Setting the camera temperature to -5deg (default).\n')
         end
     end
    
     fprintf('Taking flats\n')
     Unit.takeTwilightFlats(Args.CamerasToUse,'MinSunAlt',Args.MinSunAltForFlat,...
-                           'MaxSunAlt',Args.MaxSunAltForFlat);
+                           'MaxSunAlt',Args.MaxSunAltForFlat,...
+                           'MaxNumFlats',Args.MaxNumFlats);
 else
     fprintf('Sun at %.1f°, too low, skipping twilight flats\n',Sun.Alt*RAD)
 end
 
 % Run focus loop
-if (Args.Focus)
+if (Args.Focus)  && ~Unit.AbortActivity
    Unit.GeneralStatus='focusing the telescopes';
    % Check Sun altitude to know when to start focus loop
    Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
@@ -169,7 +188,7 @@ if (Args.Focus)
    end
     
    % Send mount to meridian at dec 60 deg, to avoid moon.
-   Unit.Mount.goToTarget(Args.FocusHA,Args.FocusDec,'ha')
+   Unit.Mount.goToTarget2(Unit.Mount.LST-Args.FocusHA,Args.FocusDec);
    fprintf('Sent mount to focus coordinates\n')
    Unit.GeneralStatus='mount sent to focusing coordinates';
    
@@ -182,7 +201,6 @@ if (Args.Focus)
         % catch % won't work if last focus loop was not successful
         %end
    %end
-    
    
    % Check success:
    if (~(round(Unit.Mount.Dec,0) > Args.FocusDec-1 && round(Unit.Mount.Dec,0) < Args.FocusDec+1 && ...
@@ -192,13 +210,33 @@ if (Args.Focus)
       return;
    end
     
-   % Make a focus run
+   % Start focus run
    FocusTelStartTime = celestial.time.julday;
    Unit.focusTel(Args.CamerasToUse);
-    
-   % Wait for 1 minute before start checking if the focus run concluded
-   Unit.abortablePause(60)
-    
+   
+   % poll till end of focus loop on all slaves
+   FocusInProgress=true;
+   while ~FocusInProgress && ~Unit.AbortActivity
+       % FIXME: dirty, identifying Slave # with telescope #, i.e. not right
+       %  for configurations mixing local and remote telescopes
+       FocusInProgress=false;
+       for i=Args.CamerasToUse
+           FocusInProgress = FocusInProgress || ...
+              ~isempty(Unit.Slave(i).Responder.query('MasterMessenger.ExecutingCommand'));
+          % if a slave times out, we get an empty reply too, and we
+          %  consider the focus done, whithout checking further
+       end
+       Unit.abortablePause(5)
+   end
+   
+   % take care to abort also the running focusTelInSlave on each slave, if
+   %  Unit.AbortActivity was set true in the master
+   if Unit.AbortActivity
+       for i=Args.CamerasToUse
+           Unit.Slave(i).Responder.send(sprintf('%s.AbortActivity=true;',UnitName));
+       end
+   end
+   
    % Check the focusTel success
    FocusSucceded=false(1,numel(Unit.Camera));
    for Icam=Args.CamerasToUse
@@ -211,11 +249,13 @@ if (Args.Focus)
    end
    
 else
-   fprintf('Skip focus routine as requested\n')
+   fprintf('Skipped focus routine, as requested\n')
 end
 
+% restore, if was set true inbetween
+Unit.AbortActivity=false;
 
-if Unit.checkWholeUnit
+if Unit.checkWholeUnit(false,false,Args.CamerasToUse)
     Unit.GeneralStatus='ready';
 else
     Unit.GeneralStatus='not ready';
