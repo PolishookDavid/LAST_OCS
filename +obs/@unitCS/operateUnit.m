@@ -203,9 +203,12 @@ if (Args.Focus)  && ~Unit.AbortActivity
    %end
    
    % Check success:
-   if (~(round(Unit.Mount.Dec,0) > Args.FocusDec-1 && round(Unit.Mount.Dec,0) < Args.FocusDec+1 && ...
-         round(Unit.Mount.HA,0)  > Args.FocusHA-1  && round(Unit.Mount.HA,0)  < Args.FocusHA+1))
-      fprintf('Mount failed to reach requested coordinates - abort (cable stretching issue?)\n');
+   DeltaHA = mod(Unit.Mount.HA - Args.FocusHA+180,360)-180;
+   DeltaDec = Unit.Mount.Dec - Args.FocusDec;
+   if abs(DeltaHA)>1 || abs(DeltaDec)>1
+      fprintf('Mount delta =(%f,%f)\n',DeltaHA,DeltaDec);
+      fprintf('Mount failed to reach requested coordinates (cable stretching issue?)\n');
+      fprintf('Aborting\n')
       Unit.shutdown;
       return;
    end
