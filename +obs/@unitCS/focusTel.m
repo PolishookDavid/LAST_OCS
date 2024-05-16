@@ -85,15 +85,20 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         % are returned.
         [Success,Result] = UnitObj.focusTelInSlave(itel,Args);
     else
+        UnitObj.constructUnitHeader;        
+        headerline=obs.util.tools.headerInputForm(UnitObj.UnitHeader);
         % start the loops in the slaves. Not blocking, it will take a long
         %  time to complete. Outputs are not returned, they will need to be
         %  appositely inspected post-facto
+        % here we assume implicitly that we have one camera per Slave, and that
+        %  all Cameras are remote
         for i=itel
+            UnitObj.Slave(i).Messenger.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline));
             % To pass Args, jencode them and tell the slave to jdecode
             % I can exploit this contraption, using namedargs2cell(Args)
             UnitObj.Slave(i).Messenger.send(['NVargs=namedargs2cell(jsondecode(''' ...
-                                             jsonencode(Args) ''') );']);
+                                             jsonencode(Args) '''));']);
             UnitObj.Slave(i).Messenger.send([UnitName '.focusTel(' ...
-                                             num2str(i) ',NVargs{:} )']);
+                                             num2str(i) ',NVargs{:})']);
         end
     end

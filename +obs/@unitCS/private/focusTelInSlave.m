@@ -45,6 +45,10 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % wait till camera is ready
     CameraObj.waitFinish;
 
+    % writing UnitObj.GeneralStatus in slaves has very little use, if it is not
+    %  read back by anyone
+    UnitObj.GeneralStatus='checking focus at initial position';
+    
     % take exposure
     % image is read with a callback - nogood when launched via messenger
     % UnitObj.takeExposure(itel,Args.ExpTime);
@@ -133,6 +137,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         Counter        = Counter + 1;
         
         Result.Counter = Counter;
+        
+        UnitObj.GeneralStatus=sprintf('taking focus image #%d (%d max)',Counter,Args.MaxIter);
 
         % take exposure
         CameraObj.startExposure(Args.ExpTime);            
