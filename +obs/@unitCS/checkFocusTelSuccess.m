@@ -1,5 +1,6 @@
 function [RC]=checkFocusTelSuccess(Unit,CameraInx,FocusTelStartTime,FocusLoopTimeout)
-% Examine the results of focusTel per camera
+% Examine the results of focusTel per camera, by inspecting the presence
+%  and content of the focus log files
 %
 % CameraInx - the index of the camera to examine [1, 2, 3 or 4]
 % FocusLoopTimeout - time out value to wait for the focus loop to conclude
@@ -30,7 +31,8 @@ Timeout = (celestial.time.julday-FocusTelStartTime)*24*3600;
 HostName = tools.os.get_computer;
 FocusLogBaseFileName = ['log_focusTel_M',HostName(6),'C',int2str(CameraInx),'.txt'];
 FocusLogDirFileName = [pipeline.last.constructCamDir(CameraInx,'SubDir','log'),'/', FocusLogBaseFileName];
-while (~exist(FocusLogDirFileName, 'file') && Timeout < FocusLoopTimeout)
+while (~exist(FocusLogDirFileName, 'file') && Timeout < FocusLoopTimeout) ...
+        && ~Unit.AbortActivity
    % Wait until file exist or reaching timeout
    Unit.abortablePause(10);
    Timeout = (celestial.time.julday-FocusTelStartTime)*24*3600;
@@ -40,8 +42,10 @@ if(~exist(FocusLogDirFileName, 'file'))
 else
    %Timeout = 0;
    FocusLog = load(FocusLogDirFileName);
-   % Wait 10 seconds as long as the log was written before the focusloop start run time (i.e. it's an old log)
-   while (FocusTelStartTime > FocusLog(Col.JD) && Timeout < FocusLoopTimeout)
+   % Wait 10 seconds as long as the log was written before the focusloop
+   %  start run time (i.e. it's an old log)
+   while (FocusTelStartTime > FocusLog(Col.JD) && Timeout < FocusLoopTimeout) ...
+        && ~Unit.AbortActivity
       Unit.abortablePause(10);
       %Timeout = Timeout + 10;
       Timeout = (celestial.time.julday-FocusTelStartTime)*24*3600;
