@@ -255,8 +255,8 @@ else
    fprintf('Skipped focus routine, as requested\n')
 end
 
-% restore, if was set true inbetween
-Unit.AbortActivity=false;
+% release the .AbortActivity flag, if was set true inbetween
+Unit.abort(false);
 
 if Unit.checkWholeUnit(false,false,Args.CamerasToUse)
     Unit.GeneralStatus='ready';

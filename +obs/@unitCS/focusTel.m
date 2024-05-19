@@ -76,6 +76,8 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     UnitName=inputname(1);
     
     UnitObj.GeneralStatus='running focus loop';
+    % in the master this is a call and forget - someone sometime will have
+    %  to check for completion and update .GeneralStatus
 
     % make sure the mount is tracking
     %UnitObj.Mount.track;
@@ -84,6 +86,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         % run, blocking, the scalar version of the method. Output arguments
         % are returned.
         [Success,Result] = UnitObj.focusTelInSlave(itel,Args);
+        UnitObj.GeneralStatus='focus loop terminated';
     else
         UnitObj.constructUnitHeader;        
         headerline=obs.util.tools.headerInputForm(UnitObj.UnitHeader);
@@ -99,6 +102,11 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             UnitObj.Slave(i).Messenger.send(['NVargs=namedargs2cell(jsondecode(''' ...
                                              jsonencode(Args) '''));']);
             UnitObj.Slave(i).Messenger.send([UnitName '.focusTel(' ...
-                                             num2str(i) ',NVargs{:})']);
+                                             num2str(i) ',NVargs{:});']);
         end
+        % define the return arguments as empty, in order not to generate
+        %  errors [and to avoid a double evaluation within the try-catch of
+        %  datagram parser, once without and once with return argument
+        Success=[];
+        Result=[];
     end

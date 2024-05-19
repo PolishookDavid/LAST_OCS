@@ -56,7 +56,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 
     % retrieve and save image explicitely, not via callbacks (in order to work also
     %  when the command is received from a messenger)
-    pause(Args.ExpTime)
+    UnitObj.abortablePause(Args.ExpTime)
     CameraObj.collectExposure;
     UnitObj.saveCurImage(itel)
                 
@@ -145,7 +145,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         CameraObj.startExposure(Args.ExpTime);            
             
         % wait
-        pause(Args.ExpTime)
+        UnitObj.abortablePause(Args.ExpTime)
                 
         % save image explicitely, not via callback (in order to work also
         %  when the command is received from a messenger)
@@ -311,22 +311,30 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                     %Result.BestPos = NaN;   % moving back to initial position
                     
                     UnitObj.report('   best position %d\n', Result.BestPos)
-                    UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
-                    UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
+                    UnitObj.report('   best FWHM %.2f\n', Result.BestFWHM)
+                    UnitObj.report('   adjusted Rsqu %.f3\n', adjrsquare)
                 end
-
-        
+    
         end
     end
     
-    temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
-    temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
-    UnitObj.report('   temperature 1 %d \n', temp1);
-    UnitObj.report('   temperature 2 %d \n\n', temp2);
+    % using the Responder for querying while the UnitMonitor is querying it
+    %  is a bad idea and can lead to deadlocks (or errors, which lead to
+    %  double datagramParser evaluations .... a mess).
+    % temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
+    % temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
+    % Use instead the temperature already stored in Unit.UnitHeader
+    try
+        temp1=UnitObj.UnitHeader{strcmpi(UnitObj.UnitHeader(:,1),'MNTTEMP'),2};
+    catch
+        temp1=NaN;
+    end
+    UnitObj.report('   temperature %.1f \n', temp1);
+    %UnitObj.report('   temperature 2 %.1f \n\n', temp2);
     
     fprintf(fileID,'\nStatus '+string(Result.Status));
-    fprintf(fileID,'\nTemperature 1 '+string(temp1));
-    fprintf(fileID,'\nTemperature 2 '+string(temp2));
+    fprintf(fileID,'\nTemperature '+string(temp1));
+    %fprintf(fileID,'\nTemperature 2 '+string(temp2));
     fprintf(fileID,'\nsteps '+string(Counter));
     fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
         
@@ -384,7 +392,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     fprintf(log2,CameraNumberStr+'\n');
     fprintf(log2,string(celestial.time.julday)+'\n');            
     fprintf(log2,string(temp1)+'\n');
-    fprintf(log2,string(temp2)+'\n');
+    % fprintf(log2,string(temp2)+'\n');
     if Success
         fprintf(log2,'1\n');
         fprintf(log2,string(Result.BestPos)+'\n');

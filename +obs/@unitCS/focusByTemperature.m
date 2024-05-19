@@ -5,14 +5,12 @@ function focusByTemperature(UnitObj, itel, Args)
 % in slave window: P.focusByTemperature(1)
 % in Master: for i=[1,2,3,4], P.Slave(i).Messenger.send(['P.focusByTemperature(' num2str(i) ')']); end
 
-
     arguments
         UnitObj
         itel                        %= []; % telescopes to focus. [] means all
         Args.TicksPerDeg            = 19.0 ;
         Args.MovementThreshold      = 30;
     end
-
 
     % Focus log legend
     Col.Camera = 1;

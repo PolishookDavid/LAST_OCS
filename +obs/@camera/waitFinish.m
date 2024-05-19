@@ -11,7 +11,7 @@ function Flag=waitFinish(CameraObj)
     %  CamStatus by all drivers
 
     ExpTime=CameraObj.ExpTime;
-    PollingTime = min(ExpTime,0.01);
+    PollingTime = min(ExpTime,0.1);
     % do we need an extra overhead time for 'reading'? Usually reading
     %  is either a blocking call of the sdk, or performed within a
     %  callback, and hence .CamStatus is available only after it (??)
