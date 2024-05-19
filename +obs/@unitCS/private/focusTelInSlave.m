@@ -7,7 +7,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     %   focus position by a temperature-focus relation.
     
     % To abort prematurely, the master has to set (via a callback,
-    % messaging on the responder UnitObj.AbortActivity=true
+    % messaging on the responder) UnitObj.AbortActivity=true
     
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
@@ -103,12 +103,13 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     MaxPlotFWHM=26;
     
     if Args.Plot
-        figure;
+        figure(itel);
         plot(CurrentPos, min(MaxPlotFWHM, InitialFWHM), 'co', 'MarkerFaceColor','c');
         grid on
         set(gca,'FontSize',10,'XtickLabel',string(get(gca,'Xtick')))
         hold on;
-        title('Focuser '+CameraNumberStr+' - '+datestr(now,'HH:MM:SS'));
+        title('Mount ' + MountNumberStr + ' Focuser '+CameraNumberStr+...
+             ' - '+datestr(now,'HH:MM:SS'));
         drawnow
     end
     

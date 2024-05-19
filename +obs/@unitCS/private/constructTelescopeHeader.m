@@ -41,15 +41,15 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
         Info(I).Key = 'FULLPROJ';
         Info(I).Val = sprintf('%s.%02d.%02d.%02d',ProjName,NodeNum,MountNum,itel);
         Info(I).Descr = '';
-    end
     
-    I = I + 1;
-    Info(I).Key = 'LST';
-    Ijd = find(strcmp({CameraInfo.Name},'JD'),1);
-    JD  = CameraInfo(Ijd).Val;
-    LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
-    Info(I).Val = LST;
-    Info(I).Descr = '';
+        I = I + 1;
+        Info(I).Key = 'LST';
+        Ijd = find(strcmp({CameraInfo.Name},'JD'),1);
+        JD  = CameraInfo(Ijd).Val;
+        LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
+        Info(I).Val = LST;
+        Info(I).Descr = '';
+    end
     
     
     I = I + 1;
