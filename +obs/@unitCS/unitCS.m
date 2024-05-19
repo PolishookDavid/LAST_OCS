@@ -205,23 +205,6 @@ classdef unitCS < obs.LAST_Handle
             end
         end
         
-        function set.AbortActivity(UnitObj,state)
-            % propagate the abort signal to all slaves using responders. A
-            %  bit overdoing but probably necessary
-            % are we sure about UnitName in all contexts?
-            UnitName=inputname(1);
-            if state
-                state='true';
-            else
-                state='false';
-            end
-            for i=1:numel(UnitObj.Slave)
-                if ~isempty(UnitObj.Slave(i).Responder)
-                    UnitObj.Slave(i).Responder.send(sprintf('%s.AbortActivity=%s;',...
-                        UnitName,state));
-                end
-            end
-        end
     end
 
 end

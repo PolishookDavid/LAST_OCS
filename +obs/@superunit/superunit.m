@@ -264,7 +264,7 @@ classdef superunit < obs.LAST_Handle
         % shotcuts to send specific Unit commands
         
         function success=abortActivity(S,units)
-            % set via callabck Unit.AbortActivity=true, so that long
+            % set via callback Unit.AbortActivity=true, so that long
             %  commands which take that property into account can abort
             %  (provided that they have been started either interactively
             %  at matlab prompt or evaluated by MasterMessenger, which is a
@@ -272,7 +272,7 @@ classdef superunit < obs.LAST_Handle
             if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
-            S.sendCallback('Unit.AbortActivity=true;',units);
+            S.sendCallback('Unit.abort;',units);
             success=S.queryCallback('Unit.AbortActivity',units);
         end
         
