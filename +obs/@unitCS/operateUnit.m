@@ -137,7 +137,8 @@ while (Sun.Alt*RAD > Args.MaxSunAltForFlat)  && ~Unit.AbortActivity
 end
 
 % Take Flat Field.
-if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat)
+if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat) && ...
+        ~Unit.AbortActivity
     Unit.GeneralStatus='setting camera temperatures';
     % increase chip temperature if it is too hot
     temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
@@ -154,15 +155,14 @@ if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat)
 
     for Icam=Args.CamerasToUse        
         if Temp>35
-            Unit.Camera{Icam}.classCommand('Temperature=5;');
-            fprintf('Setting the camera temperature to +5deg.\n')
+            CoolTemp=5;
         elseif Temp>30
-            Unit.Camera{Icam}.classCommand('Temperature=0;');
-            fprintf('Setting the camera temperature to 0deg.\n')
+            CoolTemp=0;
         else
-            Unit.Camera{Icam}.classCommand('Temperature=-5;');
-            fprintf('Setting the camera temperature to -5deg (default).\n')
+            CoolTemp=-5;
         end
+        Unit.Camera{Icam}.classCommand('Temperature=5;');
+        fprintf('Setting camera %d temperature to +%.0f°\n',CoolTemp,Icam)
     end
    
     fprintf('Taking flats\n')
@@ -186,7 +186,11 @@ if (Args.Focus)  && ~Unit.AbortActivity
       Unit.abortablePause(30);
       Sun = celestial.SolarSys.get_sun(celestial.time.julday,[Lon Lat]./RAD);
    end
-    
+   
+   if Unit.AbortActivity
+       return
+   end
+   
    % Send mount to meridian at dec 60 deg, to avoid moon.
    Unit.Mount.goToTarget2(Unit.Mount.LST-Args.FocusHA,Args.FocusDec);
    fprintf('Sent mount to focus coordinates\n')
