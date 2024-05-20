@@ -5,17 +5,17 @@ function obsByPriority2(Unit, Args)
     % records all obtained observations in log file
     %
     % The best way to interrupt the observations is creating the file
-    % ~/abort_obs, or to set with a callback the hidden property
-    % Unit.AbortActivity=true
+    %  ~/abort_obs, or to set with a callback the hidden property
+    %  Unit.AbortActivity=true
     %
     % touch ~/abort_and_shutdown will interrupt the observations and
-    % shutdown the unit
+    %  shutdown the unit
     %
     % Examples: 
     % Unit.connect
     %
     % % run script in simulation mode for current JD: it will not move the 
-    %mount of expose, but write which targets it will observe at what time
+    % mount or expose, but write which targets it will observe at what time
     % obs.util.observation.obsByPriority(Unit,'Simulate',true,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
     %
     % % run script in simulation mode for custom JD for testing or planning
@@ -53,12 +53,13 @@ function obsByPriority2(Unit, Args)
     if isempty(Args.Itel)
         Args.Itel = (1:numel(Unit.Camera));
     end
-    
         
     RAD = 180./pi;
     sec2day = 1./3600/24;
     
-
+    UnitName=inputname(1);
+    
+    Unit.GeneralStatus='starting observation script';
     
     Timeout=60;
     MountNumberStr = string(Unit.MountNumber);
@@ -143,8 +144,7 @@ function obsByPriority2(Unit, Args)
                     break
                 end
             end
-            
-            
+                       
             if Args.Simulate
                 pause(1)
                 JD = JD + 120*sec2day;
@@ -226,7 +226,8 @@ function obsByPriority2(Unit, Args)
             
             for IFocuser=Args.Itel
                 % TODO: 'Unit' should not be hard coded
-                Unit.Slave(IFocuser).Messenger.send(['Unit.focusByTemperature(' num2str(IFocuser) ')']);    
+                Unit.Slave(IFocuser).Messenger.send(...
+                    sprintf('%s.focusByTemperature(%d)',UnitName,IFocuser));
                            
                 if Temp>35
                     Unit.Camera{IFocuser}.classCommand('Temperature=5');

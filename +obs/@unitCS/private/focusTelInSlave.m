@@ -38,6 +38,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % disable automatic saving (won't work in callback)
     CurrentSaveImage=CameraObj.SaveOnDisk;
     CameraObj.SaveOnDisk=false;
+    % disable ComputeFWHM, so we can call it with more freedom
     CurrentComputeFWHM=CameraObj.ComputeFWHM;
     CameraObj.ComputeFWHM=false;
     % restore them at the end
@@ -63,7 +64,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % get image
     Image = CameraObj.LastImage;
     [InitialFWHM, ~] = imUtil.psf.fwhm_fromBank(Image, 'HalfSize',Args.ImageHalfSize);
-
+    CameraObj.LastImageFWHM=InitialFWHM;
     
     % don't move far away if focus already good
     if isempty(Args.SearchHalfRange)
