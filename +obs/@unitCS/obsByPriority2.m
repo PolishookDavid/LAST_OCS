@@ -34,6 +34,9 @@ function obsByPriority2(Unit, Args)
     % observe fields with mod(Index, 1), e.g. fields: 1, 4, 7, 10 etc.
     %
     % written by Nora May 2023, based on loopOverTargets script
+    % transition to gledmagicwater by Enrico, May 2024
+    % Originally in obs.util.observation, promoting it (temporarily?) to an
+    %  unitCS method
    
     arguments
         Unit        
@@ -419,10 +422,11 @@ function OperateBool = checkAbortFile(Unit, JD, Shutdown)
     
     if ((Sun.Alt*180/pi)>-11.5)
         fprintf('\nThe Sun is too high.\n')
+        Unit.GeneralStatus='Sun too high for observation';
         if Shutdown && (modulo_jd>0.5) && (modulo_jd<0.75)    % automatic shutdown will only happen in the morning
             fprintf('Shutting down the mount.\n')
             Unit.shutdown
-            pause(20)
+            Unit.abortablePause(20)
             fprintf('shutdown because Sun too high. \n');
             OperateBool = false;
             return
