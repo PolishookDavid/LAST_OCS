@@ -256,7 +256,6 @@ function obsByPriority2(Unit, Args)
   
         [Az, Alt] = T.azalt(JD);
         fprintf('Target Altitude: %f\n', Alt(IndPrio));
-        fprintf('Observed %i out of %i. Obtaining %i more images.\n',T.GlobalCounter(IndPrio),T.MaxNobs(IndPrio),T.NperVisit(IndPrio))
 
         % logging
         obsJD = JD;
@@ -282,12 +281,24 @@ function obsByPriority2(Unit, Args)
             Unit.takeExposure(Args.Itel,T.ExpTime(IndPrio),T.NperVisit(IndPrio),'Object',char(T.TargetName(IndPrio)));
             fprintf('Waiting for exposures to finish\n\n');
                 
-            pause(T.ExpTime(IndPrio)*(T.NperVisit(IndPrio)+1)+4);
+            %Unit.abortablePause(T.ExpTime(IndPrio)*(T.NperVisit(IndPrio)+1)+4);
+            tstart=now;
+            while (now-tstart)*86400 < (T.ExpTime(IndPrio)*(T.NperVisit(IndPrio)+1)+4) ...
+                    && ~Unit.AbortActivity
+                % TODO - counter compares # of frames from all cameras
+                T.Data.GlobalCounter(IndPrio)=Unit.Camera{Args.Itel(1)}.classCommand('ProgressiveFrame');
+                fprintf('Observed %i out of %i. Obtaining %i more images.\n',...
+                    T.GlobalCounter(IndPrio),T.MaxNobs(IndPrio),T.NperVisit(IndPrio))
+                % TODO out of how many? x Visit, x Night, global? 
+                Unit.abortablePause(T.ExpTime(IndPrio));
+            end
 
             if ~Unit.readyToExpose('Itel',Args.Itel,'Wait',true, 'Timeout',Timeout)
                fprintf('Cameras not ready after timeout - abort.\n\n')
                break;
             end
+            
+            % TODO if Unit.AbortActivity, send .abort to all cameras
         end
             
         % save Target table after successful observations
