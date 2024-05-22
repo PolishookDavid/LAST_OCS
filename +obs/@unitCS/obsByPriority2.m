@@ -298,7 +298,12 @@ function obsByPriority2(Unit, Args)
                break;
             end
             
-            % TODO if Unit.AbortActivity, send .abort to all cameras
+            if Unit.AbortActivity
+                % send .abort to all cameras
+                for i=Args.Itel
+                    Unit.Camera{i}.classCommand('abort');
+                end
+            end
         end
             
         % save Target table after successful observations
@@ -310,6 +315,7 @@ function obsByPriority2(Unit, Args)
           
     end
     
+    fprintf('\nObservations terminated\n');
     Unit.GeneralStatus='Observations terminated';
 end
 
