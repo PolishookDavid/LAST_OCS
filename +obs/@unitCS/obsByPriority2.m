@@ -12,24 +12,24 @@ function obsByPriority2(Unit, Args)
     %  shutdown the unit
     %
     % Examples: 
-    % Unit.connect
+    %   Unit.connect
     %
     % % run script in simulation mode for current JD: it will not move the 
     % mount or expose, but write which targets it will observe at what time
-    % obs.util.observation.obsByPriority(Unit,'Simulate',true,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
+    %  Unit.obsByPriority('Simulate',true,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
     %
     % % run script in simulation mode for custom JD for testing or planning
     % during the day
-    % obs.util.observation.obsByPriority(Unit,'Simulate',true,'SimJD',2460049.205,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
+    %   Unit.obsByPriority('Simulate',true,'SimJD',2460049.205,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
     %
     % % loop twice over target list and get 40 imgs per visit for each 
     % observable target
-    % obs.util.observation.obsByPriority(Unit,'NperVisit',40,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
-    % obs.util.observation.obsByPriority(Unit,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
+    %   Unit.obsByPriority('NperVisit',40,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
+    %   Unit.obsByPriority('CoordFileName','/home/ocs/targetlists/target_coordinates.txt')
     %
     % Use the Nmounts option to divide the target list among x mounts.
     % Modulo specifies which fields each mount will observe.
-    % obs.util.observation.obsByPriority(Unit,'CoordFileName','/home/ocs/targetlists/target_coordinates.txt','NMounts',3,'Modulo',1)
+    %   Unit.obsByPriority('CoordFileName','/home/ocs/targetlists/target_coordinates.txt','NMounts',3,'Modulo',1)
     % will split the target list into a third and this mount will only
     % observe fields with mod(Index, 1), e.g. fields: 1, 4, 7, 10 etc.
     %
@@ -38,6 +38,13 @@ function obsByPriority2(Unit, Args)
     % Originally in obs.util.observation, promoting it (temporarily?) to an
     %  unitCS method
    
+    % self note for messenger passing of targets: flatten-unflatten like
+    %   TData=struct2table(jsondecode(jsonencode(T.Data(1,:))))
+    % from superunit:
+    %
+    % S.send(sprintf("TData=struct2table(jsondecode('%s'));",jsonencode(T.Data(1:4,:))))
+    % S.send("Unit.obsByPriority2('Simulate',true,'TargetData',TData)")
+    
     arguments
         Unit        
         Args.Itel           = []; % telescopes to use
@@ -79,8 +86,7 @@ function obsByPriority2(Unit, Args)
             JD = Args.SimJD;
         end
     end
-    
-    
+        
     % TODO: pass log dir as an argument and create dir if not present
     if Args.Simulate
         % will overwrite logfile if in simulation mode
@@ -92,8 +98,7 @@ function obsByPriority2(Unit, Args)
         logFileName = '~/log/log_obsByPriority_M'+MountNumberStr+'_'+datestring+'.txt';
         obsFileName = '~/log/obsPrio_M'+MountNumberStr+'_'+datestring;
     end
-
-        
+  
     % columns of logfile
     if ~isfile(logFileName) || Args.Simulate
         logFile = fopen(logFileName,'w+');
@@ -122,11 +127,9 @@ function obsByPriority2(Unit, Args)
     Ntargets = length(T.Data.RA);
     fprintf('%i fields remaining.\n\n',Ntargets)
     
-    
     for I=Args.Itel
-        Unit.Camera{I}.classCommand('SaveOnDisk=1'); % save images on all cameras
+        Unit.Camera{I}.classCommand('SaveOnDisk=1;'); % save images on all cameras
     end
-    
     
     OperateBool = true;
     
@@ -144,7 +147,7 @@ function obsByPriority2(Unit, Args)
         fprintf('%i of them observable now.\n\n', sum(NeedObs&FlagAll))
             
         % wait, if no targets observable
-        while (sum(NeedObs&FlagAll) == 0) && OperateBool
+        while (sum(NeedObs&FlagAll) == 0) && OperateBool && ~Unit.AbortActivity
             
             if ~Args.Simulate
                 % check if end script or shutdown mount
@@ -154,6 +157,8 @@ function obsByPriority2(Unit, Args)
                 end
             end
                        
+            Unit.GeneralStatus='No targets currently observable, waiting';
+            
             if Args.Simulate
                 pause(1)
                 JD = JD + 120*sec2day;
@@ -172,7 +177,6 @@ function obsByPriority2(Unit, Args)
             
             fprintf('%i targets need more observations.\n', sum(NeedObs))
             fprintf('%i of them observable now.\n\n', sum(NeedObs&FlagAll))
-
             
         end
         
@@ -187,8 +191,7 @@ function obsByPriority2(Unit, Args)
                 break
             end            
         end
-            
-            
+
         % check whether the target is observable
         if ~Args.Simulate
             JD = celestial.time.julday;
@@ -211,30 +214,19 @@ function obsByPriority2(Unit, Args)
         msg=sprintf('\nObserving field %d out of %d - Name=%s, RA=%.2f, Dec=%.2f\n',...
             IndPrio,Ntargets,T.TargetName{IndPrio},T.RA(IndPrio), T.Dec(IndPrio));
         fprintf(msg)
-        Unit.GeneralStatus=msg;
+        Unit.GeneralStatus=sprintf('Observing field #%d/%d: "%s", (%.2f,%.2f)',...
+            IndPrio,Ntargets,T.TargetName{IndPrio},T.RA(IndPrio), T.Dec(IndPrio));
 
 
         % slewing
         if ~Args.Simulate
-            %Unit.Mount.goToTarget(T.RA(IndPrio), T.Dec(IndPrio));
-            Unit.Mount.goToTarget2(T.RA(IndPrio), T.Dec(IndPrio)); 
+            Unit.Mount.goToTarget2(T.RA(IndPrio), T.Dec(IndPrio));
             
-            temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
-            temp2 = Unit.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
-    
-            if temp1<-10
-                Temp = temp2;
-            elseif temp2<-10
-                Temp = temp1;
-            else
-                Temp = (temp1+temp2)*0.5;
-            end
+            temp=Unit.Temperature;
+            Temp=mean(temp(temp>-30)); % the pswitch says -60 for no sensor         
             fprintf('\nTemperature %.1f deg.\n', Temp)
-
-
             
             for IFocuser=Args.Itel
-                % TODO: 'Unit' should not be hard coded
                 Unit.Slave(IFocuser).Messenger.send(...
                     sprintf('%s.focusByTemperature(%d)',UnitName,IFocuser));
                            
@@ -247,11 +239,10 @@ function obsByPriority2(Unit, Args)
                 else
                     Unit.Camera{IFocuser}.classCommand('Temperature=-5');
                 end
-            end
-                
+            end                
 
             Unit.Mount.waitFinish;
-            pause(2);
+            Unit.abortablePause(2);
             if ~Unit.readyToExpose('Itel',Args.Itel,'Wait',true, 'Timeout',Timeout)
                 fprintf('Cameras not ready after timeout - abort.\n\n')
                 Unit.GeneralStatus='Cameras not ready after timeout - abort';
@@ -307,12 +298,20 @@ function obsByPriority2(Unit, Args)
         writetable(T.Data,obsFileName+'.txt','Delimiter',',')
           
     end
+    
+    Unit.GeneralStatus='Observations terminated';
 end
 
 
 function OperateBool = checkAbortFile(Unit, JD, Shutdown)
 
     OperateBool = true;
+    
+    if Unit.AbortActivity
+        % in most cases I also check indepenently, here for good
+        OperateBool=false;
+        return
+    end
 
     Sun = celestial.SolarSys.get_sun(JD,[35 31]./(180./pi));
     modulo_jd = mod(JD,1); % this is to avoid shutting down when starting observations in the evening
