@@ -25,7 +25,12 @@ function treatNewImage(CameraObj,Source,EventData)
         if CameraObj.ComputeFWHM
             % compute FWHM each time a new image is received, if so
             % instructed
-            %  call with fixed HalfSize, TBD if ever needed different
+            %  call with fixed HalfSize, TBD if ever needed different.
+            %  with 1000, I've measured ~1.6 sec on a LAST computer on a
+            %  typical image (is that image dependent?)
+            % If we knew for sure whether we are in live or still mode, we
+            %  should automatically skip this if in live mode and Texp too
+            %  small for it
             [CameraObj.LastImageFWHM, ~] = ...
                 imUtil.psf.fwhm_fromBank(CameraObj.LastImage, 'HalfSize',1000);
             % TBD if FWHM needs to be capped at 25 as in focusTelInSlave
