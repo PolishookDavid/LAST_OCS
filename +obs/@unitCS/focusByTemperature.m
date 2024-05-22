@@ -1,4 +1,4 @@
-function focusByTemperature(UnitObj, itel, Args)
+function focusByTemperature(UnitObj, itel, Temp, Args)
 % adjust focus if temperature has changed significantly
 %
 % Written by Nora, Jan 2023
@@ -8,6 +8,7 @@ function focusByTemperature(UnitObj, itel, Args)
     arguments
         UnitObj
         itel                        %= []; % telescopes to focus. [] means all
+        Temp double
         Args.TicksPerDeg            = 19.0 ;
         Args.MovementThreshold      = 30;
     end
@@ -16,11 +17,11 @@ function focusByTemperature(UnitObj, itel, Args)
     Col.Camera = 1;
     Col.JD = 2;
     Col.temp1 = 3;
-    Col.temp2 = 4;
-    Col.Success = 5;
-    Col.BestPos = 6;
-    Col.BestFWHM = 7;
-    Col.BackLashOffset = 8;
+    %Col.temp2 = 4;
+    Col.Success = 4;
+    Col.BestPos = 5;
+    Col.BestFWHM = 6;
+    Col.BackLashOffset = 7;
 
     FocuserObj = UnitObj.Focuser{itel};
     FocusLogBaseFileName = ['log_focusTel_M',int2str(UnitObj.MountNumber),'C',int2str(itel),'.txt'];
@@ -35,20 +36,7 @@ function focusByTemperature(UnitObj, itel, Args)
         FocusLog = load(FocusLogDirFileName);
     end
 
-    temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
-    temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
-    UnitObj.report('   temperature 1 %.1f \n', temp1);
-    UnitObj.report('   temperature 2 %.1f \n', temp2);
-    
-    if temp1<-10
-        DeltaTemp = temp2-FocusLog(Col.temp2);
-        UnitObj.report('   ignoring temperature 1 \n');
-    elseif temp2<-10
-        DeltaTemp = temp1-FocusLog(Col.temp1);
-        UnitObj.report('   ignoring temperature 2 \n');
-    else
-        DeltaTemp = ((temp1-FocusLog(Col.temp1))+(temp2-FocusLog(Col.temp2)))*0.5;
-    end
+    DeltaTemp = (Temp-FocusLog(Col.temp1));
     UnitObj.report('   temperature changed by %.1f degrees \n', DeltaTemp);
     
     NewPos = FocusLog(Col.BestPos) + DeltaTemp * Args.TicksPerDeg;
@@ -59,7 +47,7 @@ function focusByTemperature(UnitObj, itel, Args)
     CurrentPos = FocuserObj.Pos;
     
     if FocusLog(Col.Success)==0
-        UnitObj.report('   Focus loop did not succeed.\n\n');
+        UnitObj.report('   Focus loop did not succeed, hence not changing focus.\n\n');
     elseif (NewPos>Limits(2))
         UnitObj.report('   New position is above upper focuser limit.\n\n');
     elseif (abs(CurrentPos-NewPos)<Args.MovementThreshold)

@@ -228,16 +228,16 @@ function obsByPriority2(Unit, Args)
             
             for IFocuser=Args.Itel
                 Unit.Slave(IFocuser).Messenger.send(...
-                    sprintf('%s.focusByTemperature(%d)',UnitName,IFocuser));
+                    sprintf('%s.focusByTemperature(%d,%.2f);',UnitName,IFocuser,Temp));
                            
                 if Temp>35
-                    Unit.Camera{IFocuser}.classCommand('Temperature=5');
+                    Unit.Camera{IFocuser}.classCommand('Temperature=5;');
                 elseif Temp>30
-                    Unit.Camera{IFocuser}.classCommand('Temperature=0');
+                    Unit.Camera{IFocuser}.classCommand('Temperature=0;');
                 %elseif Temp>25
-                %    Unit.Camera{IFocuser}.classCommand('Temperature=0')
+                %    Unit.Camera{IFocuser}.classCommand('Temperature=0;')
                 else
-                    Unit.Camera{IFocuser}.classCommand('Temperature=-5');
+                    Unit.Camera{IFocuser}.classCommand('Temperature=-5;');
                 end
             end                
 
