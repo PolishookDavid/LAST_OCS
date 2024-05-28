@@ -32,7 +32,9 @@ classdef superunit < obs.LAST_Handle
         end
         
         function delete(S)
-            % maybe not needed, the destructor od SpawnedMatlab should do
+            % maybe not needed, the destructor of SpawnedMatlab should do
+            % Or maybe, we should find a way so that the spawned sessions
+            %  are NOT destroyed
             for i=1:numel(S.RemoteUnits)
                 % S.RemoteUnits(i).disconnect;
             end
@@ -62,6 +64,7 @@ classdef superunit < obs.LAST_Handle
                 % this is needed to reconnect to already existing units,
                 %  without attempting to spawn them
                 S.RemoteUnits(i).MessengerRemotePort=11000;
+                S.RemoteUnits(i).ResponderRemotePort=13000;
             end
         end
         
@@ -107,7 +110,9 @@ classdef superunit < obs.LAST_Handle
                 id=S.hostUnitId(S.UnitHosts{j});
                 try
                     S.report('creating Master with Unit on %s\n',S.UnitHosts{j})
-                    S.RemoteUnits(j).spawn(S.UnitHosts{j},[],11000,[],13000)
+                    S.RemoteUnits(j).spawn(S.UnitHosts{j},...
+                        [],S.RemoteUnits(i).MessengerRemotePort,...
+                        [],S.RemoteUnits(i).ResponderRemotePort);
                 catch
                     S.reportError('cannot create Unit on host %s',S.UnitHosts{j})
                 end
@@ -280,6 +285,20 @@ classdef superunit < obs.LAST_Handle
         %  other common operative activities? Instinctively I'd say not at
         %  this level, because they are at another level of specificity,
         %  and many have options. Or?
+        
+        function success=connectResponders(S,units)
+            % a last resort for attempting to reconnect to problematic sessions,
+            %  e.g. if they were created by another superunit process, and
+            %  kept busy by some long command. Just connect won't work
+            %  because it can't send commands via the busy Messenger
+            if ~exist('units','var') || isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            success=false(1,numel(units));
+            for i=units
+                success(i)=S.RemoteUnits(i).reconnectResponder;
+            end
+        end
         
     end
 
