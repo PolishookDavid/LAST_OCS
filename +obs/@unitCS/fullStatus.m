@@ -76,7 +76,7 @@ function [OperableComponents,ComponentStatus,FailureReasons]=...
     ss=cell(1,Ntel);
     for i=1:Ntel
         ss{i}=Unit.Slave(i).Status;
-        ComponentStatus.Slave(i)=ss{i};
+        ComponentStatus.Slave{i}=ss{i};
         if ~strcmp(ss{i},'alive')
             FailureReasons{numel(FailureReasons)+1}=...
                 sprintf('slave %d is %s',i,ss{i});
