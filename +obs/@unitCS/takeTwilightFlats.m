@@ -260,7 +260,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
     end
 
     UnitObj.GeneralStatus='ready';
-    UnitObj.AbortActivity=false; % restore, we got here because true
+    % UnitObj.AbortActivity=false; % restore, we got here because true
 end
 
 

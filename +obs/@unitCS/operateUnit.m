@@ -188,6 +188,8 @@ if (Args.Focus)  && ~Unit.AbortActivity
    end
    
    if Unit.AbortActivity
+       Unit.GeneralStatus='taking darks aborted';
+       Unit.abort(false);
        return
    end
    
