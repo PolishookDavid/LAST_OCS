@@ -49,22 +49,20 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
         LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
         Info(I).Val = LST;
         Info(I).Descr = '';
-    end
-    
-    
-    I = I + 1;
-    DateObs       = convert.time(JD,'JD','StrDate');
-    Info(I).Key = 'DATE-OBS';
-    Info(I).Val = DateObs{1};
-    Info(I).Descr = '';
-
-    % M_RA from UnitHeader
-    if ~isempty(UnitHeader)    
+        I = I + 1;
+        DateObs       = convert.time(JD,'JD','StrDate');
+        Info(I).Key = 'DATE-OBS';
+        Info(I).Val = DateObs{1};
+        Info(I).Descr = '';
+        
+        % M_RA from UnitHeader
         M_RA=UnitHeader{strcmp(UnitHeaderKeys,'M_RA'),2};
         I = I + 1;
         Info(I).Key = 'M_HA';
         Info(I).Val = convert.minusPi2Pi(LST - M_RA);
         Info(I).Descr = '';
+    else
+        UnitObj.report('warning: empty Unit.UnitHeader!\n');
     end
     
     ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';

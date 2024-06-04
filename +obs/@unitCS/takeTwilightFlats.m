@@ -12,7 +12,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 %               'MinFlatLimit'   [6000]
 %               'MinSunAlt'      [-10]
 %               'MaxSunAlt'      [-4]
-%               'ExpTimeRange    [3 15]
+%               'ExpTimeRange'   [3 15]
 %               'TestExpTime'    [1]
 %               'MeanFun'        [nanmedian] ** use string, not handle,
 %                                            ** eval() in slave
@@ -24,18 +24,17 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 %               'LiveMode'       false
 %               'MaxNumFlats'    20
 %
-% Output : - none, but flat images are saved on disk, TODO in the directories
-%  specified by each camera's Config.FlatDBDir
+%               'PrepMasterFlat' false ** OBSOLETE, don't use
+%
+% Output : - none. Good images are saved on disk, in the standard
+%  raw/directory
 % 
 % Example: Unit.takeTwilightFlats();
 %
-% Notes: I made it sort of work with mastrolindo, but code should be
+% Old notes: I made it sort of work with mastrolindo, but code should be
 %  revised:
-%  - most of the code is duplicated; that should be factored;
 %  - for many cameras, estimated exposure times should be individual and
 %    not the mean of all of them;
-%  - a real stopping mechanism should be in place, including a max number
-%    of flat images to take
 
     arguments
         UnitObj
@@ -75,7 +74,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
     UnitObj.GeneralStatus='taking flats';
 
     % store the present status of SaveOnDisk for each camera. We will save
-    %  images, but use an explicit call in order to provide the path, with
+    %  only the useful images with an explicit call, so we temporarily set
     %  SaveOnDisk=false
     for icam=1:Ncam
         % set ImType to flat
@@ -163,7 +162,6 @@ function takeTwilightFlats(UnitObj, Itel, Args)
                     MeanValAtMin = mean(MeanValPerSec) * min(Args.ExpTimeRange);
                     MeanValAtMax = mean(MeanValPerSec) * max(Args.ExpTimeRange);
 
-                    UnitObj.report('Flat test image\n');
                     UnitObj.report('    SunAlt              : %6.2f\n',Sun.Alt.*RAD)
                     UnitObj.report('    Az                  : %6.2f\n',M.classCommand('Az'))
                     UnitObj.report('    Alt                 : %6.2f\n',M.classCommand('Alt'))
@@ -174,6 +172,8 @@ function takeTwilightFlats(UnitObj, Itel, Args)
                     if MeanValAtMax>Args.MinFlatLimit && MeanValAtMin<Args.MaxFlatLimit && ...
                             (Sun.Alt*RAD)>Args.MinSunAlt && (Sun.Alt*RAD)<Args.MaxSunAlt
                         ContFlat = true;
+                        UnitObj.saveCurImage(Itel);
+                        UnitObj.report('Flat image(s) saved\n');
                     else
                         ContFlat         = false;
                         AttemptTakeFlat  = false;
@@ -214,6 +214,11 @@ function takeTwilightFlats(UnitObj, Itel, Args)
     end
 
     % prep a master flat image
+    % OBSOLETE functionality. Likely not working. For one, it relies in an
+    %  entries Config.CalibDarkDir and Config.CalibFlatDir which are not
+    %  currently present in the camera configuration files.
+    % Erans says that this dates from a time in whch the unit code allowed
+    %  to display immediately the sci images with dark subtracted 
     if Args.PrepMasterFlat
         UnitObj.GeneralStatus='preparing master flats image';
         CI = CalibImages;
