@@ -40,7 +40,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     CameraObj.SaveOnDisk=false;
     % disable ComputeFWHM, so we can call it with more freedom
     CurrentComputeFWHM=CameraObj.ComputeFWHM;
-    CameraObj.ComputeFWHM=false;
+    CameraObj.ComputeFWHM='omit';
     % restore them at the end
     
     % wait till camera is ready
@@ -158,7 +158,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
                 
         % measure focus value
         [FWHM, Nstars] = imUtil.psf.fwhm_fromBank(Image, 'HalfSize',Args.ImageHalfSize);
-        CameraObj.LastImageFWHM=FWHM; % so it is set even if CameraObj.ComputeFWHM=false
+        CameraObj.LastImageFWHM=FWHM; % so it is set even if CameraObj.ComputeFWHM='omit'
         FWHM  = min(25, FWHM); % very large values not reliable, as fwhm_fromBank doesn't work for donuts
         
         % adding outlier on purpose. delete after testing!
@@ -376,6 +376,11 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     FocuserObj.Pos = Result.BestPos;
     FocuserObj.waitFinish;
+    
+    % set CameraObj.LastImageFWHM to the estimated best value, even though
+    %  it is stricly incorrect, because that value was never derived from a
+    %  real image
+    CameraObj.LastImageFWHM=Result.BestFWHM;
     
     fprintf(fileID,'\nactual new focuser position '+string(FocuserObj.Pos));
     fclose(fileID);

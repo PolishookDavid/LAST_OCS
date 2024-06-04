@@ -86,7 +86,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         % run, blocking, the scalar version of the method. Output arguments
         % are returned.
         [Success,Result] = UnitObj.focusTelInSlave(itel,Args);
-        UnitObj.GeneralStatus='focus loop terminated';
+        UnitObj.GeneralStatus='focus loop terminated'; % this in the slave...
     else
         UnitObj.constructUnitHeader;        
         headerline=obs.util.tools.headerInputForm(UnitObj.UnitHeader);

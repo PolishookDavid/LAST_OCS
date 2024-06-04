@@ -248,14 +248,18 @@ if (Args.Focus)  && ~Unit.AbortActivity
    
    % Check the focusTel success
    FocusSucceded=false(1,numel(Unit.Camera));
+   msg='focus loop:';
    for Icam=Args.CamerasToUse
        FocusSucceded(Icam) = Unit.checkFocusTelSuccess(Icam, FocusTelStartTime, Args.FocusLoopTimeout);
        if FocusSucceded(Icam)
            fprintf('Focusing telescope %d succeeded\n',Icam);
+           msg=[msg, sprintf(' Tel.%d OK',Icam)];
        else
            fprintf('Focusing telescope %d FAILED!\n',Icam);
+           msg=[msg, sprintf(' Tel.%d FAIL',Icam)];
        end           
    end
+   Unit.GeneralStatus=msg; % (will this stay for long?)
    
 else
    fprintf('Skipped focus routine, as requested\n')

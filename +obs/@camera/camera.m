@@ -22,7 +22,7 @@ classdef camera < inst.device
     
     properties % (GetAccess = public, SetAccess = ?obs.unitCS) % no, also via classCommand
         LastImageName char     = '';          % The name of the last image 
-        LastImageFWHM double = NaN; % seeing of LastImage, computed if .ComputeFWHM=true
+        LastImageFWHM double = NaN; % seeing of LastImage, computed if .ComputeFWHM='always' or 'last'
     end
     
     % telescope
@@ -55,7 +55,13 @@ classdef camera < inst.device
     properties(Hidden)
         SaveOnDisk logical   = true;   % A flag marking if the images should be wriiten to the disk after exposure
         ImageFormat char     = 'fits';    % The format of the written image
-        ComputeFWHM logical = false; % compute FWHM each time a new image is received
+        ComputeFWHM char {mustBeMember(ComputeFWHM,{'never','last','always','omit'})}= 'lastimage'; % compute FWHM:
+        % 'never' - don't compute and store LastImageFWHM=NaN, to be clear
+        % 'last' - only after single still images or the last one of a sequence 
+        % 'always' - each time a neLastImageFWHMw image is received (might be a problem
+        %            for short live exposures)
+        % 'omit' - don't compute, but don't erase the old LastImageFWHM
+        %          either
     end
     
     % display
