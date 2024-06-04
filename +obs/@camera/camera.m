@@ -55,7 +55,7 @@ classdef camera < inst.device
     properties(Hidden)
         SaveOnDisk logical   = true;   % A flag marking if the images should be wriiten to the disk after exposure
         ImageFormat char     = 'fits';    % The format of the written image
-        ComputeFWHM char {mustBeMember(ComputeFWHM,{'never','last','always','omit'})}= 'lastimage'; % compute FWHM:
+        ComputeFWHM char {mustBeMember(ComputeFWHM,{'never','last','always','omit'})}= 'last'; % compute FWHM:
         % 'never' - don't compute and store LastImageFWHM=NaN, to be clear
         % 'last' - only after single still images or the last one of a sequence 
         % 'always' - each time a neLastImageFWHMw image is received (might be a problem
