@@ -163,25 +163,28 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
     %  being that this is faster than the time it takes to arm the camera
     %  and retrieve an exposure, else the FITS file will be written with an
     %  outdated header
-    Unit.constructUnitHeader;
-    
-    UnitName=inputname(1);
-    headerline=obs.util.tools.headerInputForm(Unit.UnitHeader);
-    % here we assume implicitly that we have one camera per Slave, and that
-    %  all Cameras are remote, because we want to use the Responder, for
-    %  setting Unit.UnitHeader with the earliest possible callback. If we
-    %  were using the Camera{i}.Messenger, we would depend on the completion
-    %  of the exposure command
-    for i=Cameras
-       Unit.Slave(i).Responder.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline)); 
-    end
-    
-    % restore the previous SaveOnDisk status if needed
-     if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave
+    if Unit.Master
+        Unit.constructUnitHeader;
+        
+        % UnitName=inputname(1); % WRONG if called from a function
+        % Dirty temporary fix
+        UnitName='Unit';
+        headerline=obs.util.tools.headerInputForm(Unit.UnitHeader);
+        % here we assume implicitly that we have one camera per Slave, and that
+        %  all Cameras are remote, because we want to use the Responder, for
+        %  setting Unit.UnitHeader with the earliest possible callback. If we
+        %  were using the Camera{i}.Messenger, we would depend on the completion
+        %  of the exposure command
         for i=Cameras
-            Unit.Camera{i}.classCommand('SaveOnDisk=%d;',saving(i));
+            Unit.Slave(i).Responder.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline));
+        end
+        
+        % restore the previous SaveOnDisk status if needed
+        if Nimages>1 && min(ExpTime) < InPar.MinExpTimeForSave
+            for i=Cameras
+                Unit.Camera{i}.classCommand('SaveOnDisk=%d;',saving(i));
+            end
         end
     end
-   
 
 end
