@@ -59,6 +59,9 @@ classdef unitCS < obs.LAST_Handle
         function UnitObj=unitCS(id)
             % unit class constructor
             % Package: +obs/@unitCS
+            
+            UnitObj.GitVersion=obs.util.tools.getgitversion(mfilename('fullpath'));
+           
             if exist('id','var')
                 if isnumeric(id)
                     id=num2str(id);
@@ -109,6 +112,7 @@ classdef unitCS < obs.LAST_Handle
             for i=1:numel(UnitObj.RemoteTelescopes)
                 UnitObj.Slave(i)=obs.util.SpawnedMatlab(sprintf('%s_slave_%d',UnitObj.Id,i));
             end
+            
         end
         
 
