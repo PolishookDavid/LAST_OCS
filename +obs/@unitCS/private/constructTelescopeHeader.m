@@ -40,7 +40,7 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
         I = I + 1;
         Info(I).Key = 'FULLPROJ';
         Info(I).Val = sprintf('%s.%02d.%02d.%02d',ProjName,NodeNum,MountNum,itel);
-        Info(I).Descr = '';
+        Info(I).Descr = 'Full project identifier of the telescope';
     
         I = I + 1;
         Info(I).Key = 'LST';
@@ -48,19 +48,19 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
         JD  = CameraInfo(Ijd).Val;
         LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
         Info(I).Val = LST;
-        Info(I).Descr = '';
+        Info(I).Descr = 'Local sidereal time';
         I = I + 1;
         DateObs       = convert.time(JD,'JD','StrDate');
         Info(I).Key = 'DATE-OBS';
         Info(I).Val = DateObs{1};
-        Info(I).Descr = '';
+        Info(I).Descr = 'Date of the observation';
         
         % M_RA from UnitHeader
         M_RA=UnitHeader{strcmp(UnitHeaderKeys,'M_RA'),2};
         I = I + 1;
         Info(I).Key = 'M_HA';
         Info(I).Val = convert.minusPi2Pi(LST - M_RA);
-        Info(I).Descr = '';
+        Info(I).Descr = 'Phisical HA pointed at by the mount';
     else
         UnitObj.report('warning: empty Unit.UnitHeader!\n');
     end
@@ -83,26 +83,31 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
             I = I + 1;
             Info(I).Key = 'RA';
             Info(I).Val = RA_J2000 + TelOffset(1)/cosd(Dec_J2000);
-            Info(I).Descr = '';
+            Info(I).Descr = 'J2000 RA including telescope offset';
         end
         
         I = I + 1;
         Info(I).Key = 'DEC';
         Info(I).Val = Dec_J2000 + TelOffset(2);
-        Info(I).Descr = '';
+        Info(I).Descr = 'J2000 Dec including telescope offset';
     end
     
     % focuser information
     if isa(FocuserObj,'obs.focuser') || isa(FocuserObj,'obs.remoteClass')
         I = I + 1;
+        Info(I).Key = 'GITFOCUS';
+        Info(I).Val = FocuserObj.classCommand('GitVersion');
+        Info(I).Descr = 'git version of the focus driver';
+        
+        I = I + 1;
         Info(I).Key = 'FOCUS';
         Info(I).Val = FocuserObj.classCommand('Pos');
-        Info(I).Descr = '';
+        Info(I).Descr = 'current focuser position';
         
         I = I + 1;
         Info(I).Key = 'PRVFOCUS';
         Info(I).Val = FocuserObj.classCommand('LastPos');        
-        Info(I).Descr = '';
+        Info(I).Descr = 'previous focuser position';
     end
     
     % wrap it all up in HeaderCell

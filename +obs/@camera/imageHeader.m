@@ -58,8 +58,13 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     Info(I).Descr = '';
     
     I = I + 1;
+    Info(I).Name = 'GIT_CAMR';
+    Info(I).Val = CameraObj.classCommand('GitVersion');
+    Info(I).Descr = 'git version of the camera driver software';
+        
+    I = I + 1;
     Info(I).Name = 'EXPMODE';
-    switch CameraObj.classCommand('StreamMode');
+    switch CameraObj.classCommand('StreamMode')
         case 0
            Info(I).Val  = 'SINGLE';
         case 1
@@ -67,7 +72,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
         otherwise
            Info(I).Val  = 'UNKNOWN';
     end
-    Info(I).Descr = '';
+    Info(I).Descr = 'continuous exposure mode of the camera';
     
     I = I + 1;
     Info(I).Name = 'Counter';
@@ -137,7 +142,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     Info(I).Name = 'CAMMODE';
      % matlab.io.fits.writeKey doesn't handle uint32
     Info(I).Val  = int32(CameraObj.classCommand('ReadMode'));
-    Info(I).Descr = '';
+    Info(I).Descr = 'Reading mode of the camera';
 
     I = I + 1;
     Info(I).Name = 'CAMGAIN';

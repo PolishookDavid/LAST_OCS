@@ -169,6 +169,9 @@ function takeExposure(Unit,Cameras,ExpTime,Nimages, InPar)
         % UnitName=inputname(1); % WRONG if called from a function
         % Dirty temporary fix
         UnitName='Unit';
+        % should use in the slave something like, instead
+        %Unit.Slave(i).Responder.send('w=who;')
+        %UnitName=Unit.Slave(1).Responder.query("w(strcmp({w.class},'obs.unitCS')).name;");
         headerline=obs.util.tools.headerInputForm(Unit.UnitHeader);
         % here we assume implicitly that we have one camera per Slave, and that
         %  all Cameras are remote, because we want to use the Responder, for

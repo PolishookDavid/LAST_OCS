@@ -76,7 +76,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         end
         Lon = Val;
         Info(I).Val = Val;
-        Info(I).Descr = '';
+        Info(I).Descr = 'Observatory longitude';
         
         I = I + 1;
         Info(I).Key = 'OBSLAT';
@@ -88,7 +88,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         end
         Lat = Val;
         Info(I).Val = Lat;
-        Info(I).Descr = '';
+        Info(I).Descr = 'Observatory latitude';
         
         I = I + 1;
         Info(I).Key = 'OBSALT';
@@ -99,7 +99,31 @@ function HeaderCell=constructUnitHeader(UnitObj)
             Val = NaN;
         end
         Info(I).Val = Val;
-        Info(I).Descr = '';
+        Info(I).Descr = 'height of the observatory';
+        
+        I = I + 1;
+        Info(I).Key = 'GIT_UNIT';
+        Info(I).Val = UnitObj.classCommand('GitVersion');
+        Info(I).Descr = 'git version of the unitCS software';
+        
+        if ~isempty(UnitObj.Slave) && isa(UnitObj.Slave(1),'obs.util.SpawnedMatlab')
+            I = I + 1;
+            Info(I).Key = 'GIT_MESS';
+            Info(I).Val = UnitObj.Slave(1).GitVersion;
+            Info(I).Descr = 'git version of intercommunication software';
+        end
+        
+        I = I + 1;
+        Info(I).Key = 'GITSWITC';
+        Info(I).Val = UnitObj.PowerSwitch{1}.classCommand('GitVersion');
+        Info(I).Descr = 'git version of the power switch software';
+        
+
+        I = I + 1;
+        Info(I).Key = 'GITMOUNT';
+        Info(I).Val = MountObj.classCommand('GitVersion');
+        Info(I).Descr = 'git version of the mount driver software';
+        
         
         I = I + 1;
         Info(I).Key = 'M_RA';
@@ -217,19 +241,19 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'TRK_RA';
         Info(I).Val = TrackingSpeed(1).*3600;  % [arcsec/s]
-        Info(I).Descr = '';
+        Info(I).Descr = 'Tracking speed on RA';
         
         I = I + 1;
         Info(I).Key = 'TRK_DEC';
         Info(I).Val = TrackingSpeed(2).*3600;  % [arcsec/s]
-        Info(I).Descr = '';
+        Info(I).Descr = 'Tracking speed on Dec';
     end
     
     % mount temperature, reading 1wire sensors on the power switches
     I = I + 1;
     Info(I).Key = 'MNTTEMP';
     Info(I).Val = nanmean(UnitObj.classCommand('Temperature'));
-    Info(I).Descr = '';
+    Info(I).Descr = 'Temperature at the mount sensors';
 
     
     % Read additional fixed keys from Unit.Config.FITSHeader
