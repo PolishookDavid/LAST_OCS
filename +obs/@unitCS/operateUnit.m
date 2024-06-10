@@ -162,7 +162,7 @@ if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat) 
             CoolTemp=-5;
         end
         Unit.Camera{Icam}.classCommand('Temperature=5;');
-        fprintf('Setting camera %d temperature to +%.0f°\n',CoolTemp,Icam)
+        fprintf('Setting camera %d temperature to +%.0f°\n',Icam,CoolTemp)
     end
    
     fprintf('Taking flats\n')
