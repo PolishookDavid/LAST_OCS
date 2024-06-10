@@ -76,7 +76,7 @@ function pointingModel(Unit, Args)
         fprintf('\nObserve field %d out of %d - RA=%.3f, HA=%.3f, Dec=%.3f, Alt=%.3f\n', ...
             Itarget,Ntarget,RA, HADec(Itarget,1), HADec(Itarget,2), Alt(Itarget));
 
-        Unit.Mount.goToTarget2(RA,HADec(Itarget,2),[0, 0],ApplyDistortion);
+        Unit.Mount.goToTarget(RA,HADec(Itarget,2),[0, 0],ApplyDistortion);
         Unit.Mount.waitFinish;
 
             

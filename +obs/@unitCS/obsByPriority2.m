@@ -220,7 +220,7 @@ function obsByPriority2(Unit, Args)
 
         % slewing
         if ~Args.Simulate
-            Unit.Mount.goToTarget2(T.RA(IndPrio), T.Dec(IndPrio));
+            Unit.Mount.goToTarget(T.RA(IndPrio), T.Dec(IndPrio));
             
             temp=Unit.Temperature;
             Temp=mean(temp(temp>-30)); % the pswitch says -60 for no sensor         

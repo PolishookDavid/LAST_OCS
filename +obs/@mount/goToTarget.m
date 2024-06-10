@@ -1,163 +1,140 @@
-function [Flag,RA,Dec,Aux]=goToTarget(MountObj, Long, Lat, varargin)
-    % Send mount to coordinates/name and start tracking
-    % Package: @mount
-    % Description: Send mount to a given coordinates in some coordinate system
-    %              or equinox, or an object name; convert it to euatorial coordinates
-    %              that includes the atmospheric refraction correction and optional
-    %              telescope distortion model (T-point model).
-    % Input  : - Longitude in some coordinate system, or object name.
-    %            Longitude can be either sexagesimal coordinates or numeric
-    %            calue in degress (or radians if InputUnits='rad').
-    %            Object name is converted to coordinates using either SIMBAD,
-    %            NED or JPL horizons.
-    %          - Like the first input argument, but for the latitude.
-    %            If empty, or not provided, than the first argument is assumed
-    %            to be an object name.
-    %          * Arbitrary number of pairs of arguments: ...,keyword,value,...
-    %            where keyword are one of the followings:
-    %            'InCooType'  - Input coordinates frame:
-    %                           'a' - Az. Alt.
-    %                           'g' - Galactic.
-    %                           'e' - Ecliptic
-    %                           - A string start with J (e.g., 'J2000.0').
-    %                           Equatorial coordinates with mean equinox of
-    %                           date, where the year is in Julian years.
-    %                           -  A string start with t (e.g., 't2020.5').
-    %                           Equatorial coordinates with true equinox of
-    %                           date.
-    %                           Default is 'J2000.0'
-    %             
-    %            'NameServer' - ['simbad'] | 'ned' | 'jpl'.
-    %            'DistFun'    - Distortion function handle.
-    %                           The function is of the form:
-    %                           [DistHA,DistDec]=@Fun(HA,Dec), where all the
-    %                           input and output are in degrees.
-    %                           Default is empty. If not given return [0,0].
-    %            'SkipDist'   - A logical indicating if to skip distortion
-    %                           correction. Default is false.
-    %            'InputUnits' - Default is 'deg'.
-    %            'OutputUnits'- Default is 'deg'
-    %            'Temp'       - Default is 15 C.
-    %            'Wave'       - Default is 5500 Ang.
-    %            'PressureHg' - Default is 760 mm Hg.
-    % Output : - Flag 0 if illegal input coordinates, 1 if ok.
-    %          - Apparent R.A.
-    %          - Apparent Dec.
-    %          - A structure containing the intermediate values.
-    % License: GNU general public license version 3
-    %     By : Eran Ofek                    Feb 2020
-    % Example: [DistRA,DistDec,Aux]=mount.goToTarget(10,50)
-    %          mount.goToTarget(10,50,'InCooType','a')
-    %          mount.goToTarget('10:00:00','+50:00:00');
-    %          mount.goToTarget('M31');
-    %          mount.goToTarget('9804;',[],'NameServer','jpl')
-    %--------------------------------------------------------------------------
+function [Flag,OutRA,OutDec,Aux]=goToTarget(MountObj, RA, Dec, Shift, ApplyDist)
+    % goToTarget given its J2000.0 coordinates or name
+    % Input  : - J2000.0 R.A., [deg|sex] or object name.
+    %            If second input is provided and RA is not numeric, then
+    %            will assume input is in sexagesinal coordinates.
+    %          - J2000.0 Dec. [deg|sex]. If empty, then will interpret the
+    %            first input argument as an object name.
+    %            Default is [].
+    %          - Additional [RA Dec] shift to add to coordinates [deg].
+    %            This is useful in order to set the position to one of the
+    %            cameras.
+    %            If a char array ('1'|'2'|'3'|'4') then will shift the
+    %            position to the center of the requested camera.
+    %            If [] use default.
+    %            Default is [0 0].
+    %          - A logical indicating if to apply the distortion
+    %            corrections. Default is true.
+    %
+    % Output : - A logical flag indicatirng if sucessful.
+    %          See code for additional output arguments.
+    % Author : Eran Ofek (Jan 2024)
+    % Example: M.goToTarget(150, +20, '1')
+    %          M.goToTarget('12:00:10.0','-10:10:10.0');
+    %          M.goToTarget('M31');
+    %          M.goToTarget('M15',[],[1 1]);
+    %          M.goToTarget('M81',[],[0 0 ], false);
+
+    if nargin<5
+        ApplyDist = true;
+        if nargin<4
+            Shift = [0 0];
+            if nargin<3
+                Dec = [];
+                if nargin<2
+                    error('Not enough input arguments');
+                end
+            end
+        end
+    end
+
+    if isempty(Shift)
+        Shift = [0 0];
+    end
 
     RAD = 180./pi;
+    MinAlt = 10;
+    
+    % Get current UTC time
+    % Note that computer clock must be set to UTC
+    % FFU: add test that computer clock is in UTC
+    JD = celestial.time.julday;    
 
-    if nargin<3
-        Lat = [];
+    % initilaize output to default values
+    OutRA   = NaN;
+    OutDec  = NaN;
+    Aux.RA_J2000    = NaN;
+    Aux.Dec_J2000   = NaN;
+    Aux.HA_J2000    = NaN;
+    Aux.RA_App      = NaN;
+    Aux.HA_App      = NaN;
+    Aux.Dec_App     = NaN;
+    Aux.RA_AppDist  = NaN;
+    Aux.HA_AppDist  = NaN;
+    Aux.Dec_AppDist = NaN;
+
+    % FFU: read from congiguration
+    if ischar(Shift)
+        switch Shift
+            case '1'
+                Shift = -[+1.65 +1.1];
+            case '2'
+                Shift = -[+1.65 -1.1];
+            case '3'
+                Shift = -[-1.65 -1.1];
+            case '4'
+                Shift = -[-1.65 +1.1];
+            otherwise
+                error('Unknown Shift option');
+        end
     end
+
+
+    if max(abs(Shift))>2
+        Flag = false;
+        error('Shift of more than 2 deg is not allowed');
+    else
+        
+        switch lower(MountObj.Status)
+            case {'idle','disabled','tracking','aborted','limited'}
+                % Convert input into RA/Dec [input deg, output deg]
+                GeoPos = [MountObj.ObsLon./RAD, MountObj.ObsLat./RAD, MountObj.ObsHeight];   % [rad rad m]
     
     
-%     FFU
-%     InCam = [];
-%     if ~isempty(InCam)
-%         % set coordinate such that center will be in camera #
-%         
-%     end
-%     
-%     
-    JD = celestial.time.julday;
+                % treat Shift
+    
+                % FFU: considering reading meterorological data...
+                MetData.Wave = 5000; % A
+                MetData.Temp = 15;   % C
+                MetData.P    = 760;  % Hg
+                MetData.Pw   = 8;    % Hg
+                [OutRA, OutDec, Alt, Refraction, Aux] = celestial.convert.j2000_toApparent(RA, Dec, JD,...
+                                                                   'InUnits','deg',...
+                                                                   'Epoch',2000,...
+                                                                   'OutUnits','deg',...
+                                                                   'OutEquinox',[],...
+                                                                   'OutEquinoxUnits','JD',...
+                                                                   'OutMean',false,...
+                                                                   'PM_RA',0,...
+                                                                   'PM_Dec',0,...
+                                                                   'Plx',1e-2,...
+                                                                   'RV',0,...
+                                                                   'INPOP',MountObj.INPOP,...
+                                                                   'GeoPos',GeoPos,...
+                                                                   'TypeLST','a',...
+                                                                   'ApplyAberration',true,...
+                                                                   'ApplyRefraction',true,...
+                                                                   'Wave',MetData.Wave,...
+                                                                   'Temp',MetData.Temp,...
+                                                                   'Pressure',MetData.P,...
+                                                                   'Pw',MetData.Pw,...
+                                                                   'ShiftRA',Shift(1),...
+                                                                   'ShiftDec',Shift(2),...
+                                                                   'ApplyDistortion',ApplyDist,...
+                                                                   'InterpHA',MountObj.PointingModel.InterpHA,...
+                                                                   'InterpDec',MountObj.PointingModel.InterpDec);
+      
+                % goto
+                MountObj.goTo(OutRA, OutDec);
 
-    Flag = false;     %%% TODO: delete this line
+                % Flag=true if success, i.e. no mount error
+                Flag = isempty(MountObj.LastError);
 
-    switch lower(MountObj.Status)
-        case 'park'
-            
-            MountObj.LogFile.write('Error: Attempt to slew telescope while parking');
-            error('Can not slew telescope while parking');
-        otherwise
-            % Convert input into RA/Dec [input deg, output deg]
-            try
-                OutputCooType=MountObj.CoordType;
-                if strcmp(OutputCooType,'tdate')
-                    % why not 'tdate' altogether?
-                    OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
-                end
-            catch
-                warning('mount coordinate system not known - assuming Equinox of date');
-                OutputCooType = sprintf('J%8.3f',convert.time(JD,'JD','J'));
-            end
-
-            %%% TODO: include option to call it without any pointing model
-            %%% use celestial.convert.app... instead of convert2equatorial
-            %%% still need to convert coordinates?
-            %%% save resulting RA, Dec after corrections to MountObject, so
-            %%% they can be written to the header
-            %%%
-            %%% [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
-            %%%     'DistFunHA',[],...
-            %%%     'DistFunDec',[],...
-            %%%     'DistIsDelta',true);
-                                                          
-            [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, Lat, varargin{:},'OutCooType',OutputCooType,...
-                                                              'DistFunHA',MountObj.PointingModel.InterpHA,...
-                                                              'DistFunDec',MountObj.PointingModel.InterpDec,...
-                                                              'DistIsDelta',true);
-            
-            if isempty(RA) || isempty(Dec)
-                MountObj.report('The computed RA and Dec are empty. That''s Eran''s fault.\n')
-                MountObj.report('Probably this is because there is no pointing model.\n')
-                MountObj.report('I''ll try the conversion without pointing model\n')
-                [RA, Dec, Aux] = celestial.coo.convert2equatorial(Long, ...
-                             Lat, varargin{:},'OutCooType',OutputCooType);
-            end
-
-            if isnan(RA) || isnan(Dec)
-                MountObj.LogFile.write('Error: RA or Dec are NaN');
-                error('RA or Dec are NaN');
-            end
-            
-            % validate coordinates
-            % note that input is in [rad]
-            
-            if isnan(MountObj.ObsLon) || isnan(MountObj.ObsLat)
-                % attempting to move mount when ObsLon/ObsLat
-                % are unknown
-                MountObj.LogFile.write('Attempting to move mount when ObsLon/ObsLat are unknown');
-                error('Attempting to move mount when ObsLon/ObsLat are unknown');
-            end
-            
-            [Flag,FlagRes] = celestial.coo.is_coordinate_ok(RA./RAD, Dec./RAD, JD, ...
-                'Lon', MountObj.ObsLon./RAD, ...
-                'Lat', MountObj.ObsLat./RAD, ...
-                'AltMinConst', MountObj.MinAlt./RAD,...
-                'AzAltConst', MountObj.AzAltLimit./RAD);
-            
-            
-            if Flag
-                
-                % Start slewing
-                MountObj.goTo(RA, Dec, 'eq');
-                
-            else
-                % coordinates are not ok
-                MountObj.LogFile.write('Coordinates are not valid - not slewing to requested target');
-                
-                if ~FlagRes.Alt
-                    MountObj.reportError('Target Alt too low')
-                    MountObj.LogFile.write('Target Alt too low');
-                end
-                if ~FlagRes.AzAlt
-                    MountObj.reportError('Target Alt too low for local Az')
-                    MountObj.LogFile.write('Target Alt too low for local Az');
-                end
-                if ~FlagRes.HA
-                    MountObj.reportError('Target HA is out of range')
-                    MountObj.LogFile.write('Target HA is out of range');
-                end
-            end
+            otherwise
+                MountObj.LogFile.write('Error: cannot slew telescope while mount is %s',MountObj.Status);
+                Flag = false;
+        end
+        
     end
-    
+
 end

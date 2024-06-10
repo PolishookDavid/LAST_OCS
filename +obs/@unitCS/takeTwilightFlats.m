@@ -107,7 +107,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 
             % set initial telescope coordinates
             UnitObj.Mount.report('slewing to RA=%.2f, Dec=%.2f\n',RA,Dec)
-            UnitObj.Mount.goToTarget2(RA,Dec);
+            UnitObj.Mount.goToTarget(RA,Dec);
 
             % estimate mean count rate in images
             getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun,...
@@ -137,7 +137,7 @@ function takeTwilightFlats(UnitObj, Itel, Args)
                     RA  = RA  + (rand(1,1)-0.5).*2.*Args.RandomShift;
                     Dec = Dec + (rand(1,1)-0.5).*2.*Args.RandomShift;
                     UnitObj.Mount.report('slewing to RA=%.2f, Dec=%.2f\n',RA,Dec)
-                    UnitObj.Mount.goToTarget2(RA,Dec);
+                    UnitObj.Mount.goToTarget(RA,Dec);
                     UnitObj.Mount.waitFinish;
 
                     % estimated exp time
