@@ -102,6 +102,11 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Descr = 'height of the observatory';
         
         I = I + 1;
+        Info(I).Key = 'GIT_ASTRO';
+        Info(I).Val = UnitObj.classCommand('AstroPackGitVersion');
+        Info(I).Descr = 'git version of AstroPack';
+        
+        I = I + 1;
         Info(I).Key = 'GIT_UNIT';
         Info(I).Val = UnitObj.classCommand('GitVersion');
         Info(I).Descr = 'git version of the unitCS software';

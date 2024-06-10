@@ -51,7 +51,7 @@ classdef unitCS < obs.LAST_Handle
         MountDriver % class name of the mount driver [configuration only]
         FocuserDriver % class names of the focuser drivers [configuration only]
         CameraDriver  % class names of the camera drivers [configuration only]
-        
+        AstroPackGitVersion char; % git version of AstroPack
     end
 
     methods
@@ -61,6 +61,9 @@ classdef unitCS < obs.LAST_Handle
             % Package: +obs/@unitCS
             
             UnitObj.GitVersion=obs.util.tools.getgitversion(mfilename('fullpath'));
+            
+            % AstroPack has its own function based on git describe 
+            UnitObj.AstroPackGitVersion=tools.git.getVersion;
            
             if exist('id','var')
                 if isnumeric(id)
