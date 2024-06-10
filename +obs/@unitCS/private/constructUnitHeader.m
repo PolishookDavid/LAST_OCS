@@ -62,7 +62,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'MOUNTNUM';
         Info(I).Val = MountNum;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount number';
         
         MountConfig  = MountObj.classCommand('Config');
         
@@ -76,7 +76,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         end
         Lon = Val;
         Info(I).Val = Val;
-        Info(I).Descr = 'Observatory longitude';
+        Info(I).Descr = 'longitude of the observatory';
         
         I = I + 1;
         Info(I).Key = 'OBSLAT';
@@ -88,7 +88,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         end
         Lat = Val;
         Info(I).Val = Lat;
-        Info(I).Descr = 'Observatory latitude';
+        Info(I).Descr = 'latitude of the observatory';
         
         I = I + 1;
         Info(I).Key = 'OBSALT';
@@ -102,7 +102,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Descr = 'height of the observatory';
         
         I = I + 1;
-        Info(I).Key = 'GIT_ASTRO';
+        Info(I).Key = 'GITASTRP';
         Info(I).Val = UnitObj.classCommand('AstroPackGitVersion');
         Info(I).Descr = 'git version of AstroPack';
         
@@ -134,13 +134,18 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Key = 'M_RA';
         M_RA = MountObj.classCommand('RA');
         Info(I).Val = M_RA;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount physical pointing right ascension';
         
+        I = I + 1;
+        Info(I).Key = 'M_HA';
+        Info(I).Val = convert.minusPi2Pi(MountObj.LST - M_RA);
+        Info(I).Descr = 'Phisical HA pointed at by the mount';
+
         I = I + 1;
         Info(I).Key = 'M_DEC';
         M_Dec = MountObj.classCommand('Dec');
         Info(I).Val = M_Dec;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount physical pointing declination';
                 
         I = I + 1;
         Info(I).Key = 'EQUINOX';
@@ -150,12 +155,12 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'M_AZ';
         Info(I).Val = MountObj.classCommand('Az');
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount physical pointing azimuth';
         
         I = I + 1;
         Info(I).Key = 'M_ALT';
         Info(I).Val = MountObj.classCommand('Alt');
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount physical pointing altitude';
         
 %  New J2000 considering nutation, aberration, refraction and pointing model
 %   There is a dependence on time here. Ideally, one would insert here the
@@ -176,46 +181,46 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'M_JRA';
         Info(I).Val = Aux.RA_J2000;
-        Info(I).Descr = '';
-        
+        Info(I).Descr = 'mount J2000 RA';
+
+        % pointing coordinates M_JDEC and M_JRA of the center wouldn't be
+        %  needed by themselves, but we need them to be in UnitHeader, so
+        %  that the slaves can sum to them the telescope offsets
         I = I + 1;
         Info(I).Key = 'M_JDEC';
         Info(I).Val = Aux.Dec_J2000;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount J2000 Dec';
         
         I = I + 1;
         Info(I).Key = 'M_ARA';
         Info(I).Val = Aux.RA_App;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent equinox of date RA';
         
         I = I + 1;
         Info(I).Key = 'M_AHA';
         Info(I).Val = Aux.HA_App;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent equinox of date HA';
         
         I = I + 1;
         Info(I).Key = 'M_ADEC';
         Info(I).Val = Aux.Dec_App;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent equinox of date Dec';
         
         I = I + 1;
         Info(I).Key = 'M_ADRA';
         Info(I).Val = Aux.RA_AppDist;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent RA with distortion';
         
         I = I + 1;
         Info(I).Key = 'M_ADHA';
         Info(I).Val = Aux.HA_AppDist;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent HA with distortion';
         
         I = I + 1;
         Info(I).Key = 'M_ADDec';
         Info(I).Val = Aux.Dec_AppDist;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent Dec with distortion';
         
-        % pointing coordinates of the center wouldn't be needed by
-        % themselves, but we need them to be in UnitHeader, so that the
-        % slaves can sum to them the telescope offsets
         I = I + 1;
         Info(I).Key = 'RA_J2000';
         Info(I).Val = Aux.RA_J2000;
@@ -229,12 +234,12 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'M_AAZ'; % check intentions - just AZ, perhaps?
         Info(I).Val = Aux.Az_App;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent azimuth';
         
         I = I + 1;
         Info(I).Key = 'M_AALT';  % check intentions - just ALT, perhaps?
         Info(I).Val = Aux.Alt_App;
-        Info(I).Descr = '';
+        Info(I).Descr = 'mount apparent altitude';
         
         I = I + 1;
         Info(I).Key = 'AIRMASS';

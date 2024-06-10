@@ -40,31 +40,24 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
         I = I + 1;
         Info(I).Key = 'FULLPROJ';
         Info(I).Val = sprintf('%s.%02d.%02d.%02d',ProjName,NodeNum,MountNum,itel);
-        Info(I).Descr = 'Full project identifier of the telescope';
-    
-        I = I + 1;
-        Info(I).Key = 'LST';
-        Ijd = find(strcmp({CameraInfo.Name},'JD'),1);
-        JD  = CameraInfo(Ijd).Val;
-        LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
-        Info(I).Val = LST;
-        Info(I).Descr = 'Local sidereal time';
-        I = I + 1;
-        DateObs       = convert.time(JD,'JD','StrDate');
-        Info(I).Key = 'DATE-OBS';
-        Info(I).Val = DateObs{1};
-        Info(I).Descr = 'Date of the observation';
-        
-        % M_RA from UnitHeader
-        M_RA=UnitHeader{strcmp(UnitHeaderKeys,'M_RA'),2};
-        I = I + 1;
-        Info(I).Key = 'M_HA';
-        Info(I).Val = convert.minusPi2Pi(LST - M_RA);
-        Info(I).Descr = 'Phisical HA pointed at by the mount';
+        Info(I).Descr = 'Full project identifier of the telescope';        
     else
         UnitObj.report('warning: empty Unit.UnitHeader!\n');
     end
     
+    I = I + 1;
+    Info(I).Key = 'LST';
+    Ijd = find(strcmp({CameraInfo.Name},'JD'),1);
+    JD  = CameraInfo(Ijd).Val;
+    LST         = celestial.time.lst(JD, Lon./RAD,'a').*360;  % deg
+    Info(I).Val = LST;
+    Info(I).Descr = 'Local sidereal time';
+    I = I + 1;
+    DateObs       = convert.time(JD,'JD','StrDate');
+    Info(I).Key = 'DATE-OBS';
+    Info(I).Val = DateObs{1};
+    Info(I).Descr = 'Date of the observation';
+
     ConfigKeyName = 'TelescopeOffset'; %'MountCameraDist';
     if tools.struct.isfield_notempty(CameraConfig, ConfigKeyName)
         TelOffset = CameraConfig.(ConfigKeyName);
@@ -77,8 +70,8 @@ function HeaderCell=constructTelescopeHeader(UnitObj,itel)
     
     %  Dec_J2000 and RA_J2000 are included on purpose in UnitHeader
     if ~isempty(UnitHeader)
-        Dec_J2000=UnitHeader{strcmp(UnitHeaderKeys,'DECJ2000'),2};
-        RA_J2000=UnitHeader{strcmp(UnitHeaderKeys,'RA_J2000'),2};
+        Dec_J2000=UnitHeader{strcmp(UnitHeaderKeys,'M_JDEC'),2};
+        RA_J2000=UnitHeader{strcmp(UnitHeaderKeys,'M_JRA'),2};
         if ~isempty(Dec_J2000)
             I = I + 1;
             Info(I).Key = 'RA';

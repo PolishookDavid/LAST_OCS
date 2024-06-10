@@ -82,7 +82,7 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     I = I + 1;
     Info(I).Name = 'EXPTIME';
     Info(I).Val  = CameraObj.classCommand('ExpTime');
-    Info(I).Descr = '';
+    Info(I).Descr = 'exposure time seconds';
     
     I = I + 1;
     Info(I).Name = 'FILTER';
@@ -92,15 +92,18 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     I = I + 1;
     Info(I).Name = 'JD';
     Info(I).Val  = 1721058.5 + CameraObj.classCommand('TimeStartLastImage');
-    Info(I).Descr = '';
+    Info(I).Descr = 'Julian date at exposure start';
 
     % Keys={'GAIN','DARKCUR','READNOI','SATURVAL','NONLIN'};
     % Read additional fixed keys from camera Config.FITSHeader
     ExtraKeys = CameraObj.classCommand('Config.FITSHeader');
     for i=1:numel(ExtraKeys)
         I= I + 1;
-        Info(I).Name = ExtraKeys{i}{1};
-        Info(I).Val  = ExtraKeys{i}{2};
+        Info(I).Name  = ExtraKeys{i}{1};
+        Info(I).Val   = ExtraKeys{i}{2};
+        if numel(ExtraKeys{i})>2
+            Info(I).Descr = ExtraKeys{i}{3};
+        end
     end
 
     I = I + 1;
@@ -116,12 +119,12 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     I = I + 1;
     Info(I).Name = 'CAMNUM';
     Info(I).Val  = CameraObj.classCommand('CameraNumber');
-    Info(I).Descr = '';
+    Info(I).Descr = 'camera number';
 
     I = I + 1;
     Info(I).Name = 'CAMPOS';
     Info(I).Val  = CameraObj.classCommand('CameraPos');
-    Info(I).Descr = '';
+    Info(I).Descr = 'camera position on mount';
 
     I = I + 1;
     Info(I).Name = 'CAMNAME';
@@ -131,12 +134,12 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     I = I + 1;
     Info(I).Name = 'CAMTEMP';
     Info(I).Val  = CameraObj.classCommand('Temperature');
-    Info(I).Descr = '';
+    Info(I).Descr = 'camera sensor temperature';
 
     I = I + 1;
     Info(I).Name = 'CAMCOOL';
     Info(I).Val  = CameraObj.classCommand('CoolingPower');
-    Info(I).Descr = '';
+    Info(I).Descr = 'camera cooling power %';
 
     I = I + 1;
     Info(I).Name = 'CAMMODE';
@@ -147,12 +150,12 @@ function [HeaderCell,Info]=imageHeader(CameraObj)
     I = I + 1;
     Info(I).Name = 'CAMGAIN';
     Info(I).Val  = CameraObj.classCommand('Gain');
-    Info(I).Descr = '';
+    Info(I).Descr = 'camera gain setting';
 
     I = I + 1;
     Info(I).Name = 'CAMOFFS';
     Info(I).Val  = CameraObj.classCommand('Offset');
-    Info(I).Descr = '';
+    Info(I).Descr = 'camera offset ADU';
 
     % build header from structure
     N = numel(Info);

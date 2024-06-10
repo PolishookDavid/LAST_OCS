@@ -10,7 +10,11 @@ function serialized=headerInputForm(Header)
             if isempty(val)
                 valuecol{i}='[]';
             else
-                valuecol{i}=num2str(val);
+                if isinteger(val)
+                    valuecol{i}=num2str(val);
+                else
+                    valuecol{i}=num2str(val,'%f');
+                end
             end
         else
             valuecol{i}=sprintf('''%s''',val);
