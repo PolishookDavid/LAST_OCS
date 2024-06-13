@@ -1,15 +1,17 @@
-function Aux=pointingCorrection(MountObj,MetData,JD)
+function Aux=pointingCorrection(MountObj,RA,Dec,MetData,JD)
 % compute the corrected J coordinates from the mount own ones,
 % considering nutation, aberration, refraction and pointing model
 %
-% Input: MetData - a structure containing the fields
+% Input:  RA
+%         Dec
+%         MetData - a structure containing the fields
 %                     MetData.Wave (default =5000; % Å)
 %                     MetData.Temp (default =15;   % °C)
 %                     MetData.P    (default =760;  % mmHg)
 %                     MetData.Pw   default( =8;    % mmHg)
 %
-%        TelOffset - [HA offset, Dec offset] of the the telescope
-%                       in degrees(deault [0,0])
+% %        TelOffset - [HA offset, Dec offset] of the the telescope
+% %                       in degrees(deault [0,0])
 %
 %        JD - julian day (default:  of now)
 %
@@ -50,7 +52,7 @@ GeoPos = flip(MountObj.MountPos(1:2)); % MountPos stores [Lat,Lon] instead of [L
 GeoPos(1:2)=GeoPos(1:2) * pi/180;
 
 [OutRA, OutDec, Alt, Refraction, Aux] = celestial.convert.apparent_toJ2000(...
-    MountObj.RA, MountObj.Dec, JD,...
+    RA, Dec, JD,...
     'InUnits','deg','Epoch',2000,'OutUnits','deg','OutEquinox',[],...
     'OutEquinoxUnits','JD','OutMean',true,...
     'PM_RA',0,'PM_Dec',0,'Plx',1e-2,'RV',0,'INPOP',MountObj.INPOP,...

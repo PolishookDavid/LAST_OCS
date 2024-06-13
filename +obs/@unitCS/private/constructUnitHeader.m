@@ -69,41 +69,44 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Val = MountNum;
         Info(I).Descr = 'mount number';
         
-        MountConfig  = MountObj.classCommand('Config');
+%        MountConfig  = MountObj.classCommand('Config');
         
         I = I + 1;
         Info(I).Key = 'OBSLON';
-        ConfigKeyName = 'ObsLon';
-        if tools.struct.isfield_notempty(MountConfig, ConfigKeyName)
-            Val = MountConfig.(ConfigKeyName);
-        else
-            Val = NaN;
-        end
-        Lon = Val;
-        Info(I).Val = Val;
+%         ConfigKeyName = 'ObsLon';
+%         if tools.struct.isfield_notempty(MountConfig, ConfigKeyName)
+%             Val = MountConfig.(ConfigKeyName);
+%         else
+%             Val = NaN;
+%         end
+%         Lon = Val;
+        Lon=MountObj.classCommand('MountPos(2)');
+        Info(I).Val = Lon;
         Info(I).Descr = 'longitude of the observatory';
         
         I = I + 1;
         Info(I).Key = 'OBSLAT';
-        ConfigKeyName = 'ObsLat';
-        if tools.struct.isfield_notempty(MountConfig, ConfigKeyName)
-            Val = MountConfig.(ConfigKeyName);
-        else
-            Val = NaN;
-        end
-        Lat = Val;
+%        ConfigKeyName = 'ObsLat';
+%         if tools.struct.isfield_notempty(MountConfig, ConfigKeyName)
+%             Val = MountConfig.(ConfigKeyName);
+%         else
+%             Val = NaN;
+%         end
+%         Lat = Val;
+        Lat=MountObj.classCommand('MountPos(1)');
         Info(I).Val = Lat;
         Info(I).Descr = 'latitude of the observatory';
         
         I = I + 1;
         Info(I).Key = 'OBSALT';
-        ConfigKeyName = 'ObsHeight';
-        if tools.struct.isfield_notempty(MountConfig, ConfigKeyName)
-            Val = MountConfig.(ConfigKeyName);
-        else
-            Val = NaN;
-        end
-        Info(I).Val = Val;
+%         ConfigKeyName = 'ObsHeight';
+%         if tools.struct.isfield_notempty(MountConfig, ConfigKeyName)
+%             Val = MountConfig.(ConfigKeyName);
+%         else
+%             Val = NaN;
+%         end
+%         Info(I).Val = Val;
+        Info(I).Val = MountObj.classCommand('MountPos(3)');
         Info(I).Descr = 'height of the observatory';
         
         I = I + 1;
@@ -157,14 +160,20 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Val = 2000.0;
         Info(I).Descr = '';
         
+        JD=celestial.time.julday;
+        OutCoo=celestial.coo.horiz_coo([M_RA,M_Dec]*pi/180,...
+                JD,[Lon,Lat]*pi/180,'h');
+        az=OutCoo(1)*180/pi;
+        alt=OutCoo(2)*180/pi;
+
         I = I + 1;
         Info(I).Key = 'M_AZ';
-        Info(I).Val = MountObj.classCommand('Az');
+        Info(I).Val = az;
         Info(I).Descr = 'mount physical pointing azimuth';
         
         I = I + 1;
         Info(I).Key = 'M_ALT';
-        Info(I).Val = MountObj.classCommand('Alt');
+        Info(I).Val = alt;
         Info(I).Descr = 'mount physical pointing altitude';
         
 %  New J2000 considering nutation, aberration, refraction and pointing model
@@ -179,14 +188,14 @@ function HeaderCell=constructUnitHeader(UnitObj)
 %   scale of seconds, b) whenever we are tracking at sidereal rate, and
 %   the mount behaves normally, RA remains almost constant.
 
-        JD = celestial.time.julday();
-        Aux = MountObj.classCommand(sprintf('pointingCorrection([],%.8f)',JD));
+        Aux = MountObj.classCommand(sprintf('pointingCorrection(%.8f,%.8f,[],%.8f)',...
+            M_RA,M_Dec,JD));
          
         % all the fields in Aux go into header, with this mapping:
         I = I + 1;
         Info(I).Key = 'M_JRA';
         Info(I).Val = Aux.RA_J2000;
-        Info(I).Descr = 'mount J2000 RA';
+        Info(I).Descr = 'mount center J2000 RA';
 
         % pointing coordinates M_JDEC and M_JRA of the center wouldn't be
         %  needed by themselves, but we need them to be in UnitHeader, so
@@ -194,7 +203,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'M_JDEC';
         Info(I).Val = Aux.Dec_J2000;
-        Info(I).Descr = 'mount J2000 Dec';
+        Info(I).Descr = 'mount center J2000 Dec';
         
         I = I + 1;
         Info(I).Key = 'M_ARA';
@@ -225,16 +234,6 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Key = 'M_ADDec';
         Info(I).Val = Aux.Dec_AppDist;
         Info(I).Descr = 'mount apparent Dec with distortion';
-        
-        I = I + 1;
-        Info(I).Key = 'RA_J2000';
-        Info(I).Val = Aux.RA_J2000;
-        Info(I).Descr = 'RA of the mount center';
-        
-        I = I + 1;
-        Info(I).Key = 'DECJ2000';
-        Info(I).Val = Aux.Dec_J2000;
-        Info(I).Descr = 'Dec of the mount center';
         
         I = I + 1;
         Info(I).Key = 'M_AAZ'; % check intentions - just AZ, perhaps?
