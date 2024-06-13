@@ -7,14 +7,19 @@ function HeaderCell=constructUnitHeader(UnitObj)
     %
     % Typically, this function is called by UnitObj.takeExposure, and the
     %  header reflects values read prior to the exposure. Temperatures
-    %  won't change significantly, but the mount might fault during the
-    %  exposure, and that won't be reflected in the FITS header
+    %  won't change significantly, but the mount pointing will evolve
+    %  during the depending on the tracking speed, if it won't altogether
+    %  fault, and that won't be reflected in the FITS header.
+    %
+    % The header computed here is then transmitted to the telescope slaves,
+    %  so to be available by the time that the image is ready to be saved.
+    %  Some of the values in it should be used by .constructTelescopeHeader to
+    %  compute the proper header values, like updated HA at the time of the
+    %  start of the exposure (but currently they are not)
     %
     % Output  : - A 3 column cell array with header for image
     % Additionally, the result is stored in UnitObj.UnitHeader.
     
-    RAD = 180./pi;
-
     MountObj = UnitObj.Mount;
     
     I = 0;
@@ -139,7 +144,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'M_HA';
         Info(I).Val = convert.minusPi2Pi(MountObj.LST - M_RA);
-        Info(I).Descr = 'Phisical HA pointed at by the mount';
+        Info(I).Descr = 'Physical HA pointed at by the mount';
 
         I = I + 1;
         Info(I).Key = 'M_DEC';
