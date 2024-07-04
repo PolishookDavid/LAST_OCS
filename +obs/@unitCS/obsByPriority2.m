@@ -166,7 +166,7 @@ function obsByPriority2(Unit, Args)
                 fprintf('Simulated JD: %.3f or %s\n',JD,simdatetime)
             else
                 fprintf('Waiting 2 minutes.\n')
-                pause(120)
+                Unit.abortablePause(120)
                 JD = celestial.time.julday; % + Args.DeltaJD;
                 Unit.Mount.home; % avoid tracking when there are not targets
             end
