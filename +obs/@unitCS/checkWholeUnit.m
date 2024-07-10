@@ -72,9 +72,11 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
     end
 
     % check definition and reachability of the power switches
+    %  First, find out if for the required subset of telescopes and mount
+    %  we need to check all of them
     remedyS=false;
     if ok
-        [ok,remedyS]=U.checkSwitches(remediate);
+        [ok,remedyS]=U.checkSwitches(remediate,itel);
     end
 
     % check mount
