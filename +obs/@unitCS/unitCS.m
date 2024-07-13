@@ -208,7 +208,10 @@ classdef unitCS < obs.LAST_Handle
             N=numel(UnitObj.PowerSwitch);
             T=NaN(1,N);
             for i=1:N
-                T(i)= UnitObj.PowerSwitch{i}.classCommand('Sensors.TemperatureSensors(1)');
+                try
+                    T(i)= UnitObj.PowerSwitch{i}.classCommand('Sensors.TemperatureSensors(1)');
+                catch
+                end
             end
         end
         
