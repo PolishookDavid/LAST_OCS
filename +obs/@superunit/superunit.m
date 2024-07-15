@@ -188,8 +188,45 @@ classdef superunit < obs.LAST_Handle
         
         function send(S,command,units)
             % send the same command to all or specific units, without waiting
-            %  for replies
+            %  for replies, but checking if they are busy
             %  input: command: char array
+            %         units:   empty or numeric array
+            if ~exist('units','var') || isempty(units)
+                units=1:numel(S.RemoteUnits);
+            end
+            for i=1:numel(units)
+                UId=S.RemoteUnits(units(i)).Id;
+                try
+%                    status=S.RemoteUnits(units(i)).Status;
+%                    if ~any(strcmpi(status,{'disconnected','dead'}))
+                        cexec=S.commandExecuting(units(i));
+                        if isempty(cexec{:})
+                            S.RemoteUnits(units(i)).Messenger.send(command);
+                        else
+                            S.report('Unit %s is currently executing "%s"\n',...
+                                UId,cexec{:})
+                            S.report(' the command "%s" won''t be sent\n',command)
+                            S.report('You might want to use %s.sendEnqueue() instead, at your risk!\n',...
+                                    inputname(1))
+                        end
+%                     else
+%                         S.report('unit %s is %s and cannot accept commands\n',...
+%                             S.RemoteUnits(UId,status))
+%                     end
+                 catch
+                    S.reportError('invalid Messenger for unit %s',UId)
+                end
+            end
+        end
+
+        function sendEnqueue(S,command,units)
+            % send the same command to all or specific units, without waiting
+            %  for replies, and without checking if they are busy. If they
+            %  are, the udp buffer acts as a sort of command queue, but its
+            %  behavior is fragile - there is no control on what happens if
+            %  the buffer overflows, and no way of flush the queue - the
+            %  buffer could be flushed, but the associated callback queue not
+            % Input: command: char array
             %         units:   empty or numeric array
             if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
