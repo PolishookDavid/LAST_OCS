@@ -26,6 +26,11 @@ function connectSlave(Unit,islaves)
         %  and the unit is properly shut down, but shit happens,
         %  processes die or ar killed by mistake, and whatnot
         if ~isempty(S.PID) || ~isempty(S.listeners)
+            if ~isa(S.Messenger,'obs.util.MessengerCommon')
+                % recreate the Messenger, even if S.connect would do
+                % it again anyway, for the early communication attempt
+                spawned(i)=S.connect;
+            end
             if S.Messenger.areYouThere
                 Unit.report('slave %d already exists, will try to reconnect\n',islaves(i))
                 spawned(i)=true;
