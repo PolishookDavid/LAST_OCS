@@ -105,30 +105,28 @@ classdef superunit < obs.LAST_Handle
                 units=1:numel(S.RemoteUnits);
             end
             % first spawn serially all
-            for i=1:numel(units)
-                j=units(i);
-                id=S.hostUnitId(S.UnitHosts{j});
+            for i=units(:)'
                 try
-                    S.report('creating Master with Unit on %s\n',S.UnitHosts{j})
-                    S.RemoteUnits(j).spawn(S.UnitHosts{j},...
+                    S.report('creating Master with Unit on %s\n',S.UnitHosts{i})
+                    S.RemoteUnits(i).spawn(S.UnitHosts{i},...
                         [],S.RemoteUnits(i).MessengerRemotePort,...
                         [],S.RemoteUnits(i).ResponderRemotePort);
                 catch
-                    S.reportError('cannot create Unit on host %s',S.UnitHosts{j})
+                    S.reportError('cannot create Unit on host %s',S.UnitHosts{i})
                 end
             end
             % then try to connect
-            for i=1:numel(units)
-                j=units(i);
-                id=S.hostUnitId(S.UnitHosts{j});
-                S.report('connecting to spawned session "%s"\n',S.RemoteUnits(j).Id')
-                if S.RemoteUnits(j).connect
-                    S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
-                    S.sendEnqueue(sprintf('Unit.Slave.RemoteTerminal=''%s'';',...
-                        S.SlaveTerminals),j);
+            for i=units(:)'
+                id=S.hostUnitId(S.UnitHosts{i});
+                S.report('connecting to spawned session "%s"\n',S.RemoteUnits(i).Id')
+                if S.RemoteUnits(i).connect
+                    S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),i)
+                    S.sendEnqueue(sprintf(...
+                      'for i=1:numel(Unit.Slave),Unit.Slave(i).RemoteTerminal=''%s'';end',...
+                      S.SlaveTerminals),i);
                 else
                     S.reportError('cannot connect to the master created on host %s',...
-                        S.UnitHosts{j})
+                        S.UnitHosts{i})
                 end
             end
         end
