@@ -124,8 +124,7 @@ classdef superunit < obs.LAST_Handle
                 S.report('connecting to spawned session "%s"\n',S.RemoteUnits(j).Id')
                 if S.RemoteUnits(j).connect
                     S.send(sprintf('Unit=obs.unitCS(''%02d'');',id),j)
-                    S.sendEnqueue(sprintf(...
-                        'for i=1:numel(Unit.Slave),Unit.Slave(i).RemoteTerminal=''%s'';end',...
+                    S.sendEnqueue(sprintf('Unit.Slave.RemoteTerminal=''%s'';',...
                         S.SlaveTerminals),j);
                 else
                     S.reportError('cannot connect to the master created on host %s',...
@@ -139,31 +138,24 @@ classdef superunit < obs.LAST_Handle
             if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
-            res=false(size(units));
-            for i=1:numel(units)
-                res(i)=S.RemoteUnits(units(i)).connect;
-            end
+            res=S.RemoteUnits(units).connect;
          end
         
         function disconnect(S,units)
             % disconnect from remote units, without terminating them
-            %  (the hardware stay on and the unit is available for another
-            %   client to connect with it)
+            %  (the hardware stays on and the unit is available for another
+            %   client to connect to it)
             if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
-            for i=1:numel(units)
-                S.RemoteUnits(units(i)).disconnect;
-            end
+            S.RemoteUnits(units).disconnect;
         end
         
         function terminate(S,units)
             if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
-            for i=1:numel(units)
-                S.RemoteUnits(units(i)).terminate;
-            end
+            S.RemoteUnits(units).terminate;
         end
         
         % shortcuts for sending multiple commands
@@ -331,10 +323,7 @@ classdef superunit < obs.LAST_Handle
             if ~exist('units','var') || isempty(units)
                 units=1:numel(S.RemoteUnits);
             end
-            success=false(1,numel(units));
-            for i=units
-                success(i)=S.RemoteUnits(i).reconnectResponder;
-            end
+            success=S.RemoteUnits(units).reconnectResponder;
         end
         
     end
