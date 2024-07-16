@@ -14,23 +14,37 @@ function connectSlave(Unit,islaves)
     spawned=false(1,numel(islaves));
     
     for i=1:numel(islaves)
-        Unit.report('spawning slave %d\n',islaves(i))
         S=Unit.Slave(islaves(i));
-        S.MessengerLocalPort = []; % arbitrary port numbers, but for definiteness
+        S.MessengerLocalPort = []; % empty port numbers, OS will assign
         S.MessengerRemotePort= 8500+islaves(i);
         S.ResponderLocalPort = [];
         S.ResponderRemotePort= 9500+islaves(i);
-        % Spawn a new slave if possible. I doubt that handling the case of 
-        %  orphan slaves, and attempting reconnections to existing slaves 
-        %  is viable. Slaves should in principle exist only
-        %  when the cameras are powered, and we don't want them dangling
-        S.spawn
-        spawned(i)=isempty(S.LastError);
+        % Decide what to do: reconnect if possible, kill if impossible
+        %  and/or spawn anew.
+        % Slaves should in principle exist only when the cameras are
+        %  powered, and we don't want them dangling when the master is closed
+        %  and the unit is properly shut down, but shit happens,
+        %  processes die or ar killed by mistake, and whatnot
+        if ~isempty(S.PID) || ~isempty(S.listeners)
+            if S.Messenger.areYouThere
+                Unit.report('slave %d already exists, will try to reconnect\n',islaves(i))
+                spawned(i)=true;
+            else
+                Unit.report('slave %d exists but is stale, killing it\n',islaves(i))
+                S.kill
+            end
+        end
+        if ~spawned(i)
+            % Spawn a new slave if possible
+            Unit.report('spawning slave %d\n',islaves(i))
+            S.spawn
+            spawned(i)=isempty(S.LastError);
+        end
     end
     
     for i=1:numel(islaves)
         S=Unit.Slave(islaves(i));
-        % create a slave unitCS object and populate it
+        % create a slave unitCS object and (re)populate it
         if spawned(i) && S.connect
             SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];
             M=S.Messenger;
@@ -101,5 +115,7 @@ function connectSlave(Unit,islaves)
             % send the connect command to the slave unit object, to connect
             %  with its own hardware
             M.send([SlaveUnitName '.connect;']);
+            
+            S.report('%s connected and initialized\n',SlaveUnitId)
         end
     end
