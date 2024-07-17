@@ -25,6 +25,7 @@ function connectSlave(Unit,islaves)
         %  powered, and we don't want them dangling when the master is closed
         %  and the unit is properly shut down, but shit happens,
         %  processes die or ar killed by mistake, and whatnot
+        S.LastError=''; % dirty, used as a sentinel
         if ~isempty(S.PID) || ~isempty(S.listeners)
             if ~isa(S.Messenger,'obs.util.MessengerCommon')
                 % recreate the Messenger, even if S.connect would do
