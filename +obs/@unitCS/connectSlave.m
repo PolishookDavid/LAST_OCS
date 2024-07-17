@@ -50,7 +50,8 @@ function connectSlave(Unit,islaves)
     for i=1:numel(islaves)
         S=Unit.Slave(islaves(i));
         % create a slave unitCS object and (re)populate it
-        if spawned(i) && S.connect
+        if spawned(i)
+            S.connect; % once more doesn't harm; and recreates the Responder
             SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];
             M=S.Messenger;
             M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
