@@ -39,6 +39,10 @@ function connectSlave(Unit,islaves)
                 S.kill
             end
         end
+        if ~isempty(S.LastError)
+            % either .listeners or .kill failed, and I hope nothing else relevant
+            continue
+        end
         if ~spawned(i)
             % Spawn a new slave if possible
             Unit.report('spawning slave %d\n',islaves(i))
@@ -50,8 +54,7 @@ function connectSlave(Unit,islaves)
     for i=1:numel(islaves)
         S=Unit.Slave(islaves(i));
         % create a slave unitCS object and (re)populate it
-        if spawned(i)
-            S.connect; % once more doesn't harm; and recreates the Responder
+        if spawned(i) && S.connect % connect once more doesn't harm; and recreates the Responder
             SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];
             M=S.Messenger;
             M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
