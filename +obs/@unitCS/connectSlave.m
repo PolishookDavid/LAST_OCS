@@ -38,6 +38,7 @@ function connectSlave(Unit,islaves)
             else
                 Unit.report('slave %d exists but is stale, killing it\n',islaves(i))
                 S.kill
+                pause(1)
             end
         end
         if ~isempty(S.LastError)
