@@ -9,6 +9,8 @@ function connectSlave(Unit,islaves)
         islaves=1:numel(Unit.Slave);
     end
     
+    % fix this whch is fragile, or just go for "Unit":
+    % https://github.com/PolishookDavid/LAST_OCS/issues/21
     SlaveUnitName=inputname(1);
     
     spawned=false(1,numel(islaves));
@@ -66,7 +68,8 @@ function connectSlave(Unit,islaves)
             %  consistent!
             ownedTelescopes=Unit.RemoteTelescopes{islaves(i)};
             % create and populate the slave Unit, if doesn't already exist
-            if ~M.query("exist('Unit','var') && isa(Unit,'obs.unitCS')")
+            if ~M.query(sprintf('exist(''%s'',''var'') && isa(%s,''obs.unitCS'')',...
+                    SlaveUnitName,SlaveUnitName))
                 % doesn't exist, create it with Messenger commands. Use
                 %  query instead of send, so we are sure that all commands
                 %  are executed sequentially, and not buffered
