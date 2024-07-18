@@ -113,18 +113,7 @@ function connectSlave(Unit,islaves)
                     M.query([SFocuser '.RemoteName=''' SFocuser ''';']);
                     M.query([SFocuser '.Messenger=MasterResponder;']);
                 end
-                
-                % set in the local unit the messenger and remote name of remote telescopes
-                %  handled by this slave
-                for j=ownedTelescopes
-                    SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
-                    SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
-                    Unit.Camera{j}.RemoteName = SCamera;
-                    Unit.Camera{j}.Messenger = M;
-                    Unit.Focuser{j}.RemoteName = SFocuser;
-                    Unit.Focuser{j}.Messenger = M;
-                end
-                
+                                
                 % send the connect command to the slave unit object, to connect
                 %  with its own hardware
                 M.send([SlaveUnitName '.connect;']);
@@ -133,5 +122,17 @@ function connectSlave(Unit,islaves)
             else
                 S.report('%s reconnected\n',SlaveUnitId)
             end
+
+            % set in the local unit the messenger and remote name of remote telescopes
+            %  handled by this slave
+            for j=ownedTelescopes
+                SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
+                SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
+                Unit.Camera{j}.RemoteName = SCamera;
+                Unit.Camera{j}.Messenger = M;
+                Unit.Focuser{j}.RemoteName = SFocuser;
+                Unit.Focuser{j}.Messenger = M;
+            end
+    
         end
     end
