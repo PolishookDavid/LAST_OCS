@@ -59,74 +59,79 @@ function connectSlave(Unit,islaves)
         if spawned(i) && S.connect % connect once more doesn't harm; and recreates the Responder
             SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];
             M=S.Messenger;
-            M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
-            M.query(sprintf('%s.Master=false;',SlaveUnitName));
-
-            % Pass along Config descriptive (but semi-mandatory,unfortunately)
-            %  parameters: .ProjName, .NodeNumber, .TimeZone
-            M.query(sprintf('%s.Config.ProjName=''%s'';',SlaveUnitName,...
-                            Unit.Config.ProjName));
-            M.query(sprintf('%s.Config.NodeNumber=%s;',SlaveUnitName,...
-                            num2str(Unit.Config.NodeNumber)));
-            M.query(sprintf('%s.Config.TimeZone=%s;',SlaveUnitName,...
-                            num2str(Unit.Config.TimeZone)));
-
-            % populate remote power switches
-            M.query([SlaveUnitName '.PowerSwitch=cell(1,' ...
-                     num2str(numel(Unit.PowerSwitch)) ');']);
-            for j=1:numel(Unit.PowerSwitch)
-                Sswitch=[SlaveUnitName '.PowerSwitch{' num2str(j) '}'];
-                M.query([Sswitch '=obs.remoteClass;']);
-                M.query([Sswitch '.RemoteName=''' Sswitch ''';']);
-                M.query([Sswitch '.Messenger=MasterResponder;']);
+            if ~M.query("exist('Unit','var') && isa(Unit,'obs.unitCS')")
+                % create and populate the slave Unit, if doesn't already exist
+                M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
+                M.query(sprintf('%s.Master=false;',SlaveUnitName));
+                
+                % Pass along Config descriptive (but semi-mandatory,unfortunately)
+                %  parameters: .ProjName, .NodeNumber, .TimeZone
+                M.query(sprintf('%s.Config.ProjName=''%s'';',SlaveUnitName,...
+                    Unit.Config.ProjName));
+                M.query(sprintf('%s.Config.NodeNumber=%s;',SlaveUnitName,...
+                    num2str(Unit.Config.NodeNumber)));
+                M.query(sprintf('%s.Config.TimeZone=%s;',SlaveUnitName,...
+                    num2str(Unit.Config.TimeZone)));
+                
+                % populate remote power switches
+                M.query([SlaveUnitName '.PowerSwitch=cell(1,' ...
+                    num2str(numel(Unit.PowerSwitch)) ');']);
+                for j=1:numel(Unit.PowerSwitch)
+                    Sswitch=[SlaveUnitName '.PowerSwitch{' num2str(j) '}'];
+                    M.query([Sswitch '=obs.remoteClass;']);
+                    M.query([Sswitch '.RemoteName=''' Sswitch ''';']);
+                    M.query([Sswitch '.Messenger=MasterResponder;']);
+                end
+                % copy camera power definitions
+                M.query(sprintf('%s.CameraPowerUnit=%s;', ...
+                    SlaveUnitName, mat2str(Unit.CameraPowerUnit) ));
+                M.query(sprintf('%s.CameraPowerOutput=%s;', ...
+                    SlaveUnitName, mat2str(Unit.CameraPowerOutput) ));
+                
+                % populate the remote mount
+                SMount=[SlaveUnitName '.Mount'];
+                M.query([SMount '=obs.remoteClass;']);
+                M.query([SMount '.RemoteName=''' SMount ''';']);
+                M.query([SMount '.Messenger=MasterResponder;']);
+                
+                % populate cameras and focusers
+                % Telescopes owned by this slave are configured by its own
+                %  configuration file, when created/connected. Of course the
+                %  configurations of the master and of its slaves have to be
+                %  consistent!
+                ownedTelescopes=Unit.RemoteTelescopes{islaves(i)};
+                M.query(sprintf('%s.LocalTelescopes=%s;',SlaveUnitName, ...
+                    mat2str(ownedTelescopes) ));
+                % local cameras and focusers of this unit are remotes of the slave
+                for j=Unit.LocalTelescopes
+                    SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
+                    M.query([SCamera '=obs.remoteClass;']);
+                    M.query([SCamera '.RemoteName=''' SCamera ''';']);
+                    M.query([SCamera '.Messenger=MasterResponder;']);
+                    SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
+                    M.query([SFocuser '=obs.remoteClass;']);
+                    M.query([SFocuser '.RemoteName=''' SFocuser ''';']);
+                    M.query([SFocuser '.Messenger=MasterResponder;']);
+                end
+                
+                % set in the local unit the messenger and remote name of remote telescopes
+                %  handled by this slave
+                for j=ownedTelescopes
+                    SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
+                    SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
+                    Unit.Camera{j}.RemoteName = SCamera;
+                    Unit.Camera{j}.Messenger = M;
+                    Unit.Focuser{j}.RemoteName = SFocuser;
+                    Unit.Focuser{j}.Messenger = M;
+                end
+                
+                % send the connect command to the slave unit object, to connect
+                %  with its own hardware
+                M.send([SlaveUnitName '.connect;']);
+                
+                S.report('%s connected and initialized\n',SlaveUnitId)
+            else
+                S.report('%s reconnected\n',SlaveUnitId)
             end
-            % copy camera power definitions
-            M.query(sprintf('%s.CameraPowerUnit=%s;', ...
-                       SlaveUnitName, mat2str(Unit.CameraPowerUnit) ));
-            M.query(sprintf('%s.CameraPowerOutput=%s;', ...
-                       SlaveUnitName, mat2str(Unit.CameraPowerOutput) ));
-
-            % populate the remote mount
-            SMount=[SlaveUnitName '.Mount'];
-            M.query([SMount '=obs.remoteClass;']);
-            M.query([SMount '.RemoteName=''' SMount ''';']);
-            M.query([SMount '.Messenger=MasterResponder;']);
-
-            % populate cameras and focusers
-            % Telescopes owned by this slave are configured by its own
-            %  configuration file, when created/connected. Of course the
-            %  configurations of the master and of its slaves have to be
-            %  consistent!
-            ownedTelescopes=Unit.RemoteTelescopes{islaves(i)};
-            M.query(sprintf('%s.LocalTelescopes=%s;',SlaveUnitName, ...
-                             mat2str(ownedTelescopes) ));
-            % local cameras and focusers of this unit are remotes of the slave
-            for j=Unit.LocalTelescopes
-                SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
-                M.query([SCamera '=obs.remoteClass;']);
-                M.query([SCamera '.RemoteName=''' SCamera ''';']);
-                M.query([SCamera '.Messenger=MasterResponder;']);
-                SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
-                M.query([SFocuser '=obs.remoteClass;']);
-                M.query([SFocuser '.RemoteName=''' SFocuser ''';']);
-                M.query([SFocuser '.Messenger=MasterResponder;']);
-            end
-
-            % set in the local unit the messenger and remote name of remote telescopes
-            %  handled by this slave
-            for j=ownedTelescopes
-                SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
-                SFocuser=sprintf('%s.Focuser{%d}',SlaveUnitName,j);
-                Unit.Camera{j}.RemoteName = SCamera;
-                Unit.Camera{j}.Messenger = M;
-                Unit.Focuser{j}.RemoteName = SFocuser;
-                Unit.Focuser{j}.Messenger = M;
-            end
-
-            % send the connect command to the slave unit object, to connect
-            %  with its own hardware
-            M.send([SlaveUnitName '.connect;']);
-            
-            S.report('%s connected and initialized\n',SlaveUnitId)
         end
     end
