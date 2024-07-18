@@ -57,10 +57,19 @@ function connectSlave(Unit,islaves)
         S=Unit.Slave(islaves(i));
         % create a slave unitCS object and (re)populate it
         if spawned(i) && S.connect % connect once more doesn't harm; and recreates the Responder
+            % common definitions for the connect and reconnect cases
             SlaveUnitId=[Unit.Id '_slave_' num2str(islaves(i))];
             M=S.Messenger;
+            % Telescopes owned by this slave are configured by its own
+            %  configuration file, when created/connected. Of course the
+            %  configurations of the master and of its slaves have to be
+            %  consistent!
+            ownedTelescopes=Unit.RemoteTelescopes{islaves(i)};
+            % create and populate the slave Unit, if doesn't already exist
             if ~M.query("exist('Unit','var') && isa(Unit,'obs.unitCS')")
-                % create and populate the slave Unit, if doesn't already exist
+                % doesn't exist, create it with Messenger commands. Use
+                %  query instead of send, so we are sure that all commands
+                %  are executed sequentially, and not buffered
                 M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
                 M.query(sprintf('%s.Master=false;',SlaveUnitName));
                 
@@ -95,11 +104,6 @@ function connectSlave(Unit,islaves)
                 M.query([SMount '.Messenger=MasterResponder;']);
                 
                 % populate cameras and focusers
-                % Telescopes owned by this slave are configured by its own
-                %  configuration file, when created/connected. Of course the
-                %  configurations of the master and of its slaves have to be
-                %  consistent!
-                ownedTelescopes=Unit.RemoteTelescopes{islaves(i)};
                 M.query(sprintf('%s.LocalTelescopes=%s;',SlaveUnitName, ...
                     mat2str(ownedTelescopes) ));
                 % local cameras and focusers of this unit are remotes of the slave
@@ -120,10 +124,11 @@ function connectSlave(Unit,islaves)
                 
                 S.report('%s connected and initialized\n',SlaveUnitId)
             else
+                % we have just reconnected without creating the slave Unit 
                 S.report('%s reconnected\n',SlaveUnitId)
             end
 
-            % set in the local unit the messenger and remote name of remote telescopes
+            % set in the master Unit the messenger and remote name of remote telescopes
             %  handled by this slave
             for j=ownedTelescopes
                 SCamera=sprintf('%s.Camera{%d}',SlaveUnitName,j);
