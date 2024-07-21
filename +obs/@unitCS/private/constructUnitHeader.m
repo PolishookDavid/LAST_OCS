@@ -160,7 +160,12 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Val = 2000.0;
         Info(I).Descr = '';
         
+        I = I + 1;
+        Info(I).Key = 'JD_START';
         JD=celestial.time.julday;
+        Info(I).Val = JD;
+        Info(I).Descr = 'Julian day at the time the command was given';
+        
         OutCoo=celestial.coo.horiz_coo([M_RA,M_Dec]*pi/180,...
                 JD,[Lon,Lat]*pi/180,'h');
         az=OutCoo(1)*180/pi;
@@ -178,7 +183,7 @@ function HeaderCell=constructUnitHeader(UnitObj)
         
 %  New J2000 considering nutation, aberration, refraction and pointing model
 %   There is a dependence on time here. Ideally, one would insert here the
-%   time at which the exposures are sarted, or ended, or the mean of the
+%   time at which the exposures are started, or ended, or the mean of the
 %   two. These exact times though are known only post facto in the slaves.
 %   In the previous implemenatation, all the mount data was queried by each
 %   slave at the time of saving the images, which caused an overhead of
@@ -231,19 +236,19 @@ function HeaderCell=constructUnitHeader(UnitObj)
         Info(I).Descr = 'mount apparent HA with distortion';
         
         I = I + 1;
-        Info(I).Key = 'M_ADDec';
+        Info(I).Key = 'M_ADDEC';
         Info(I).Val = Aux.Dec_AppDist;
         Info(I).Descr = 'mount apparent Dec with distortion';
         
         I = I + 1;
         Info(I).Key = 'M_AAZ'; % check intentions - just AZ, perhaps?
         Info(I).Val = Aux.Az_App;
-        Info(I).Descr = 'mount apparent azimuth';
+        Info(I).Descr = 'mount apparent azimuth, degrees';
         
         I = I + 1;
         Info(I).Key = 'M_AALT';  % check intentions - just ALT, perhaps?
         Info(I).Val = Aux.Alt_App;
-        Info(I).Descr = 'mount apparent altitude';
+        Info(I).Descr = 'mount apparent altitude, degrees';
         
         I = I + 1;
         Info(I).Key = 'AIRMASS';
@@ -255,12 +260,12 @@ function HeaderCell=constructUnitHeader(UnitObj)
         I = I + 1;
         Info(I).Key = 'TRK_RA';
         Info(I).Val = TrackingSpeed(1).*3600;  % [arcsec/s]
-        Info(I).Descr = 'Tracking speed on RA';
+        Info(I).Descr = 'Tracking speed on RA, arcsec/s';
         
         I = I + 1;
         Info(I).Key = 'TRK_DEC';
         Info(I).Val = TrackingSpeed(2).*3600;  % [arcsec/s]
-        Info(I).Descr = 'Tracking speed on Dec';
+        Info(I).Descr = 'Tracking speed on Dec, arcsec/s';
     end
     
     % mount temperature, reading 1wire sensors on the power switches
