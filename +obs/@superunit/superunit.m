@@ -350,7 +350,7 @@ classdef superunit < obs.LAST_Handle
             if isempty(termtype)
                 termtype='none';
             end
-            termoptions={'xterm','gnome-terminal','desktop','none'};
+            termoptions={'xterm','gnome-terminal','desktop','silentx','none'};
             q=contains(termoptions,lower(termtype));
             if ~any(q)
                 q=numel(termoptions);
