@@ -33,21 +33,31 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
     % Note, if the unit has not yet been connected, no remoteUnit object
     %  will be defined, and no Slave will be thought relevant
     relevantslaves=false(1,numel(U.Slave));
+%     for i=1:numel(U.Slave)
+%         for j=itel
+%             if isa(U.Camera{j},'obs.remoteClass') && ...
+%                  ~isempty(U.Camera{j}.Messenger) && ...
+%                  ~isempty(U.Slave(i).Messenger) && ...
+%                   U.Slave(i).Messenger==U.Camera{j}.Messenger
+%                 relevantslaves(i)=true;
+%             end
+%         end
+%         for j=itel
+%             if isa(U.Focuser{j},'obs.remoteClass') && ...
+%                   ~isempty(U.Focuser{j}.Messenger) &&...
+%                   ~isempty(U.Slave(i).Messenger) && ...
+%                    U.Slave(i).Messenger==U.Focuser{j}.Messenger
+%                 relevantslaves(i)=true;
+%             end
+%         end
+%     end
+    
+    % much simpler: relevant slaves to be checked found searching itel in 
+    %  RemoteTelescopes
     for i=1:numel(U.Slave)
         for j=itel
-            if isa(U.Camera{j},'obs.remoteClass') && ...
-                 ~isempty(U.Camera{j}.Messenger) && ...
-                 ~isempty(U.Slave(i).Messenger) && ...
-                  U.Slave(i).Messenger==U.Camera{j}.Messenger
-                relevantslaves(i)=true;
-            end
-        end
-        for j=itel
-            if isa(U.Focuser{j},'obs.remoteClass') && ...
-                  ~isempty(U.Focuser{j}.Messenger) &&...
-                  ~isempty(U.Slave(i).Messenger) && ...
-                   U.Slave(i).Messenger==U.Focuser{j}.Messenger
-                relevantslaves(i)=true;
+            if any(U.RemoteTelescopes{i}==j)
+                relevantslaves(i) = true;
             end
         end
     end
