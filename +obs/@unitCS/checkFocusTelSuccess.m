@@ -19,11 +19,11 @@ end
 Col.Camera = 1;
 Col.JD = 2;
 Col.temp1 = 3;
-Col.temp2 = 4;
-Col.Success = 5;
-Col.BestPos = 6;
-BestFWHM = 7;
-Col.BackLashOffset = 8;
+%Col.temp2 = 4;
+Col.Success = 4;
+Col.BestPos = 5;
+Col.BestFWHM = 6;
+Col.BackLashOffset = 7;
 
 RC = 0;
 %Timeout = 0;
