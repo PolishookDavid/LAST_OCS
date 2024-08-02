@@ -194,7 +194,7 @@ if (Args.Focus)  && ~Unit.AbortActivity
    end
    
    % Send mount to meridian at dec 60 deg, to avoid moon.
-   Unit.Mount.goToTarget(Unit.Mount.LST-Args.FocusHA,Args.FocusDec);
+   Unit.Mount.goTo(Unit.Mount.LST-Args.FocusHA,Args.FocusDec);
    fprintf('Sent mount to focus coordinates\n')
    Unit.GeneralStatus='mount sent to focusing coordinates';
    
