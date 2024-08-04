@@ -27,12 +27,14 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     %                   Default is {}.
     %            'MaxIter' - Maximum number of iterations. Default is 20.
     %            'MaxFWHM' - When estimating the FWHM min, use only values
-    %                   with FWHM better than this vale. Default is 8 [arcsec].
+    %                   with FWHM better than this value. Default is 8 [arcsec].
     %            'MinNstars' - Min. required number of stars.
     %                   Default is 10.
-    %             'Verbose' - Bool. Print numbers in slave session. Default
+    %            'Verbose' - Bool. Print numbers in slave session. Default
     %                       is true.
-    %             'Plot' - Bool. Plot focus curve. Default is true.
+    %            'Plot' - Bool. Plot focus curve. Default is true.
+    %            'Timeout' - seconds, terminate the focus loop if not completed
+    %                       this time
     % Output : - A sucess flag.
     %          - A Result structure with the following fields:
     %            .Status
@@ -40,9 +42,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     %            .BestFWHM
     %            .Counter
     % Author : Eran Ofek (Apr 2022) Nora (Jan. 2023), Enrico
-    % Example: in Slave session P.focusTel(4);
-    %          in Master session P.focusTel(1:4) (result not returned)
-    
+    % Example: in Slave session P.focusTel(4); (single itel!)
+    %          in Master session P.focusTel(1:4) (result not returned for telescopes
+    %                                             controlled by a 'messenger' Messenger)
     arguments
         UnitObj
         itel                     = []; % telescopes to focus. [] means all
@@ -66,6 +68,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         Args.Plot logical        = true;
         %Args.LogDir              = '/home/ocs/log'
         %Args.PlotDir             = '/home/ocs/log/focus_plots'
+        Args.Timeout             = 300;
     end
     
     
@@ -82,17 +85,20 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
     % make sure the mount is tracking
     %UnitObj.Mount.track;
     
+    t0=now;
     if numel(itel)==1 && ~isa(UnitObj.Camera{itel},'obs.remoteClass')
         % run, blocking, the scalar version of the method. Output arguments
         % are returned.
         [Success,Result] = UnitObj.focusTelInSlave(itel,Args);
         UnitObj.GeneralStatus='focus loop terminated'; % this in the slave...
     else
+        % this is run in the master. We could alternatively check for
+        %  Unit.Master=true
         UnitObj.constructUnitHeader;
         headerline=obs.util.tools.headerInputForm(UnitObj.UnitHeader);
         % here we assume implicitly that we have one camera per Slave, and that
         %  all Cameras are remote
-        listener=false(numel(UnitObj.Slave));
+        listener=false(1,numel(UnitObj.Slave));
         for i=itel
             UnitObj.Slave(i).Messenger.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline));
             % To pass Args, jencode them and tell the slave to jdecode
@@ -110,15 +116,52 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             %  so we're forced to call and forget
             listener(itel)= strcmpi(UnitObj.Slave(i).RemoteMessengerFlavor,'listener');
         end
+        Success=false(1,numel(itel));
+        StatusStrings=cell(1,numel(itel));
         if any(listener)
             % TODO - query periodically all the slaves with listeners, and
             %  exit only when the last one of them has filled its UnitObj.FocusData.Status
             % This should be done with a timeout.
-            for i=1:itel
-                % update Unit.GeneralStatus with a short formatting of the
-                %  ongoing results (i.e. FocusData.Counter, and if
-                %  completed)
+            completed=false;
+            while (now-t0)*86400<Args.Timeout && ~completed
+                completed=true;
+                for i=1:itel(listener)
+                    try
+                        UnitObj.FocusData(i)=UnitObj.Slave(i).Responder.query(...
+                                      sprintf('%s.FocusData(%d);',UnitName,i));
+                        completed = completed && ~isempty(UnitObj.FocusData(i).Status);
+                        % prepare strings for updating Unit.GeneralStatus
+                        %  with a short formatting of the ongoing results
+                        %  (i.e. FocusData.Counter, and if completed)
+                        if ~isempty(UnitObj.FocusData(i).Status)
+                            if ~isnan(UnitObj.FocusData(i).BestFWHM)
+                                StatusStrings{i}=sprintf('T%d - OK',i);
+                            else
+                                StatusStrings{i}=sprintf('T%d - FAIL',i);
+                            end
+                        else
+                            if ~isempty(UnitObj.FocusData(i).Counter)
+                                StatusStrings{i}=sprintf('T%d - #%d',i,...
+                                              UnitObj.FocusData(i).Counter);
+                            end
+                        end
+                    catch
+                        completed=false;
+                    end
+                end
+                UnitObj.GeneralStatus=['focusing:' strjoin(StatusStrings,'/')];
             end
+            if ~completed
+                UnitObj.abort;
+            end
+            % results are returned only for telescopes powered by listeners
+            for i=itel
+                Success(i)=~isempty(UnitObj.FocusData(i).Status) && ...
+                           ~isnan(UnitObj.FocusData(i).BestFWHM);
+            end
+            % fuck you, I have enough of unpacking and repacking, just
+            %  return all of it
+            Result=UnitObj.FocusData;
         else
             % we cannot block and query, hence exit here
             % define the return arguments as empty, in order not to generate
