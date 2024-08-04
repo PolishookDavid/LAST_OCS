@@ -11,8 +11,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     CameraObj  = UnitObj.Camera{itel};
     FocuserObj = UnitObj.Focuser{itel};
-    
-    
+        
     LogDir              = '/home/ocs/log';
     PlotDir             = '/home/ocs/log/focus_plots';
 
@@ -96,10 +95,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
     % 
     Success = false;
-    Result.Status     = '';
-    Result.BestPos    = NaN;
-    Result.BestFWHM   = NaN;
-    Result.Counter    = NaN;
+    UnitObj.FocusData(itel)=obs.FocusData; % reset FocusData
+    UnitObj.FocusData(itel).ResTable = repmat(UnitObj.FocusData(itel).ResTable(1),1,Args.MaxIter);
     
     MaxPlotFWHM=26;
     
@@ -132,13 +129,12 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         
     FocPos = StartPos;
         
-    ResTable = nan(Args.MaxIter,4);  % % [FocPos, FWHM, Nstars, FlagGood]
     Cont     = true;
     Counter  = 0;
     while Cont && Counter<Args.MaxIter && ~UnitObj.AbortActivity
         Counter        = Counter + 1;
         
-        Result.Counter = Counter;
+        UnitObj.FocusData(itel).Counter = Counter;
         
         UnitObj.GeneralStatus=sprintf('taking focus image #%d (%d max)',Counter,Args.MaxIter);
 
@@ -168,7 +164,10 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         
         actualFocPos = FocuserObj.Pos;
         FlagGood = ~isnan(actualFocPos) & FWHM>0.5 & FWHM<Args.MaxFWHM & Nstars>Args.MinNstars;
-        ResTable(Counter,:) = [actualFocPos, FWHM, Nstars, FlagGood];
+        UnitObj.FocusData(itel).ResTable(Counter).FocPos = actualFocPos;
+        UnitObj.FocusData(itel).ResTable(Counter).FWHM = FWHM;
+        UnitObj.FocusData(itel).ResTable(Counter).Nstars = Nstars;
+        UnitObj.FocusData(itel).ResTable(Counter).FlagGood = FlagGood;
             
         if Args.Verbose
             UnitObj.report('\n\n %d\n', Counter)
@@ -201,9 +200,9 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
 
         % look for focus
         % consider only FWHM under 23
-        if sum(ResTable(:,2)<23)>4      
+        if sum([UnitObj.FocusData(itel).ResTable.FWHM]<23)>4      
 
-            FocStatus = checkForMinimum(ResTable(1:Counter,:));
+            FocStatus = checkForMinimum([UnitObj.FocusData(itel).ResTable(1:Counter).FWHM]);
 
             switch lower(FocStatus)
                 case 'rising'
@@ -239,8 +238,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
      
                 
     % truncate not used pre allocated matrix
-    ResTable = ResTable(1:Counter,:);
-    Result.ResTable = ResTable;
+    UnitObj.FocusData(itel).ResTable = UnitObj.FocusData(itel).ResTable(1:Counter);
     
     BacklashOffset = Args.BacklashOffset;
 
@@ -252,67 +250,73 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     fprintf(fileID,'\nBacklashOffset '+string(BacklashOffset));
     %Altitude = UnitObj.Mount.Alt
     %fprintf(fileID,'\nAltitude '+string(Altitude));
-    
+   
+    GoodFocus=[UnitObj.FocusData(itel).ResTable.FlagGood];
     % search for global minimum    
     if Counter>=Args.MaxIter
         % focus not found
-        Result.Status = 'Max iter reached';
+        UnitObj.FocusData(itel).Status = 'Max iter reached';
         Success       = false;
         UnitObj.report('	Max iter reached.\n')
-        Result.BestPos = Args.PosGuess;   % moving back to initial position
-	elseif sum(ResTable(:,4))<3
-        Result.Status = 'Number of good FWHM points is smaller than 3';
+        UnitObj.FocusData(itel).BestPos = Args.PosGuess;   % moving back to initial position
+	elseif sum(GoodFocus)<3
+        UnitObj.FocusData(itel).Status = 'Number of good FWHM points is smaller than 3';
         Success       = false;
         UnitObj.report('	Fewer than 3 good points.\n')
-        Result.BestPos = Args.PosGuess;   % moving back to initial position
+        UnitObj.FocusData(itel).BestPos = Args.PosGuess;   % moving back to initial position
         
     else
         switch lower(FocStatus)
             case 'rising'        
-                Result.Status = 'Rising. Focus out of search range.';
+                UnitObj.FocusData(itel).Status = 'Rising. Focus out of search range.';
                 Success       = false;
-                Result.BestPos = Args.PosGuess;   % moving back to initial position
+                UnitObj.FocusData(itel).BestPos = Args.PosGuess;   % moving back to initial position
         
             case 'found'
                             
                 % using only good points
-                Foc  = ResTable(ResTable(:,4)==1,1);
-                FWHM = ResTable(ResTable(:,4)==1,2);
+                Foc  = UnitObj.FocusData(itel).ResTable(GoodFocus,1);
+                FWHM = UnitObj.FocusData(itel).ResTable(GoodFocus,2);
                 
         
                 % Estimate minimum FWHM
-                [Result.BestPos, Result.BestFWHM, adjrsquare] = fitParabola(Foc,FWHM);
+                [UnitObj.FocusData(itel).BestPos, ...
+                    UnitObj.FocusData(itel).BestFWHM, adjrsquare] = ...
+                      fitParabola(Foc,FWHM);
 
                 
                 if adjrsquare<0.85 && length(Foc)>6
                     fprintf(fileID,'\nBad fit. Removing two outliers.');
                     UnitObj.report('Bad fit. Trying to remove outliers.\n')
                     % % % outlier rejection might need some more testing % % %
-                    [Result.BestPos, Result.BestFWHM, adjrsquare] = fitParabolaOutliers(Foc,FWHM,2,30);
+                    [UnitObj.FocusData(itel).BestPos, ...
+                        UnitObj.FocusData(itel).BestFWHM, adjrsquare] = ...
+                           fitParabolaOutliers(Foc,FWHM,2,30);
 
                 end
                 
-                plot(Result.BestPos, Result.BestFWHM, 'ro', 'MarkerFaceColor','r');
+                plot(UnitObj.FocusData(itel).BestPos, UnitObj.FocusData(itel).BestFWHM,...
+                     'ro', 'MarkerFaceColor','r');
                 drawnow
 
                 
-                if Result.BestPos<min(Foc)
-                    Result.Status = 'Bad fit.';
+                if UnitObj.FocusData(itel).BestPos<min(Foc)
+                    UnitObj.FocusData(itel).Status = 'Bad fit.';
                     Success       = false;
-                    Result.BestPos = CurrentPos;   % moving back to initial position
+                    UnitObj.FocusData(itel).BestPos = CurrentPos;   % moving back to initial position
                     UnitObj.report('   Bad fit.\n')
-                elseif Result.BestPos>max(Foc)
-                    Result.Status = 'Bad fit.';
+                elseif UnitObj.FocusData(itel).BestPos>max(Foc)
+                    UnitObj.FocusData(itel).Status = 'Bad fit.';
                     Success       = false;
-                    Result.BestPos = CurrentPos;   % moving back to initial position
+                    UnitObj.FocusData(itel).BestPos = CurrentPos;   % moving back to initial position
                     UnitObj.report('   Bad fit.\n')
                 else
-                    Result.Status = 'Found.';
+                    UnitObj.FocusData(itel).Status = 'Found.';
                     Success       = true;
-                    %Result.BestPos = NaN;   % moving back to initial position
+                    %UnitObj.FocusData(itel).BestPos = NaN;   % moving back to initial position
                     
-                    UnitObj.report('   best position %d\n', Result.BestPos)
-                    UnitObj.report('   best FWHM %.2f\n', Result.BestFWHM)
+                    UnitObj.report('   best position %d\n', UnitObj.FocusData(itel).BestPos)
+                    UnitObj.report('   best FWHM %.2f\n', UnitObj.FocusData(itel).BestFWHM)
                     UnitObj.report('   adjusted Rsqu %.f3\n', adjrsquare)
                 end
     
@@ -333,27 +337,30 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     UnitObj.report('   temperature %.1f \n', temp1);
     %UnitObj.report('   temperature 2 %.1f \n\n', temp2);
     
-    fprintf(fileID,'\nStatus '+string(Result.Status));
+    fprintf(fileID,'\nStatus '+string(UnitObj.FocusData(itel).Status));
     fprintf(fileID,'\nTemperature '+string(temp1));
     %fprintf(fileID,'\nTemperature 2 '+string(temp2));
     fprintf(fileID,'\nsteps '+string(Counter));
-    fprintf(fileID,'\ngood points '+string(sum(ResTable(:,4))));
+    fprintf(fileID,'\ngood points '+string(sum(GoodFocus)));
         
     if Success
-        UnitObj.report('   best position %d\n', Result.BestPos)
-        UnitObj.report('   best FWHM %d\n', Result.BestFWHM)
+        UnitObj.report('   best position %d\n', UnitObj.FocusData(itel).BestPos)
+        UnitObj.report('   best FWHM %d\n', UnitObj.FocusData(itel).BestFWHM)
         UnitObj.report('   adjusted Rsqu %d\n', adjrsquare)
         
-        %fprintf(fileID,'\nbest position %f', Result.BestPos);
-        %fprintf(fileID,'\nbest FWHM %f', Result.BestFWHM);
+        %fprintf(fileID,'\nbest position %f', UnitObj.FocusData(itel).BestPos);
+        %fprintf(fileID,'\nbest FWHM %f', UnitObj.FocusData(itel).BestFWHM);
         %fprintf(fileID,'\nadjusted Rsquared %f', adjrsquare);
 
-        %fprintf(fileID,'\nbest position '+string(Result.BestPos));
-        %fprintf(fileID,'\nbest FWHM '+string(Result.BestFWHM));
+        %fprintf(fileID,'\nbest position '+string(UnitObj.FocusData(itel).BestPos));
+        %fprintf(fileID,'\nbest FWHM '+string(UnitObj.FocusData(itel).BestFWHM));
         %fprintf(fileID,'\nadjusted Rsquared '+string(adjrsquare));
     end
     
-    Result
+    Result=struct('Status',UnitObj.FocusData(itel).Status,...
+                  'BestPos',UnitObj.FocusData(itel).BestPos,...
+                  'BestFWHM',UnitObj.FocusData(itel).BestFWHM,...
+                  'Counter',UnitObj.FocusData(itel).Counter);
            
     hold off
     
@@ -371,16 +378,16 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     %--- move focuser to best focus position: BestPos
             
     if Args.Verbose
-        UnitObj.report('Moved to best position %d\n', Result.BestPos);
+        UnitObj.report('Moved to best position %d\n', UnitObj.FocusData(itel).BestPos);
     end
     
-    FocuserObj.Pos = Result.BestPos;
+    FocuserObj.Pos = UnitObj.FocusData(itel).BestPos;
     FocuserObj.waitFinish;
     
     % set CameraObj.LastImageFWHM to the estimated best value, even though
     %  it is stricly incorrect, because that value was never derived from a
     %  real image
-    CameraObj.LastImageFWHM=Result.BestFWHM;
+    CameraObj.LastImageFWHM=UnitObj.FocusData(itel).BestFWHM;
     
     fprintf(fileID,'\nactual new focuser position '+string(FocuserObj.Pos));
     fclose(fileID);
@@ -401,8 +408,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % fprintf(log2,string(temp2)+'\n');
     if Success
         fprintf(log2,'1\n');
-        fprintf(log2,string(Result.BestPos)+'\n');
-        fprintf(log2,string(Result.BestFWHM)+'\n');
+        fprintf(log2,string(UnitObj.FocusData(itel).BestPos)+'\n');
+        fprintf(log2,string(UnitObj.FocusData(itel).BestFWHM)+'\n');
     else
         fprintf(log2,'0\n');
         fprintf(log2,'NaN\n');
@@ -411,8 +418,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     fprintf(log2,string(BacklashOffset));
     fclose(log2);
     
-    info = sprintf("%.2f arcsec at %.0f", Result.BestFWHM, Result.BestPos);    
-    text(Result.BestPos, 10, info)
+    info = sprintf("%.2f arcsec at %.0f", UnitObj.FocusData(itel).BestFWHM, UnitObj.FocusData(itel).BestPos);    
+    text(UnitObj.FocusData(itel).BestPos, 10, info)
     PlotName = string(PlotDir)+'/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png';
     saveas(gcf,PlotName)
 
@@ -422,12 +429,10 @@ end
 
 
 % util funs
-function Status = checkForMinimum(FocFWHM)
+function Status = checkForMinimum(FWHM)
     %
     % requires minimum of 5 points
    
-    FWHM = FocFWHM(:,2);
-
     %%%%% rising case not yet tested %%%%%%%
     if min(FWHM(end-2:end))>max(FWHM(1:2)+5)
         % focus FWHM is rising near starting point - focus is not there
@@ -491,9 +496,9 @@ function [BestPos, BestFWHM, adjrsquare] = fitParabolaOutliers(Foc,FWHM,Nout,Ntr
         FitRes(Iim,2)=FWHMTemp;
         FitRes(Iim,3)=adjrsquareTemp;
     end
-    [M,I] = max(FitRes(:,3))
+    [M,I] = max(FitRes(:,3));
     
-    BestPos = FitRes(I,1)
-    BestFWHM = FitRes(I,2)
-    adjrsquare = FitRes(I,3)
+    BestPos = FitRes(I,1);
+    BestFWHM = FitRes(I,2);
+    adjrsquare = FitRes(I,3);
 end

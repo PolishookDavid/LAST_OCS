@@ -88,25 +88,43 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         [Success,Result] = UnitObj.focusTelInSlave(itel,Args);
         UnitObj.GeneralStatus='focus loop terminated'; % this in the slave...
     else
-        UnitObj.constructUnitHeader;        
+        UnitObj.constructUnitHeader;
         headerline=obs.util.tools.headerInputForm(UnitObj.UnitHeader);
-        % start the loops in the slaves. Not blocking, it will take a long
-        %  time to complete. Outputs are not returned, they will need to be
-        %  appositely inspected post-facto
         % here we assume implicitly that we have one camera per Slave, and that
         %  all Cameras are remote
+        listener=false(numel(UnitObj.Slave));
         for i=itel
             UnitObj.Slave(i).Messenger.send(sprintf('%s.UnitHeader=%s;',UnitName,headerline));
             % To pass Args, jencode them and tell the slave to jdecode
             % I can exploit this contraption, using namedargs2cell(Args)
             UnitObj.Slave(i).Messenger.send(['NVargs=namedargs2cell(jsondecode(''' ...
-                                             jsonencode(Args) '''));']);
+                                            jsonencode(Args) '''));']);
+            % start the loops in the slaves. Not blocking, it will take a long
+            %  time to complete. Outputs are not returned, they will need to be
+            %  appositely inspected post-facto
             UnitObj.Slave(i).Messenger.send([UnitName '.focusTel(' ...
-                                             num2str(i) ',NVargs{:});']);
+                                            num2str(i) ',NVargs{:});']);
+            % check if slaves are driven via a listener. If so, we can
+            %  query them with callbacks for the progress of the focusing. If not,
+            %  queries would be enqueued after the command, and we cannot,
+            %  so we're forced to call and forget
+            listener(itel)= strcmpi(UnitObj.Slave(i).RemoteMessengerFlavor,'listener');
         end
-        % define the return arguments as empty, in order not to generate
-        %  errors [and to avoid a double evaluation within the try-catch of
-        %  datagram parser, once without and once with return argument
-        Success=[];
-        Result=[];
+        if any(listener)
+            % TODO - query periodically all the slaves with listeners, and
+            %  exit only when the last one of them has filled its UnitObj.FocusData.Status
+            % This should be done with a timeout.
+            for i=1:itel
+                % update Unit.GeneralStatus with a short formatting of the
+                %  ongoing results (i.e. FocusData.Counter, and if
+                %  completed)
+            end
+        else
+            % we cannot block and query, hence exit here
+            % define the return arguments as empty, in order not to generate
+            %  errors [and to avoid a double evaluation within the try-catch of
+            %  datagram parser, once without and once with return argument
+            Success=[];
+            Result=[];
+        end
     end

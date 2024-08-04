@@ -40,6 +40,7 @@ classdef unitCS < obs.LAST_Handle
         Temperature double; % temperature reading from the IPswitch 1wire sensors
         GeneralStatus string = "disconnected"; % description, for superunit monitoring
         Master logical = true; % spawned slaves will be set false, to prevent calling whole unit methods in them
+        FocusData obs.FocusData  % all data produced by the focus loop
     end
     
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
@@ -116,6 +117,8 @@ classdef unitCS < obs.LAST_Handle
                 UnitObj.Slave(i)=obs.util.SpawnedMatlab(sprintf('%s_slave_%d',UnitObj.Id,i));
             end
             
+            % create the structure FocusData for all telescopes
+            UnitObj.FocusData=repmat(obs.FocusData,1,Nlocal+Nremote);
         end
         
 
