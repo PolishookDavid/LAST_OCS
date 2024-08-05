@@ -138,7 +138,7 @@ end
 
 % Take Flat Field.
 if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat) && ...
-        ~Unit.AbortActivity
+         ~Unit.AbortActivity
     Unit.GeneralStatus='setting camera temperatures';
     % increase chip temperature if it is too hot
     temp1 = Unit.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
@@ -165,10 +165,14 @@ if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat) 
         fprintf('Setting camera %d temperature to +%.0f°\n',Icam,CoolTemp)
     end
    
-    fprintf('Taking flats\n')
-    Unit.takeTwilightFlats(Args.CamerasToUse,'MinSunAlt',Args.MinSunAltForFlat,...
-                           'MaxSunAlt',Args.MaxSunAltForFlat,...
-                           'MaxNumFlats',Args.MaxNumFlats);
+    if Args.MaxNumFlats>0
+        fprintf('Taking flats\n')
+        Unit.takeTwilightFlats(Args.CamerasToUse,'MinSunAlt',Args.MinSunAltForFlat,...
+                               'MaxSunAlt',Args.MaxSunAltForFlat,...
+                               'MaxNumFlats',Args.MaxNumFlats);
+    else
+        fprintf('No flats required\n')
+    end
 else
     fprintf('Sun at %.1f°, too low, skipping twilight flats\n',Sun.Alt*RAD)
 end
@@ -221,7 +225,7 @@ if (Args.Focus)  && ~Unit.AbortActivity
     
    % Start focus run
    FocusTelStartTime = celestial.time.julday;
-   Unit.focusTel(Args.CamerasToUse);
+   Unit.focusTel(Args.CamerasToUse,'Timeout',Args.FocusLoopTimeout);
    
    % poll till end of focus loop on all slaves
    FocusInProgress=true;
@@ -250,7 +254,9 @@ if (Args.Focus)  && ~Unit.AbortActivity
    FocusSucceded=false(1,numel(Unit.Camera));
    msg='focus loop:';
    for Icam=Args.CamerasToUse
-       FocusSucceded(Icam) = Unit.checkFocusTelSuccess(Icam, FocusTelStartTime, Args.FocusLoopTimeout);
+       % FocusSucceded(Icam) = Unit.checkFocusTelSuccess(Icam, FocusTelStartTime, Args.FocusLoopTimeout);
+       FocusSucceded(Icam) = Unit.FocusData(Icam).LoopCompleted & ...
+                             ~isnan(Unit.FocusData(Icam).BestFWHM);
        if FocusSucceded(Icam)
            fprintf('Focusing telescope %d succeeded\n',Icam);
            msg=[msg, sprintf(' Tel.%d OK',Icam)];

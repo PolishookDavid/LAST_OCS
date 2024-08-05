@@ -3,6 +3,7 @@ classdef FocusData
     %  loop procedure
     properties
         Status   = '';
+        LoopCompleted = false;
         BestPos  = NaN;
         BestFWHM = NaN;
         Counter  = NaN;

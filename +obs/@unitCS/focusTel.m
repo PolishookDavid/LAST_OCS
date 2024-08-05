@@ -119,9 +119,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         Success=false(1,numel(itel));
         StatusStrings=cell(1,numel(itel));
         if any(listener)
-            % TODO - query periodically all the slaves with listeners, and
-            %  exit only when the last one of them has filled its UnitObj.FocusData.Status
-            % This should be done with a timeout.
+            % query periodically all the slaves with listeners, and
+            %  exit only when the last one of them has
+            %  UnitObj.FocusData.LoopCompleted, with a timeout.
             completed=false;
             while (now-t0)*86400<Args.Timeout && ~completed
                 completed=true;
@@ -130,31 +130,31 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                         UnitObj.FocusData(i)=...
                               obs.FocusData(UnitObj.Slave(i).Responder.query(...
                                       sprintf('%s.FocusData(%d);',UnitName,i)));
-                        % FIXME - complete is immediately true
-                        completed = completed && ~isempty(UnitObj.FocusData(i).Status);
+                        completed = completed && UnitObj.FocusData(i).LoopCompleted;
                         % prepare strings for updating Unit.GeneralStatus
                         %  with a short formatting of the ongoing results
                         %  (i.e. FocusData.Counter, and if completed)
                         if ~isempty(UnitObj.FocusData(i).Status)
                             if ~isnan(UnitObj.FocusData(i).BestFWHM)
-                                StatusStrings{i}=sprintf('T%d - OK',i);
+                                StatusStrings{i}=sprintf('T%d OK ',i);
                             else
-                                StatusStrings{i}=sprintf('T%d - FAIL',i);
+                                StatusStrings{i}=sprintf(' T%d FAIL ',i);
                             end
                         else
-                            if ~isempty(UnitObj.FocusData(i).Counter)
-                                StatusStrings{i}=sprintf('T%d - #%d',i,...
+                            if ~isempty(UnitObj.FocusData(i).Counter) && ...
+                                    ~isnan(UnitObj.FocusData(i).Counter)
+                                StatusStrings{i}=sprintf(' T%d [#%d] ',i,...
                                               UnitObj.FocusData(i).Counter);
                             else
-                                StatusStrings{i}=sprintf('T%d - ?',i);
+                                StatusStrings{i}=sprintf(' T%d [--] ',i);
                             end
                         end
                     catch
                         completed=false;
-                        StatusStrings{i}=sprintf('T%d - ?',i);
+                        StatusStrings{i}=sprintf(' T%d [?] ',i);
                     end
                 end
-                UnitObj.GeneralStatus=['focusing:' strjoin(StatusStrings,'/')];
+                UnitObj.GeneralStatus=['Focusing:' strjoin(StatusStrings,'/')];
             end
             if ~completed
                 UnitObj.abort;

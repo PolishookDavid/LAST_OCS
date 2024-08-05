@@ -21,7 +21,13 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     if ~isfolder(PlotDir)
         mkdir(PlotDir);
     end
-    
+     
+    Success = false;
+    % reset FocusData, creating at least itel elements (Slaves don't know
+    %  how many telescopes are in the system)
+    UnitObj.FocusData = repmat(obs.FocusData,1,itel);
+    UnitObj.FocusData(itel).ResTable = repmat(UnitObj.FocusData(itel).ResTable(1),1,Args.MaxIter);
+
     MountNumberStr = string(UnitObj.MountNumber);
     CameraNumberStr = string(CameraObj.classCommand('CameraNumber'));
     
@@ -92,12 +98,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     if isempty(Args.PosGuess)
         Args.PosGuess = CurrentPos;
     end
-    
-    % 
-    Success = false;
-    UnitObj.FocusData(itel)=obs.FocusData; % reset FocusData
-    UnitObj.FocusData(itel).ResTable = repmat(UnitObj.FocusData(itel).ResTable(1),1,Args.MaxIter);
-    
+        
     MaxPlotFWHM=26;
     
     if Args.Plot
@@ -323,6 +324,10 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
         end
     end
     
+    % at this point we can set the flag, so that readers are aware that the
+    %  loop completed in a way or another
+    UnitObj.FocusData(itel).LoopCompleted=true;
+    
     % using the Responder for querying while the UnitMonitor is querying it
     %  is a bad idea and can lead to deadlocks (or errors, which lead to
     %  double datagramParser evaluations .... a mess).
@@ -393,7 +398,10 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     fclose(fileID);
     
     
-    % computer readable log containing only most recent result
+    % computer readable log containing only most recent result. Not really
+    %  useful, left as a relic. Once it was reread by
+    %  unitCS.checkFocusTelSuccess(), but it makes more sense now to
+    %  inspect Unit.FocusData instead
     path = pipeline.last.constructCamDir(CameraObj.classCommand('CameraNumber'), 'SubDir', 'log');
     if not(isfolder(path))
         mkdir(path);
