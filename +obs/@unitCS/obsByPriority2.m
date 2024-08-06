@@ -129,6 +129,8 @@ function obsByPriority2(Unit, Args)
     
     for I=Args.Itel
         Unit.Camera{I}.classCommand('SaveOnDisk=1;'); % save images on all cameras
+        % turn on computation of FWHM, in case changed (e.g. by FocusTel)
+        Unit.Camera{I}.classCommand('ComputeFWHM=''last'';');
     end
     
     OperateBool = true;

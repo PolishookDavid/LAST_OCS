@@ -3,6 +3,9 @@ classdef FocusData
     %  loop procedure
     properties
         Status   = '';
+        TimeStarted = NaN;
+        TimeEnded = NaN;
+        Temperature = NaN;
         LoopCompleted = false;
         BestPos  = NaN;
         BestFWHM = NaN;

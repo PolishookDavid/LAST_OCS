@@ -254,6 +254,9 @@ if (Args.Focus)  && ~Unit.AbortActivity
    FocusSucceded=false(1,numel(Unit.Camera));
    msg='focus loop:';
    for Icam=Args.CamerasToUse
+       % FIXME! if Unit.Slave.RemoteMessengerFlavor ~='listener',
+       %  .focusTel is not blocking. Formerly checkFocusTelSuccess did the
+       %  block
        % FocusSucceded(Icam) = Unit.checkFocusTelSuccess(Icam, FocusTelStartTime, Args.FocusLoopTimeout);
        FocusSucceded(Icam) = Unit.FocusData(Icam).LoopCompleted & ...
                              ~isnan(Unit.FocusData(Icam).BestFWHM);

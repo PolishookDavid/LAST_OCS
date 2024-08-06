@@ -27,7 +27,20 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     %  how many telescopes are in the system)
     UnitObj.FocusData = repmat(obs.FocusData,1,itel);
     UnitObj.FocusData(itel).ResTable = repmat(UnitObj.FocusData(itel).ResTable(1),1,Args.MaxIter);
-
+    UnitObj.FocusData(itel).TimeStarted=celestial.time.julday;
+    
+    % using the Responder for querying while the UnitMonitor is querying it
+    %  is a bad idea and can lead to deadlocks (or errors, which lead to
+    %  double datagramParser evaluations .... a mess).
+    % temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
+    % temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
+    % Use instead the temperature already stored in Unit.UnitHeader
+    try
+        UnitObj.FocusData(itel).Temperature=...
+            UnitObj.UnitHeader{strcmpi(UnitObj.UnitHeader(:,1),'MNTTEMP'),2};
+    catch
+    end
+    
     MountNumberStr = string(UnitObj.MountNumber);
     CameraNumberStr = string(CameraObj.classCommand('CameraNumber'));
     
@@ -323,22 +336,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     
         end
     end
-    
-    % at this point we can set the flag, so that readers are aware that the
-    %  loop completed in a way or another
-    UnitObj.FocusData(itel).LoopCompleted=true;
-    
-    % using the Responder for querying while the UnitMonitor is querying it
-    %  is a bad idea and can lead to deadlocks (or errors, which lead to
-    %  double datagramParser evaluations .... a mess).
-    % temp1 = UnitObj.PowerSwitch{1}.classCommand('Sensors.TemperatureSensors(1)');
-    % temp2 = UnitObj.PowerSwitch{2}.classCommand('Sensors.TemperatureSensors(1)');
-    % Use instead the temperature already stored in Unit.UnitHeader
-    try
-        temp1=UnitObj.UnitHeader{strcmpi(UnitObj.UnitHeader(:,1),'MNTTEMP'),2};
-    catch
-        temp1=NaN;
-    end
+        
+    temp1=UnitObj.FocusData(itel).Temperature;
     UnitObj.report('   temperature %.1f \n', temp1);
     %UnitObj.report('   temperature 2 %.1f \n\n', temp2);
     
@@ -401,7 +400,8 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     % computer readable log containing only most recent result. Not really
     %  useful, left as a relic. Once it was reread by
     %  unitCS.checkFocusTelSuccess(), but it makes more sense now to
-    %  inspect Unit.FocusData instead
+    %  inspect Unit.FocusData instead. Also .focusByTemperature reads it,
+    %  though
     path = pipeline.last.constructCamDir(CameraObj.classCommand('CameraNumber'), 'SubDir', 'log');
     if not(isfolder(path))
         mkdir(path);
@@ -430,6 +430,11 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     text(UnitObj.FocusData(itel).BestPos, 10, info)
     PlotName = string(PlotDir)+'/focusres_M'+MountNumberStr+'C'+CameraNumberStr+'_'+datestr(now,'YYYYmmDD_HH:MM:SS')+'.png';
     saveas(gcf,PlotName)
+    
+    % at this point we can set the flag, so that readers are aware that the
+    %  loop completed in a way or another
+    UnitObj.FocusData(itel).LoopCompleted=true;
+    UnitObj.FocusData(itel).TimeEnded=celestial.time.julday;
 
     % restore UnitObj.AbortActivity = false, to be on the safe side
     UnitObj.AbortActivity=false;

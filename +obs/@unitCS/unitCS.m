@@ -115,6 +115,11 @@ classdef unitCS < obs.LAST_Handle
             %UnitObj.Slave=cell(1,numel(UnitObj.RemoteTelescopes));
             for i=1:numel(UnitObj.RemoteTelescopes)
                 UnitObj.Slave(i)=obs.util.SpawnedMatlab(sprintf('%s_slave_%d',UnitObj.Id,i));
+                % default RemoteMessengerFlavor='listener'. In primis
+                %  because of https://github.com/PolishookDavid/LAST_OCS/issues/36
+                %  (.focusTel not blocking otherwise), but alas, Slaves
+                %  must be slaves, the prompt is only for debugging
+                UnitObj.Slave(i).RemoteMessengerFlavor='listener';
             end
             
             % create the structure FocusData for all telescopes
