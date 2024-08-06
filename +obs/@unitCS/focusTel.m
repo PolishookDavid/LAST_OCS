@@ -115,10 +115,15 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             %  queries would be enqueued after the command, and we cannot,
             %  so we're forced to call and forget
             listener(itel)= strcmpi(UnitObj.Slave(i).RemoteMessengerFlavor,'listener');
+            % initialize FocusData(i)
+            UnitObj.FocusData(i)=obs.FocusData;
         end
         Success=false(1,numel(itel));
         StatusStrings=cell(1,numel(itel));
-        if any(listener)
+        if any(listener(itel))
+            % magic fairy delay,otherwise we may read an old FocusData,
+            % which has LoopCompleted from a previous loop (FIXME)
+            pause(3)
             % query periodically all the slaves with listeners, and
             %  exit only when the last one of them has
             %  UnitObj.FocusData.LoopCompleted, with a timeout.
@@ -160,9 +165,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                 UnitObj.abort;
             end
             % results are returned only for telescopes powered by listeners
-            for i=itel
-                Success(i)=~isempty(UnitObj.FocusData(i).Status) && ...
-                           ~isnan(UnitObj.FocusData(i).BestFWHM);
+            for i=1:numel(itel)
+                Success(i)=~isempty(UnitObj.FocusData(itel(i)).Status) && ...
+                           ~isnan(UnitObj.FocusData(itel(i)).BestFWHM);
             end
             % fuck you, I have enough of unpacking and repacking, just
             %  return all of it

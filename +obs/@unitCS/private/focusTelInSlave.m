@@ -28,6 +28,7 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
     UnitObj.FocusData = repmat(obs.FocusData,1,itel);
     UnitObj.FocusData(itel).ResTable = repmat(UnitObj.FocusData(itel).ResTable(1),1,Args.MaxIter);
     UnitObj.FocusData(itel).TimeStarted=celestial.time.julday;
+    UnitObj.FocusData(itel).LoopCompleted=false;
     
     % using the Responder for querying while the UnitMonitor is querying it
     %  is a bad idea and can lead to deadlocks (or errors, which lead to
