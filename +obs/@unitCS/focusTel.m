@@ -125,7 +125,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             completed=false;
             while (now-t0)*86400<Args.Timeout && ~completed
                 completed=true;
-                for i=itel(listener)
+                for i=itel(listener(itel))
                     try
                         UnitObj.FocusData(i)=...
                               obs.FocusData(UnitObj.Slave(i).Responder.query(...
@@ -154,7 +154,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
                         StatusStrings{i}=sprintf(' T%d [?] ',i);
                     end
                 end
-                UnitObj.GeneralStatus=['Focusing:' strjoin(StatusStrings,'/')];
+                UnitObj.GeneralStatus=['Focusing:' strjoin(StatusStrings(itel),'/')];
             end
             if ~completed
                 UnitObj.abort;

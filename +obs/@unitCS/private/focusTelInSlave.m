@@ -289,8 +289,10 @@ function [Success, Result] = focusTelInSlave(UnitObj, itel, Args)
             case 'found'
                             
                 % using only good points
-                Foc  = UnitObj.FocusData(itel).ResTable(GoodFocus,1);
-                FWHM = UnitObj.FocusData(itel).ResTable(GoodFocus,2);
+                FocPos=[UnitObj.FocusData(itel).ResTable.FocPos];
+                allFWHM=[UnitObj.FocusData(itel).ResTable.FWHM];
+                Foc  = FocPos(GoodFocus)';
+                FWHM = allFWHM(GoodFocus)';
                 
         
                 % Estimate minimum FWHM
