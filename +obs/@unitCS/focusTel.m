@@ -1,7 +1,11 @@
 function [Success, Result] = focusTel(UnitObj, itel, Args)
-    % Focus a single telescope
-    %   This routine can adaptively focus a single telescope, or set its
-    %   focus position by a temperature-focus relation.
+    % Focus adaptively a single or muntiple telescopes. This function can
+    %  be run, blocking, in a Slave for a single telescope, or in a master
+    %  unit for one or many (all) telescopes. In the former case this
+    %  function is just a wrapper to .focusTelInSlave(), in the latter its
+    %  behavior is blocking only if the slaves are spawned as Listeners 
+    %  (if they aren't, we can't use callbacks to query for completion)
+    %
     % Input  : - The unit object.
     %          - focuser number 1,2,3, or 4.
     %          * ...,key,val,...
@@ -121,14 +125,14 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
         Success=false(1,numel(itel));
         StatusStrings=cell(1,numel(itel));
         if any(listener(itel))
-            % magic fairy delay,otherwise we may read an old FocusData,
-            % which has LoopCompleted from a previous loop (FIXME)
-            pause(3)
             % query periodically all the slaves with listeners, and
             %  exit only when the last one of them has
             %  UnitObj.FocusData.LoopCompleted, with a timeout.
             completed=false;
-            while (now-t0)*86400<Args.Timeout && ~completed
+            while (now-t0)*86400<Args.Timeout && ~completed && ~Unit.AbortActivity
+                % magic fairy delay, otherwise we may read an old FocusData,
+                % which has LoopCompleted from a previous loop (FIXME)
+                UnitObj.abortablePause(3)
                 completed=true;
                 for i=itel(listener(itel))
                     try
