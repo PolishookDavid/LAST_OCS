@@ -110,10 +110,14 @@ function takeTwilightFlats(UnitObj, Itel, Args)
             UnitObj.Mount.goToTarget(RA,Dec);
 
             % estimate mean count rate in images
-            getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime, Args.MeanFun,...
-                               Args.LiveMode);
             MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, Args.TestExpTime,...
                                                Args.MeanFun, Args.LiveMode);
+
+            if isnan(MeanValPerSec)
+                UnitObj.reportError('Cannot get initial brightness estimate. Aborting')
+                UnitObj.GeneralStatus='Taking flats failed';
+                return
+            end
 
             % DEBUG
             %MeanValPerSec = 670
@@ -150,8 +154,12 @@ function takeTwilightFlats(UnitObj, Itel, Args)
 
                     UnitObj.takeExposure(Itel, EstimatedExpTime, 1, ...
                         'ImType','twflat','LiveSingleImage',Args.LiveMode);
-                    UnitObj.readyToExpose('Itel',Itel, 'Wait',true, ...
-                              'Test',[0 0 1], 'Timeout',EstimatedExpTime+20);
+                    if ~UnitObj.readyToExpose('Itel',Itel, 'Wait',true, ...
+                              'Test',[0 0 1], 'Timeout',EstimatedExpTime+20)
+                          UnitObj.reportError('Camera(s) not ready again after exposing. Aborting')
+                          UnitObj.GeneralStatus='Taking flats failed';
+                          return
+                    end
 
                     for Icam=1:1:Ncam
                         ListOfFlatFiles(Icam).List{Counter} = ...
@@ -180,15 +188,15 @@ function takeTwilightFlats(UnitObj, Itel, Args)
                     end
                 end
             elseif MeanValAtMax<Args.MinFlatLimit
-                
+
                 UnitObj.GeneralStatus='too dark for flats - skipping';
                 % well, theoretically we could decide to make flats before
                 % morning, then we could wait for dawn... but it's not what
                 % we do
-                
+
                 UnitObj.report('Estimated exposure time > %g sec, skipping \n',...
                     max(Args.ExpTimeRange));
-                
+
                 break
             else
 
@@ -285,9 +293,15 @@ function MeanValPerSec = getMeanCountPerSec(UnitObj, Itel, TestExpTime, MeanFun,
     
     UnitObj.takeExposure(Itel, TestExpTime, 1, 'LiveSingleImage',LiveMode);
     
-    UnitObj.readyToExpose('Itel',Itel, 'Wait',true,'Timeout',2*TestExpTime+10);
-                    
-    MeanValPerSec = getMeanVal(UnitObj,  Itel, MeanFun, TestExpTime);
+    if UnitObj.readyToExpose('Itel',Itel, 'Wait',true,'Timeout',2*TestExpTime+10)
+        % if all cameras return ready after the exposure time, good, trust
+        %  the value read
+        MeanValPerSec = getMeanVal(UnitObj,  Itel, MeanFun, TestExpTime);
+    else
+        % otherwise, return NaN as a flag, because .LastImage may be
+        % something else
+        MeanValPerSec=NaN;
+    end
     
     % save on
     for icam=1:Ncam
