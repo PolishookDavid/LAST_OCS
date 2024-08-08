@@ -53,6 +53,7 @@ function obsByPriority2(Unit, Args)
         Args.MinAlt         = 30; % [deg]
         Args.ObsCoo         = [35.0407331, 30.0529838]; % [LONG, LAT]
         Args.Simulate       = false;
+        Args.NoChecks       = false; % Don't check Visibility, priority>0, etc. Set to true e.g. to test at daytime
         Args.SimJD          = []; %default is current JD %2460049.205;
         Args.MinVisibilityTime = 0.01; %days; stop observing target 15min before it is no longer visible
         Args.CadenceMethod  {mustBeMember(Args.CadenceMethod,{'cycle','predefined','highestsetting'})}= 'cycle'; % 'predefined', 'highestsetting', 'cycle'
@@ -141,7 +142,8 @@ function obsByPriority2(Unit, Args)
             JD = celestial.time.julday;
         end
         
-        [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);
+        [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime,...
+            'CheckSun',~Args.NoChecks,'CheckVisibility',~Args.NoChecks);
         %fprintf('%i targets are observable.\n\n', sum(FlagAll))
         NeedObs = T.Data.MaxNobs>T.Data.GlobalCounter;
             
@@ -173,7 +175,8 @@ function obsByPriority2(Unit, Args)
                 Unit.Mount.home; % avoid tracking when there are not targets
             end
             
-            [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime);         
+            [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime,...
+                'CheckSun',~Args.NoChecks,'CheckVisibility',~Args.NoChecks);
             %fprintf('%i targets are observable.\n', sum(FlagAll))
             NeedObs = T.Data.MaxNobs>T.Data.GlobalCounter;
             
@@ -201,7 +204,7 @@ function obsByPriority2(Unit, Args)
         
         [~,PP,IndPrio]=T.calcPriority(JD,Args.CadenceMethod);
         
-        if PP(IndPrio) <= 0
+        if PP(IndPrio) <= 0 && ~Args.NoChecks
             fprintf('Highest priority is zero. Waiting two minutes.\n')
             
             if Args.Simulate
@@ -224,8 +227,26 @@ function obsByPriority2(Unit, Args)
         if ~Args.Simulate
             Unit.Mount.goToTarget(T.RA(IndPrio), T.Dec(IndPrio));
             
+            % make sure that the mount entered tracking
+            retries=2;
+            for i=1:retries
+                MountStatus=Unit.Mount.Status;
+                if strcmpi(MountStatus,'tracking')
+                    break
+                else
+                    Unit.reportError('Mount is "%s" instead of tracking. Trying to force track',...
+                          MountStatus);
+                    Unit.Mount.track;
+                end
+            end
+            if ~strcmpi(MountStatus,'tracking')
+                fprintf('\nMount can''t be set to track!\n');
+                Unit.GeneralStatus='Mount failed tracking, observation aborted';
+                return
+            end
+
             temp=Unit.Temperature;
-            Temp=mean(temp(temp>-30)); % the pswitch says -60 for no sensor         
+            Temp=mean(temp(temp>-30)); % the pswitch says -60 for no sensor
             fprintf('\nTemperature %.1f deg.\n', Temp)
             
             for IFocuser=Args.Itel
@@ -342,7 +363,7 @@ function OperateBool = checkAbortFile(Unit, JD, Shutdown)
             fprintf('Shutting down the mount.\n')
             Unit.shutdown
             Unit.abortablePause(20)
-            fprintf('shutdown because Sun too high. \n');
+            fprintf('shutdown because Sun too high.\n');
             OperateBool = false;
             return
         else
