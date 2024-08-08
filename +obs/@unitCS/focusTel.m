@@ -129,7 +129,7 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             %  exit only when the last one of them has
             %  UnitObj.FocusData.LoopCompleted, with a timeout.
             completed=false;
-            while (now-t0)*86400<Args.Timeout && ~completed && ~Unit.AbortActivity
+            while (now-t0)*86400<Args.Timeout && ~completed && ~UnitObj.AbortActivity
                 % magic fairy delay, otherwise we may read an old FocusData,
                 % which has LoopCompleted from a previous loop (FIXME)
                 UnitObj.abortablePause(3)
