@@ -21,6 +21,7 @@ function plotFocusData(FocusData)
         FocPos=[ResTable.FocPos];
         FWHM=[ResTable.FWHM];
         FlagGood=[ResTable.FlagGood];
+        FlagGood=FlagGood(1:numel(FocPos)); % because it is initialized fully
         if ~isempty(FocPos)
             plot(FocPos(FlagGood), FWHM(FlagGood), 'bo', 'MarkerFaceColor','b');
             hold on
