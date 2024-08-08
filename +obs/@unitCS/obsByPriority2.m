@@ -250,8 +250,11 @@ function obsByPriority2(Unit, Args)
             fprintf('\nTemperature %.1f deg.\n', Temp)
             
             for IFocuser=Args.Itel
-                Unit.Slave(IFocuser).Messenger.send(...
-                    sprintf('%s.focusByTemperature(%d,%.2f);',UnitName,IFocuser,Temp));
+                % Ideally, we could compensate the focus if the temperature
+                %  has changed. However focusByTemperature doesn't seem to do well
+                %  its job, so it's commented out. It should be improved someday
+                % Unit.Slave(IFocuser).Messenger.send(...
+                %    sprintf('%s.focusByTemperature(%d,%.2f);',UnitName,IFocuser,Temp));
                            
                 if Temp>35
                     Unit.Camera{IFocuser}.classCommand('Temperature=5;');

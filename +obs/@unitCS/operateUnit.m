@@ -212,7 +212,8 @@ if (Args.Focus)  && ~Unit.AbortActivity
         %end
    %end
    
-   % Check success:
+   % Check success (that's crude: we check HA and not RA, allow for
+   % discrepancies of 1°...
    DeltaHA = mod(Unit.Mount.HA - Args.FocusHA+180,360)-180;
    DeltaDec = Unit.Mount.Dec - Args.FocusDec;
    if abs(DeltaHA)>1 || abs(DeltaDec)>1
@@ -222,6 +223,9 @@ if (Args.Focus)  && ~Unit.AbortActivity
       Unit.shutdown;
       return;
    end
+   
+   % order tracking again, just in case goTo almost but didn't converge
+   Unit.Mount.track;
     
    % Start focus run
    FocusTelStartTime = celestial.time.julday;
