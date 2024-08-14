@@ -66,10 +66,10 @@ function obsByPriority2(Unit, Args)
         Args.Itel = (1:numel(Unit.Camera));
     end
         
-    RAD = 180./pi;
+    %RAD = 180./pi;
     sec2day = 1./3600/24;
     
-    UnitName=inputname(1);
+    % UnitName=inputname(1); % used only by focusByTemperature
     
     Unit.GeneralStatus='starting observation script';
     
@@ -142,7 +142,7 @@ function obsByPriority2(Unit, Args)
             JD = celestial.time.julday;
         end
         
-        [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime,...
+        FlagAll = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime,...
             'CheckSun',~Args.NoChecks,'CheckVisibility',~Args.NoChecks);
         %fprintf('%i targets are observable.\n\n', sum(FlagAll))
         NeedObs = T.Data.MaxNobs>T.Data.GlobalCounter;
@@ -175,7 +175,7 @@ function obsByPriority2(Unit, Args)
                 Unit.Mount.home; % avoid tracking when there are not targets
             end
             
-            [FlagAll, Flag] = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime,...
+            FlagAll = isVisible(T, JD,'MinVisibilityTime',Args.MinVisibilityTime,...
                 'CheckSun',~Args.NoChecks,'CheckVisibility',~Args.NoChecks);
             %fprintf('%i targets are observable.\n', sum(FlagAll))
             NeedObs = T.Data.MaxNobs>T.Data.GlobalCounter;
@@ -206,6 +206,8 @@ function obsByPriority2(Unit, Args)
         
         if PP(IndPrio) <= 0 && ~Args.NoChecks
             fprintf('Highest priority is zero. Waiting two minutes.\n')
+            Unit.GeneralStatus=sprintf('Highest priority 0. Waiting till %s',...
+            datestr(now+120/sec2day));
             
             if Args.Simulate
                 pause(1)
@@ -280,7 +282,7 @@ function obsByPriority2(Unit, Args)
         fprintf('Actual pointing: RA=%f, Dec=%f\n',Unit.Mount.RA, Unit.Mount.Dec);
         fprintf('MountAltitude: %f\n', Unit.Mount.Alt);
   
-        [Az, Alt] = T.azalt(JD);
+        [~, Alt] = T.azalt(JD);
         fprintf('Target Altitude: %f\n', Alt(IndPrio));
 
         % logging
