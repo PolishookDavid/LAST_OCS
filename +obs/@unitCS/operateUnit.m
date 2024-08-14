@@ -192,7 +192,7 @@ if (Args.Focus)  && ~Unit.AbortActivity
    end
    
    if Unit.AbortActivity
-       Unit.GeneralStatus='taking darks aborted';
+       Unit.GeneralStatus='waiting aborted, focusing not done';
        Unit.abort(false);
        return
    end
