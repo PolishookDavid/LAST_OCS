@@ -15,12 +15,12 @@
 
 classdef camera < inst.device
  
-    properties
+    properties (SetObservable, GetObservable)
         ImType char            = 'sci';       % The image type: science, flat, bias, dark
         Object char            = '';          % The name of the observed object/field
     end
     
-    properties % (GetAccess = public, SetAccess = ?obs.unitCS) % no, also via classCommand
+    properties (SetObservable, GetObservable)% (GetAccess = public, SetAccess = ?obs.unitCS) % no, also via classCommand
         LastImageName char     = '';          % The name of the last image 
         LastImageFWHM double = NaN; % seeing of LastImage, computed if .ComputeFWHM='always' or 'last'
     end
@@ -52,7 +52,7 @@ classdef camera < inst.device
     end
     
     % save
-    properties(Hidden)
+    properties(Hidden, SetObservable, GetObservable)
         SaveOnDisk logical   = true;   % A flag marking if the images should be wriiten to the disk after exposure
         ImageFormat char     = 'fits';    % The format of the written image
         ComputeFWHM char {mustBeMember(ComputeFWHM,{'never','last','always','omit'})}= 'last'; % compute FWHM:

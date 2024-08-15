@@ -15,10 +15,13 @@ classdef unitCS < obs.LAST_Handle
     properties
         PowerSwitch  cell   % handles to IP power switches units
         Mount               % handle to the mount(s) abstraction object
-        MountPower logical % power of the mount, off/on
         Camera cell    % cell, handles to the camera abstraction objects
-        CameraPower logical % power of the cameras off/on
         Focuser cell   % cell, handles to the focuser abstraction objects
+    end
+
+    properties(SetObservable, GetObservable)
+        MountPower logical % power of the mount, off/on
+        CameraPower logical % power of the cameras off/on
     end
 
     properties(Hidden)
@@ -29,6 +32,9 @@ classdef unitCS < obs.LAST_Handle
         MountPowerOutput double=[]; % switch output controlling the mount
         MountNumber    int16   = 99;  % Mount number 1..12 - 99=unknown (currently taken from Id)
         UnitHeader;    % cell with additional FITS header keywords provided by the master
+    end
+
+    properties (Hidden, SetObservable, GetObservable)
         AbortActivity logical =false; % set this to true with a callback to stop scripts
     end
 
@@ -37,12 +43,15 @@ classdef unitCS < obs.LAST_Handle
         LocalTelescopes % indices of the local telescopes
         RemoteTelescopes='{}'; % evaluates to a cell, indices of the telescopes assigned to each slave
         Slave obs.util.SpawnedMatlab; % handles to SpawnedMatlad sessions
-        Temperature double; % temperature reading from the IPswitch 1wire sensors
-        GeneralStatus string = "disconnected"; % description, for superunit monitoring
         Master logical = true; % spawned slaves will be set false, to prevent calling whole unit methods in them
-        FocusData obs.FocusData  % all data produced by the focus loop
     end
-    
+
+    properties(GetAccess=public, SetAccess=?obs.LAST_Handle, SetObservable, GetObservable)
+        GeneralStatus string = "disconnected"; % description, for superunit monitoring
+        FocusData obs.FocusData  % all data produced by the focus loop
+        Temperature double; % temperature reading from the IPswitch 1wire sensors
+    end
+
     properties(GetAccess=public, SetAccess=?obs.LAST_Handle, Hidden)
         %these are set only when reading the configuration. Due to the
         % current yml configuration reader, the configuration can contain

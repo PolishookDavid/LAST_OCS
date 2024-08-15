@@ -12,11 +12,8 @@ classdef mount < inst.device
     end
     
     properties(Hidden)
-        %LastRC    = '';
         LogFile            = LogFile;
         LogFileDir char    = '';
-        IsConnected = false; % Connection status between class to camera (??)
-        %IsCounterWeightDown=true; % Test that this works as expected
     end
     
     % Mount ID
@@ -79,6 +76,10 @@ classdef mount < inst.device
             % mount class constructor
             % Package: +obs/@mount
             % Input  : .Id to set,
+
+            % call the parent creator to define the property listeners
+            MountObj=MountObj@inst.device;
+
             if exist('id','var') && ~isempty(id)
                 MountObj.Id=id;
             end
