@@ -86,7 +86,10 @@ classdef unitCS < obs.LAST_Handle
             % this one is read in as string and converted, because of limitations of
             %  Astropack's yml reader
             UnitObj.RemoteTelescopes=eval(UnitObj.RemoteTelescopes);
-                        
+
+            % turn on pushing to PV store
+            UnitObj.PushPropertyChanges=true;
+
             % populate mount, camera, focuser and power switches handles
             for i=1:numel(UnitObj.PowerDriver)
                 UnitObj.PowerSwitch{i}=eval([UnitObj.PowerDriver{i} ...
@@ -96,6 +99,11 @@ classdef unitCS < obs.LAST_Handle
             % for now always one mount per unit (or, empty mount when absent)
             UnitObj.Mount=eval([UnitObj.MountDriver ...
                             '(''' sprintf('%s_%d',UnitObj.Id,1) ''')']);
+            % turn on pushing to PV store for the mount
+            if ~isempty(UnitObj.MountDriver)
+                UnitObj.Mount.PushPropertyChanges=true;
+            end
+
             Nlocal=numel(UnitObj.LocalTelescopes);
             Nremote=numel(horzcat(UnitObj.RemoteTelescopes{:}));
             UnitObj.Camera=cell(1,Nlocal+Nremote);
@@ -108,8 +116,10 @@ classdef unitCS < obs.LAST_Handle
                 telescope_label=sprintf('%s_%d_%d',UnitObj.Id,1,j);
                 UnitObj.Camera{j}=eval([UnitObj.CameraDriver{i} ...
                                         '(''' telescope_label ''')']);
+                UnitObj.Camera{j}.PushPropertyChanges=true;
                 UnitObj.Focuser{j}=eval([UnitObj.FocuserDriver{i} ...
                                         '(''' telescope_label ''')']);
+                UnitObj.Focuser{j}.PushPropertyChanges=true;
                 % better listener or addlistener?
                 addlistener(UnitObj.Camera{j},'LastImage','PostSet',@UnitObj.treatNewImage);
             end
@@ -176,6 +186,7 @@ classdef unitCS < obs.LAST_Handle
             catch
                 power=false;
             end
+            %UnitObj.pushPVvalue(power);
         end
         
         function set.MountPower(UnitObj,power)
@@ -198,6 +209,7 @@ classdef unitCS < obs.LAST_Handle
                     Power(onThisSwitch)=false;
                 end
             end
+            %UnitObj.pushPVvalue(Power);
         end
         
         function set.CameraPower(UnitObj,power)
@@ -230,8 +242,19 @@ classdef unitCS < obs.LAST_Handle
                 catch
                 end
             end
+            UnitObj.pushPVvalue(T);
         end
         
+        % setters which only push to PV data produced elsewhere
+        function set.GeneralStatus(UnitObj,status)
+            UnitObj.pushPVvalue(status);
+        end
+
+%         function set.FocusData(UnitObj,data)
+% % not OK for this struct
+%             UnitObj.pushPVvalue(data);
+%         end
+
     end
 
 end
