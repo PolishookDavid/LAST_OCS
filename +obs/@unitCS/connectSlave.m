@@ -75,6 +75,11 @@ function connectSlave(Unit,islaves)
                 %  are executed sequentially, and not buffered
                 M.query(sprintf('%s=obs.unitCS(''%s'');',SlaveUnitName,SlaveUnitId));
                 M.query(sprintf('%s.Master=false;',SlaveUnitName));
+                % turn off PushPropertyChanges for slave units: they have
+                %  the same Id as the master, but don't get all the
+                %  information which is relayed only to the master
+                M.query(sprintf('%s.PushPropertyChanges=false;',SlaveUnitName));
+                
                 
                 % Pass along Config descriptive (but semi-mandatory,unfortunately)
                 %  parameters: .ProjName, .NodeNumber, .TimeZone

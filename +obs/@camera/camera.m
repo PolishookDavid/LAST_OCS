@@ -119,18 +119,22 @@ classdef camera < inst.device
     methods
         % setters pushing to PVstore
         function set.LastImageFWHM(C,FWHM)
+            C.LastImageFWHM=FWHM;
             C.pushPVvalue(FWHM);
         end
         
         function set.LastImageName(C,name)
+            C.LastImageName=name;
             C.pushPVvalue(name);
         end
         
-        function set.ImType(C,name)
-            C.pushPVvalue(name);
+        function set.ImType(C,type)
+            C.ImType=type;
+            C.pushPVvalue(type);
         end
         
         function set.Object(C,name)
+            C.Object=name;
             C.pushPVvalue(name);
         end
     

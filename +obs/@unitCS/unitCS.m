@@ -186,7 +186,7 @@ classdef unitCS < obs.LAST_Handle
             catch
                 power=false;
             end
-            %UnitObj.pushPVvalue(power);
+            UnitObj.pushPVvalue(power);
         end
         
         function set.MountPower(UnitObj,power)
@@ -209,7 +209,7 @@ classdef unitCS < obs.LAST_Handle
                     Power(onThisSwitch)=false;
                 end
             end
-            %UnitObj.pushPVvalue(Power);
+            UnitObj.pushPVvalue(Power);
         end
         
         function set.CameraPower(UnitObj,power)
@@ -247,13 +247,14 @@ classdef unitCS < obs.LAST_Handle
         
         % setters which only push to PV data produced elsewhere
         function set.GeneralStatus(UnitObj,status)
+            UnitObj.GeneralStatus=status;
             UnitObj.pushPVvalue(status);
         end
 
-%         function set.FocusData(UnitObj,data)
-% % not OK for this struct
-%             UnitObj.pushPVvalue(data);
-%         end
+        function set.FocusData(UnitObj,data)
+            UnitObj.FocusData=data;
+            UnitObj.pushPVvalue(data);
+        end
 
     end
 
