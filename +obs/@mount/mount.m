@@ -121,6 +121,12 @@ classdef mount < inst.device
                 %         % .Dir missing in Astropack's LogFile
                 %         MountObj.LogFile.LogPath = ConfigStruct.LogFileDir;
             end
+            
+            % create periodical queries to push stati to PV
+            MountObj.PeriodicQueries(1).Properties={'Alt','Status'};
+            MountObj.PeriodicQueries(1).Period=10;
+            MountObj.PushPropertyChanges = true;
+
         end
         
         function delete(MountObj)

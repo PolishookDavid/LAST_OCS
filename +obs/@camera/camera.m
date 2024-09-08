@@ -98,6 +98,12 @@ classdef camera < inst.device
             CameraObj.loadConfig(CameraObj.configFileName('createsuper'))
             % add a listener for new images
             addlistener(CameraObj,'LastImage','PostSet',@CameraObj.treatNewImage);
+            % create periodical queries to push stati to PV
+            CameraObj.PeriodicQueries(1).Properties={'Temperature'};
+            CameraObj.PeriodicQueries(1).Period=20;
+            CameraObj.PeriodicQueries(2).Properties={'CoolingPower','CamStatus'};
+            CameraObj.PeriodicQueries(2).Period=10;
+            CameraObj.PushPropertyChanges = true;
         end
        
         function delete(CameraObj)

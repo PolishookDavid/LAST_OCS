@@ -143,6 +143,13 @@ classdef unitCS < obs.LAST_Handle
             
             % create the structure FocusData for all telescopes
             UnitObj.FocusData=repmat(obs.FocusData,1,Nlocal+Nremote);
+            
+            % create periodical queries to push stati to PV
+            UnitObj.PeriodicQueries(1).Properties={'Temperature'};
+            UnitObj.PeriodicQueries(1).Period=20;
+            UnitObj.PeriodicQueries(2).Properties={'CameraPower','MountPower'};
+            UnitObj.PeriodicQueries(2).Period=10;
+            UnitObj.PushPropertyChanges = true;
         end
         
 

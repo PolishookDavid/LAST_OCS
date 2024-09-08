@@ -52,6 +52,10 @@ classdef focuser < inst.device
                % boh...
             end
              
+            % create periodical queries to push stati to PV
+            Focuser.PeriodicQueries(1).Properties={'Status'};
+            Focuser.PeriodicQueries(1).Period=9;
+            Focuser.PushPropertyChanges = true;
         end
         
         function delete(Focuser)
