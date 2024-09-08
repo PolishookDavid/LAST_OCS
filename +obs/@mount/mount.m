@@ -123,7 +123,8 @@ classdef mount < inst.device
             end
             
             % create periodical queries to push stati to PV
-            MountObj.PeriodicQueries(1).Properties={'Alt','Status'};
+            MountObj.PeriodicQueries(1).Properties={'getPropertyIfConnected(''Alt'')',...
+                'getPropertyIfConnected(''Status'')'};
             MountObj.PeriodicQueries(1).Period=10;
             MountObj.PushPropertyChanges = true;
 
