@@ -178,7 +178,13 @@ if (Sun.Alt*RAD > Args.MinSunAltForFlat && Sun.Alt*RAD < Args.MaxSunAltForFlat) 
         fprintf('No flats required\n')
     end
 else
-    fprintf('Sun at %.1f°, too low, skipping twilight flats\n',Sun.Alt*RAD)
+    if Unit.AbortActivity
+        Unit.GeneralStatus='operation aborted';
+        Unit.abort(false);
+        return
+    else
+        fprintf('Sun at %.1f°, too low, skipping twilight flats\n',Sun.Alt*RAD)
+    end
 end
 
 % Run focus loop
