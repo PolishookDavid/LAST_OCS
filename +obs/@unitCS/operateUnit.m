@@ -50,6 +50,8 @@ end
 RAD = 180./pi;
 UnitName=inputname(1);
 
+Unit.AbortActivity=false;
+
 Unit.GeneralStatus='Operation initialization';
 
 % Connect the unit if not already connected. As indicator, check if Cameras
@@ -104,6 +106,7 @@ if (strcmp(Unit.Mount.Status,'disabled'))
    % Check home success:
    if (round(Unit.Mount.Alt,0) ~= 60 || round(Unit.Mount.Az,0) ~= 180)
       fprintf('Mount failed to reach home - abort (cable stretching issue?)\n');
+      Unit.GeneralStatus='Mount failed homing - shutting down';
       Unit.shutdown;
       return;
    end
@@ -115,6 +118,7 @@ pause(1)
 % Check success.
 if (Unit.Mount.TrackingSpeed(1) == 0)
    fprintf('Mount failed to track - abort\n');
+   Unit.GeneralStatus='Mount failed tracking - shutting down';
    Unit.shutdown;
    return;
 end
