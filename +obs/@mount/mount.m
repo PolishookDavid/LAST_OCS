@@ -134,6 +134,7 @@ classdef mount < inst.device
             % delete mount object and related sub objects (if they were
             % defined) (formely: Handle, SlewingTimer - all making no
             %  sense)
+            MountObj.PushPropertyChanges=false; % to delete timers
             try
             catch
             end

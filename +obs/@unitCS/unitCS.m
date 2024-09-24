@@ -166,6 +166,7 @@ classdef unitCS < obs.LAST_Handle
                 %  slaves, and to a cumbersome logic for deciding
                 %  whether to spawn new ones or to reconnect to the old
                 %  ones. I don't see anymore the point for that.
+            UnitObj.PushPropertyChanges=false; % to delete timers
             %for i=1:numel(UnitObj.Slave)
             %     delete(UnitObj.Slave(i))
             %end

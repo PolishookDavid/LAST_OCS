@@ -59,6 +59,7 @@ classdef focuser < inst.device
         end
         
         function delete(Focuser)
+            Focuser.PushPropertyChanges=false; % to delete timers
         end
 
     end

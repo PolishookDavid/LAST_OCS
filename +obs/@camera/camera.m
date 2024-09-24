@@ -107,6 +107,7 @@ classdef camera < inst.device
         end
        
         function delete(CameraObj)
+            CameraObj.PushPropertyChanges=false; % to delete timers
         end
         
     end
