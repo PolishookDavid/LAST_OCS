@@ -52,7 +52,7 @@ classdef superunit < obs.LAST_Handle
             S.RemoteUnits=repmat(obs.util.SpawnedMatlab,1,Nunits);
             for i=1:Nunits
                 id=S.hostUnitId(S.UnitHosts{i});
-                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('master%02d',id));
+                S.RemoteUnits(i)=obs.util.SpawnedMatlab(sprintf('%02d_master',id));
                 if ~isempty(id)
                     S.RemoteUnits(i).RemoteUser='ocs';
                 end
