@@ -150,6 +150,8 @@ classdef unitCS < obs.LAST_Handle
             UnitObj.PeriodicQueries(2).Properties={'CameraPower','MountPower'};
             UnitObj.PeriodicQueries(2).Period=10;
             UnitObj.PushPropertyChanges = true;
+            
+            UnitObj.GeneralStatus="initialized";
         end
         
 
