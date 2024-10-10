@@ -34,7 +34,6 @@ function [ok,remedy,usable]=checkWholeUnit(U,full,remediate,itel)
         usable=false(1,numel(U.Camera));
     end
     
-    ok=true;
     remedy=false;
     okSwitches=false;
     okMount=false;
@@ -114,12 +113,40 @@ function [ok,remedy,usable]=checkWholeUnit(U,full,remediate,itel)
         [okMount,remedyM]=U.checkMount(full,remediate);
     end
     
+    % before checking cameras and focusers, make sure that if they are remote
+    %  the corresponding slave is ok. Otherwise, it doesn't make sense to
+    %  waste time in trying to remediate by power cycling or reconnecting
+    cameraslave=zeros(1,numel(U.Camera));
+    focuserslave=zeros(1,numel(U.Camera));
+    
+    for i=1:numel(U.Slave)
+        for j=itel
+            if isa(U.Camera{j},'obs.remoteClass') && ...
+                 ~isempty(U.Camera{j}.Messenger) && ...
+                 ~isempty(U.Slave(i).Messenger) && ...
+                  U.Slave(i).Messenger==U.Camera{j}.Messenger
+                cameraslave(j)=i;
+            end
+        end
+        for j=itel
+            if isa(U.Focuser{j},'obs.remoteClass') && ...
+                  ~isempty(U.Focuser{j}.Messenger) &&...
+                  ~isempty(U.Slave(i).Messenger) && ...
+                   U.Slave(i).Messenger==U.Focuser{j}.Messenger
+                focuserslave(j)=i;
+            end
+        end
+    end
+    
     % check cameras
     okCameras=false(1,numel(itel));
     remedyC=okCameras;
     if ok
         for i=1:numel(itel)
-            [okCameras(i),remedyC(i)]=U.checkCamera(itel(i),full,remediate);
+            cs=cameraslave(itel(i));
+            if cs>0 && okSlaves(cs)
+                [okCameras(i),remedyC(i)]=U.checkCamera(itel(i),full,remediate);
+            end
         end
     end
 
@@ -128,7 +155,10 @@ function [ok,remedy,usable]=checkWholeUnit(U,full,remediate,itel)
     remedyF=okFocusers;
     if ok
         for i=1:numel(itel)
-            [okFocusers(i),remedyF(i)]=U.checkFocuser(itel(i),full,remediate);
+            fs=focuserslave(itel(i));
+            if fs>0 && okSlaves(fs)
+                [okFocusers(i),remedyF(i)]=U.checkFocuser(itel(i),full,remediate);
+            end
         end
     end
 
