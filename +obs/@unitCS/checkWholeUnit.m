@@ -1,15 +1,27 @@
-function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
+function [ok,remedy,usable]=checkWholeUnit(U,full,remediate,itel)
 % Perform several sanity tests and checks on the objects of the unit,
-%  check the connection status with the hardware,
-%  report and optionally attempt to solve problems.
+%  checks the connection status with the hardware, report and optionally 
+%  attempt to solve problems.
+% Checking short circuits failure of essential components, i.e., if Slaves
+%   are required but not ok we do not proceed at checking individual cameras,
+%   if switches are not ok we don't check the mount, etc.
 % This method can be called after unitCS.connect, and is most useful when
 %  called in the Master unit session
+%
 % Optional arguments:
 % -full [default false], try some operative tests (nudge focusers, take images);
 %   takes longer
 % -remediate [default false], try to apply some remedies
 % -itel [default empty] telescopes to check (it is acceptable to operate an
 %   unit with missing telescopes). If empty, all telescopes of the unit.
+%
+% Returns:
+% -ok : true if all checks for the prescribed units succeeded
+% -remedy: true if remediation was asked for and was necessary
+% -usable: logical array, true for each telescope which is in condition to
+%          work (i.e. mount, focuser and camera ok). If at input itel did
+%          not request all telescopes, usable will be false for those not
+%          checked
     arguments
         U obs.unitCS
         full logical =false; % test full operation, e.g. move focusers, take images
@@ -19,10 +31,13 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
 
     if isempty(itel)
         itel=1:numel(U.Camera);
+        usable=false(1,numel(U.Camera));
     end
     
     ok=true;
     remedy=false;
+    okSwitches=false;
+    okMount=false;
 
     U.report('Checking definitions and connections of unit %s:\n',U.Id)
     U.GeneralStatus='Checking sanity of unit';
@@ -33,6 +48,7 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
     % Note, if the unit has not yet been connected, no remoteUnit object
     %  will be defined, and no Slave will be thought relevant
     relevantslaves=false(1,numel(U.Slave));
+    okSlaves=relevantslaves;
 %     for i=1:numel(U.Slave)
 %         for j=itel
 %             if isa(U.Camera{j},'obs.remoteClass') && ...
@@ -65,8 +81,8 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
     for i=find(relevantslaves)
         status=U.Slave(i).Status;
         U.report('Slave %d status: "%s"\n',i,status)
-        ok=strcmp(status,'alive');
-        if ~ok && remediate
+        okSlaves(i)=strcmp(status,'alive');
+        if ~okSlaves(i) && remediate
             remedy=true;
             % attempt disconnection and reconnection
             if ~strcmp(status,'disconnected')
@@ -77,44 +93,48 @@ function [ok,remedy]=checkWholeUnit(U,full,remediate,itel)
             % this IS tricky, because connectSlave uses inputname()
             U.report('creation of the slave %d anew\n',i)
             evalin('caller',sprintf('%s.connectSlave(%d)',inputname(1),i));
-            ok=strcmp(U.Slave(i).Status,'alive');
+            okSlaves(i)=strcmp(U.Slave(i).Status,'alive');
         end
     end
+
+    ok = isempty(relevantslaves) || any(okSlaves);
 
     % check definition and reachability of the power switches
     %  First, find out if for the required subset of telescopes and mount
     %  we need to check all of them
     remedyS=false;
     if ok
-        [ok,remedyS]=U.checkSwitches(remediate,itel);
+        [okSwitches,remedyS]=U.checkSwitches(remediate,itel);
+        ok = ok & okSwitches;
     end
-
+    
     % check mount
     remedyM=false;
     if ok
-        [okm,remedyM]=U.checkMount(full,remediate);
+        [okMount,remedyM]=U.checkMount(full,remediate);
     end
     
     % check cameras
-    okc=false(1,numel(itel));
-    remedyC=okc;
+    okCameras=false(1,numel(itel));
+    remedyC=okCameras;
     if ok
         for i=1:numel(itel)
-            [okc(i),remedyC(i)]=U.checkCamera(itel(i),full,remediate);
+            [okCameras(i),remedyC(i)]=U.checkCamera(itel(i),full,remediate);
         end
     end
 
     % check focusers
-    okf=false(1,numel(itel));
-    remedyF=okf;
+    okFocusers=false(1,numel(itel));
+    remedyF=okFocusers;
     if ok
         for i=1:numel(itel)
-            [okf(i),remedyF(i)]=U.checkFocuser(itel(i),full,remediate);
+            [okFocusers(i),remedyF(i)]=U.checkFocuser(itel(i),full,remediate);
         end
     end
 
-    ok = ok && okm && all(okc) && all(okf);
+    ok = ok && okMount && all(okCameras) && all(okFocusers);
     remedy = remedy || remedyS || remedyM || any(remedyC) || any(remedyF);
+    usable(itel) = repmat(okSwitches,1,numel(itel)) & repmat(okMount,1,numel(itel)) & okCameras & okFocusers;
     if ok
         U.GeneralStatus='ready';
         if ~remedy

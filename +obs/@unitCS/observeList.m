@@ -31,14 +31,12 @@ function observeList(Unit, Args)
 
         Args.SelectMethod    = 'minam';
 
-        Args.CameraTempFunction = @(AmbientTemp) max(AmbientTemp - 25, -10);
+        Args.CameraTempFunction % left empty, because the default can't be built in the arguments block 
         Args.CheckAbortTime     = 10;  % [s] when taking exposure, will check for abort every THIS number of seconds
         
 
         Args.SimulationJD   = [];   % if given, then work in simulation mode
     end
-
-    RAD = 180./pi;
 
     % The following code should be embeded in the super-script that runs
     % the observatory - NOT HERE
@@ -58,6 +56,9 @@ function observeList(Unit, Args)
         Args.GeoPos = Unit.Mount.MountPos([2 1 3]);   % [deg, deg, m]
     end
 
+    if isempty(Args.CameraTempFunction)
+        Args.CameraTempFunction = @(AmbientTemp) max(AmbientTemp - 25, -10);
+    end
 
     %=== SCHEDULER ===
     % Define a populate the reference class:
@@ -65,12 +66,15 @@ function observeList(Unit, Args)
     TS.GeoPos = Args.GeoPos;
     % Read target list
     % ... Eran will provide
-    % If target list is not available or empty, then create default list:
-    TS.generateRegularGrid('ListName','LAST', 'N_LonLat',[88 30]);
+    % Idea - inspect a preset Redis key
     
+    % If target list is not available or empty, then create default list:
+    if isempty(TS) || isempty(TS.List) % is there another condition for empty list?
+        TS.generateRegularGrid('ListName','LAST', 'N_LonLat',[88 30]);
+    end
 
     % populate MountNumber
-    MountNumber = 
+    MountNumber = str2double(Unit.Id);
 
     % Check hardware status
     %   Check mount connected, no faults
