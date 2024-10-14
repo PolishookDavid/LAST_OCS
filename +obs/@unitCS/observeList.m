@@ -83,20 +83,22 @@ function observeList(Unit, Args)
     % ...
     %   DONOT set mount to home position
     %   Check cameras and focusers
-    ListOfCams =   % vector operational camera+focuser
+    [~,~,ListOfCams] = Unit.checkWholeUnit;  % vector operational camera+focuser
 
-    if numel(ListOfCams)<Args.MinNumCamToUse
-        abortActivityAndReport(Unit, sprintf('only %d cameras are available',numel(ListOfCams)));
+    if numel(find(ListOfCams))<Args.MinNumCamToUse
+        abortActivityAndReport(Unit, sprintf('only %d cameras are available',numel(find(ListOfCams))));
         return;
     end
 
     % set cameras temperature
     %   Read mount temperature
-    MountTemp =   % mount temperature [C]
+    MountTemp = nanmean(Unit.Temperature);  % mount temperature [C]
     % Calculate recomended set temperature for camera
     CameraSetTemp = Args.CameraTempFunction(MountTemp);
     % set camera temperature
-    % ...
+    for i=find(ListOfCams)
+        Unit.Camera{i}.classCommand(sprintf('Temperature=%f',CameraSetTemp))
+    end
 
     % Check that cameras Idle
 
