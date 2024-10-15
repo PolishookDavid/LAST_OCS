@@ -104,6 +104,9 @@ classdef camera < inst.device
             CameraObj.PeriodicQueries(2).Properties={'CoolingPower','CamStatus'};
             CameraObj.PeriodicQueries(2).Period=10;
             CameraObj.PushPropertyChanges = true;
+            % note: for QHYccd, the superclass constructor is called before
+            %  loading libqhyccdlib, so the periodic timer evaluations will
+            %  initially give errors
         end
        
         function delete(CameraObj)
