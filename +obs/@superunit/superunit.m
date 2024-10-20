@@ -137,6 +137,13 @@ classdef superunit < obs.LAST_Handle
                 units=1:numel(S.RemoteUnits);
             end
             res=S.RemoteUnits(units).connect;
+            % turn on periodic self updating of MessengerCommon.set.ExecutingCommand
+            %  for MasterMessenger
+            for i=1:numel(units)
+                if res(i)
+                    S.send('MasterMessenger.PushPropertyChanges=true',units(i));
+                end
+            end
          end
         
         function disconnect(S,units)
