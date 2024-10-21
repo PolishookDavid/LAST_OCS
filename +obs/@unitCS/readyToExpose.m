@@ -93,14 +93,14 @@ function [Ready,Status]=readyToExpose(Unit, Args)
             % Slaves are responsive - check mount
 
             if Args.Test(1)
-                Unit.report('checking if mount is in a good status\n')
+                Unit.report('checking if mount is tracking\n')
                 MountOK = false;
                 Counter = 0;
                 while ~MountOK && Counter<2
                     Counter = Counter + 1;
                     Status.mount = Unit.Mount.classCommand('Status');
                     switch lower(Status.mount)
-                        case {'idle','tracking','home','aborted'}
+                        case {'tracking'}
                             MountOK = true;
                         otherwise
                             MountOK = false;

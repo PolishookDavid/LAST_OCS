@@ -7,7 +7,7 @@ function observeList(Unit, Args)
     %            'SumNaxAlt' - Sun max. alt. for observations [deg].
     %                   Default is -11.5.
     %            'MinNumCamToUse' - Minimum number of cameras to use. If
-    %                   the number of cameras available is smaller then this
+    %                   the number of cameras available is smaller than this
     %                   number then do not observe.
     %                   Default is 1.
     %            'SelectMethod' - Target selection method.
@@ -73,9 +73,6 @@ function observeList(Unit, Args)
         TS.generateRegularGrid('ListName','LAST', 'N_LonLat',[88 30]);
     end
 
-    % populate MountNumber
-    MountNumber = str2double(Unit.Id);
-
     % Check hardware status
     %   Check mount connected, no faults
     % ...
@@ -109,8 +106,7 @@ function observeList(Unit, Args)
         JD = Args.SimulationJD;
     end
 
-    ContinueObs = true;
-    while ContinueObs
+    while ~Unit.AbortActivity % add also SunAlt > -11.5 & DSunAlt >0 for morning
 
         % Get current time
         if isempty(Args.SimulationJD)
@@ -140,7 +136,7 @@ function observeList(Unit, Args)
 
             % select target
             tic;
-            [TargetInd, Priority, ~, TargetStruct] = TS.selectTarget(JD, 'MountNum',MountNumber, 'SelectMethod',Args.SelectMethod);
+            [TargetInd, Priority, ~, TargetStruct] = TS.selectTarget(JD, 'MountNum',Unit.MountNumber, 'SelectMethod',Args.SelectMethod);
             RunTime = toc;
             ReportText = sprintf('Target selection run time: %f seconds',RunTime);
             Unit.report(ReportText);
@@ -162,7 +158,7 @@ function observeList(Unit, Args)
                 % function
 
                 % takeExposure
-                % ...
+                Unit.takeExposure(find(ListOfCams),ExpTime,Nexp)
 
                 % report in monitor
                 Unit.GeneralStatus = sprintf('Observing %s',FieldID);
@@ -172,20 +168,12 @@ function observeList(Unit, Args)
 
 
                 % wait for takeExposure to end and check if need to abort
-                TotalWaitTime = ExpTime.*Nexp;
+                TotalWaitTime = ExpTime.*(Nexp+1);
 
                 % wait for TotalWaitTime, but every Args.CheckAbortTime
                 % seconds check for abort.
-                %...
-                Ncheck            = ceil(TotalWaitTime./Args.CheckAbortTime);
-                PauseTimePerCheck = TotalWaitTime./Ncheck;
-                for Icheck=1:1:Ncheck
-                    if Unit.AbortActivity
-                        abortActivityAndReport(Unit);  % NOTE: abortActivity is an internal function
-                        return;
-                    end
-                end
-
+                Unit.abortablePause(TotalWaitTime)
+ 
                 % Wait for camera to be idle.
                 % If wait time > 100s then assume that something went wrong
                 % - in this case:
@@ -194,7 +182,13 @@ function observeList(Unit, Args)
                 % 3. Restart instruments
                 % 4. continue
                 % ...
-
+                [ready,Status]=Unit.readyToExpose('Itel',find(ListOfCams),...
+                         'Wait',true,'Timeout',20);
+                if ~ready
+                    % be more specific in the message here, add which
+                    % component failed
+                    Unit.reportError('Unit didn''t finish exposure')
+                end
 
                 % check seeing/focus of latest observations
                 %   As a rule the camera object should calculate the
@@ -224,13 +218,6 @@ function observeList(Unit, Args)
             end % if ~isempty(TargetInd)
 
 
-            % checkAbort
-            if Unit.AbortActivity
-                abortActivityAndReport(Unit);  % NOTE: abortActivity is an internal function
-                return;
-            end
-           
-
         end % if SunAlt<Args.SunMaxAlt
        
     end % while ContinueObs
@@ -238,23 +225,7 @@ function observeList(Unit, Args)
 
 end
 
-
-%% Internal functions
-
-function abortActivityAndReport(Unit, AbortReason)
-    %
-
-    arguments
-        Unit
-        AbortReason = '';
-    end
-
-    % report in monitor
-    Unit.GeneralStatus = sprintf('Aborting');
-    % writeLog
-    ReportText = sprintf('Aborting, %s',AbortReason);
-    Unit.report(ReportText);
-    % Abort activity
-    Unit.abort;
-
+if Unit.AbortActivity
+    Unit.GeneralStatus='aborted, because';
+    Unit.report([mfilename,' aborted'])
 end
