@@ -29,13 +29,14 @@ function observeList(Unit, Args)
         Args.SunMaxAlt       = -11.5; % [deg]
         Args.MinNumCamToUse  = 1;
 
-        Args.SelectMethod    = 'minam';
+        Args.SelectMethod    = 'minam'; % ignored, responsibility of the scheduler
 
         Args.CameraTempFunction % left empty, because the default can't be built in the arguments block 
         Args.CheckAbortTime     = 10;  % [s] when taking exposure, will check for abort every THIS number of seconds
         
-
         Args.SimulationJD   = [];   % if given, then work in simulation mode
+        
+        Args.Mailbox= Redis('last0', 6379, 'password', 'foobared');
     end
 
     % The following code should be embeded in the super-script that runs
@@ -60,30 +61,18 @@ function observeList(Unit, Args)
         Args.CameraTempFunction = @(AmbientTemp) max(AmbientTemp - 25, -10);
     end
 
-    %=== SCHEDULER ===
-    % Define a populate the reference class:
-    TS = telescope.Scheduler;
-    TS.GeoPos = Args.GeoPos;
-    % Read target list
-    % ... Eran will provide
-    % Idea - inspect a preset Redis key
-    
-    % If target list is not available or empty, then create default list:
-    if isempty(TS) || isempty(TS.List) % is there another condition for empty list?
-        TS.generateRegularGrid('ListName','LAST', 'N_LonLat',[88 30]);
-    end
 
     % Check hardware status
     %   Check mount connected, no faults
     % ...
     %   If needed fix problems
     % ...
-    %   DONOT set mount to home position
+    %   DO NOT set mount to home position
     %   Check cameras and focusers
-    [~,~,ListOfCams] = Unit.checkWholeUnit;  % vector operational camera+focuser
+    [~,~,ListOfCams] = Unit.checkWholeUnit(0,1);  % vector operational camera+focuser
 
     if numel(find(ListOfCams))<Args.MinNumCamToUse
-        abortActivityAndReport(Unit, sprintf('only %d cameras are available',numel(find(ListOfCams))));
+        Unit.reportError('only %d cameras are available',numel(find(ListOfCams)));
         return;
     end
 
@@ -97,8 +86,7 @@ function observeList(Unit, Args)
         Unit.Camera{i}.classCommand(sprintf('Temperature=%f',CameraSetTemp))
     end
 
-    % Check that cameras Idle
-
+    % Check that cameras Idle (superfluous, has been just done)
     % Check focusers
 
 
@@ -113,42 +101,51 @@ function observeList(Unit, Args)
             % JD/UTC from computer
             JD = celestial.time.julday;
         end
+ 
+        Sun=celestial.SolarSys.get_sun(JD);
+        SunAlt=Sun.Alt;
+        DSunAlt=Sun.dAltdt;
             
-        [SunAz, SunAlt, DSunAz, DSunAlt] = TS.sun(JD);
-
-
         if Unit.AbortActivity
-            abortActivityAndReport(Unit);  % NOTE: abortActivity is an internal function
-            return;
+            break
         end
 
         if SunAlt<Args.SunMaxAlt
             % can observe
+                        
+            %post in the mailbox a request for a target and wait for a
+            % reply
+            requestHash=sprintf('TargetRequest:%d',Unit.MountNumber);
+            success=Args.Mailbox.hset(requestHash,'Status','requesting','JD',JD);
+            if ~success % or is this str2num(success)?
+                Unit.reportError('cannot post target request to scheduler')
+            end
+            t0=now;
+            timeout=10;
+            while (now-t0)*86400< timeout && ...
+                  ~strcmpi(Mailbox.hget(requestHash,'Status'),'provided')
+              % get target
+              TargetStruct=jsondecode(Mailbox.hget(requestHash,'Target'));
+              Unit.AbortablePause(0.1)
+            end
+            if (now-t0)*86400 >= timeout
+                Unit.reportError('Scheduler not providing a target')
+            end
             
-            
-            %=== select targets ===
 
-            % initiate nightly counter (if needed)
-            TS.initNightCounter(false);  % init NightCounter only if a new night
+            if ~isempty(TargetStruct)
+                % Target acquired
+                Mailbox.hset(requestHash,'Status','acquired','JD',JD);
 
-            % reload target list updates
-            % ... from Eran
-
-            % select target
-            tic;
-            [TargetInd, Priority, ~, TargetStruct] = TS.selectTarget(JD, 'MountNum',Unit.MountNumber, 'SelectMethod',Args.SelectMethod);
-            RunTime = toc;
-            ReportText = sprintf('Target selection run time: %f seconds',RunTime);
-            Unit.report(ReportText);
-
-            if ~isempty(TargetInd)
-                % Traget selected
-
+                FieldName = TargetStruct.FieldName;
                 ExpTime = TargetStruct.ExpTime;   % Requested ExpTime [s]
                 Nexp    = TargetStruct.Nexp;      % Requested number of images
 
+                
+                Unit.report(sprintf('Target acquired: "%s", %d exposures x %f sec',...
+                    FieldName,Nexp,ExpTime));
                 % go to target
-                % ...
+                Unit.Mount.goToTarget(TargetStruct.RA,TargetStruct.Dec);
 
                 % Checks (either specifically, or using LastErr)
                 %   check for mount faults
@@ -156,9 +153,17 @@ function observeList(Unit, Args)
                 %   check pointing
                 % If checks failed - try to recover by calling mountRecover
                 % function
+                if ~isempty(Unit.Mount.LastError)
+                end
+
+                % if recovery fails, or something else is unreasonable
+                % (e.g. alt>MinAlt, Nexp or Texp out of limits)
+                %if ....
+                %Mailbox.hset(requestHash,'Status','acquired');
+                %else ...
 
                 % takeExposure
-                Unit.takeExposure(find(ListOfCams),ExpTime,Nexp)
+                Unit.takeExposure(find(ListOfCams),ExpTime,Nexp,'LiveSingleImage',true)
 
                 % report in monitor
                 Unit.GeneralStatus = sprintf('Observing %s',FieldID);
@@ -188,6 +193,9 @@ function observeList(Unit, Args)
                     % be more specific in the message here, add which
                     % component failed
                     Unit.reportError('Unit didn''t finish exposure')
+                    Mailbox.hset(requestHash,'Status','failed','JD',JD);
+                else
+                    Mailbox.hset(requestHash,'Status','observed','JD',JD);
                 end
 
                 % check seeing/focus of latest observations
@@ -196,16 +204,18 @@ function observeList(Unit, Args)
                 %   sequence (only if the sequence length is >5).
                 % FWHM [arcsec], Elongation [A/B], Theta [deg], MedBack
                 % [DN; median background of image sample]
-                [FWHM, Elongation, Theta, MedBack] =
+                %[FWHM, Elongation, Theta, MedBack] = ...
+                % but for now we have only
+                %  Unit.Camera{:}.classCommand('LastImageFWHM'), no moments
 
                 % Write to log:
-                TextLog = sprintf('Sequence of %d images of %d [s]. Theta=5.1f  Elon=%5.1f  Theta=%6.1f',Nexp, ExpTime, FWHM, Elongation, Theta);
-  
-                Unit.report(TextLog);
-
-                % update scheduler counters
-                TS.increaseCounter(TargetInd);
-
+                % TextLog = sprintf('Sequence of %d images of %d [s]. Theta=5.1f  Elon=%5.1f  Theta=%6.1f',Nexp, ExpTime, FWHM, Elongation, Theta);  
+                Unit.report('Sequence of %d images of %d [s]\n',Nexp, ExpTime);
+                Unit.report('  Properties of the last images:\n')
+                for i=find(ListOfCams)
+                    Unit.report('Camera %d: FWHM %.3f\n',i,Unit.Camera{i}.classCommand('LastImageFWHM'))
+                end
+                
                 % check mount temp/images/quality/seeing/smearing(!)??
                 % Place holder for treating bad image quality
 
@@ -217,15 +227,17 @@ function observeList(Unit, Args)
                 Unit.GeneralStatus = ReportText;
             end % if ~isempty(TargetInd)
 
-
+        else
+            Unit.report('Sun is too high!\n')
         end % if SunAlt<Args.SunMaxAlt
        
     end % while ContinueObs
 
 
-end
-
-if Unit.AbortActivity
-    Unit.GeneralStatus='aborted, because';
-    Unit.report([mfilename,' aborted'])
-end
+    % if we got here, either we are done or the script was aborted
+    if Unit.AbortActivity
+        Unit.GeneralStatus='aborted: why, because';
+        Unit.report([mfilename,' aborted'])
+    else
+        Unit.GeneralStatus='Observations terminated';
+    end
