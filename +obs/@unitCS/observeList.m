@@ -31,7 +31,7 @@ function observeList(Unit, Args)
 
         Args.SelectMethod    = 'minam'; % ignored, responsibility of the scheduler
 
-        Args.CameraTempFunction % left empty, because the default can't be built in the arguments block 
+        Args.CameraTempFunction =[];% left empty, because the default can't be built in the arguments block 
         Args.CheckAbortTime     = 10;  % [s] when taking exposure, will check for abort every THIS number of seconds
         
         Args.SimulationJD   = [];   % if given, then work in simulation mode
@@ -76,15 +76,6 @@ function observeList(Unit, Args)
         return;
     end
 
-    % set cameras temperature
-    %   Read mount temperature
-    MountTemp = nanmean(Unit.Temperature);  % mount temperature [C]
-    % Calculate recomended set temperature for camera
-    CameraSetTemp = Args.CameraTempFunction(MountTemp);
-    % set camera temperature
-    for i=find(ListOfCams)
-        Unit.Camera{i}.classCommand(sprintf('Temperature=%f',CameraSetTemp))
-    end
 
     % Check that cameras Idle (superfluous, has been just done)
     % Check focusers
@@ -95,6 +86,17 @@ function observeList(Unit, Args)
     end
 
     while ~Unit.AbortActivity % add also SunAlt > -11.5 & DSunAlt >0 for morning
+
+        % set cameras temperature
+        %   Read mount temperature
+        MountTemp = nanmean(Unit.Temperature);  % mount temperature [C]
+        % Calculate recomended set temperature for camera
+        CameraSetTemp = Args.CameraTempFunction(MountTemp);
+        % set camera temperature
+        for i=find(ListOfCams)
+            Unit.Camera{i}.classCommand(sprintf('Temperature=%f;',CameraSetTemp));
+        end
+
 
         % Get current time
         if isempty(Args.SimulationJD)
@@ -123,10 +125,14 @@ function observeList(Unit, Args)
             t0=now;
             timeout=10;
             while (now-t0)*86400< timeout && ...
-                  ~strcmpi(Mailbox.hget(requestHash,'Status'),'provided')
+                  ~strcmpi(Args.Mailbox.hget(requestHash,'Status'),'provided')
               % get target
-              TargetStruct=jsondecode(Mailbox.hget(requestHash,'Target'));
-              Unit.AbortablePause(0.1)
+              try
+                  TargetStruct=jsondecode(Args.Mailbox.hget(requestHash,'Target'));
+              catch
+                  TargetStruct=[];
+              end
+              Unit.abortablePause(0.1)
             end
             if (now-t0)*86400 >= timeout
                 Unit.reportError('Scheduler not providing a target')
@@ -135,7 +141,7 @@ function observeList(Unit, Args)
 
             if ~isempty(TargetStruct)
                 % Target acquired
-                Mailbox.hset(requestHash,'Status','acquired','JD',JD);
+                Args.Mailbox.hset(requestHash,'Status','acquired','JD',JD);
 
                 FieldName = TargetStruct.FieldName;
                 ExpTime = TargetStruct.ExpTime;   % Requested ExpTime [s]
@@ -159,7 +165,7 @@ function observeList(Unit, Args)
                 % if recovery fails, or something else is unreasonable
                 % (e.g. alt>MinAlt, Nexp or Texp out of limits)
                 %if ....
-                %Mailbox.hset(requestHash,'Status','acquired');
+                %Args.Mailbox.hset(requestHash,'Status','acquired');
                 %else ...
 
                 % takeExposure
@@ -193,9 +199,9 @@ function observeList(Unit, Args)
                     % be more specific in the message here, add which
                     % component failed
                     Unit.reportError('Unit didn''t finish exposure')
-                    Mailbox.hset(requestHash,'Status','failed','JD',JD);
+                    Args.Mailbox.hset(requestHash,'Status','failed','JD',JD);
                 else
-                    Mailbox.hset(requestHash,'Status','observed','JD',JD);
+                    Args.Mailbox.hset(requestHash,'Status','observed','JD',JD);
                 end
 
                 % check seeing/focus of latest observations
@@ -228,7 +234,13 @@ function observeList(Unit, Args)
             end % if ~isempty(TargetInd)
 
         else
-            Unit.report('Sun is too high!\n')
+            Unit.report('Sun altitide is %.1f°, too high!\n',SunAlt)
+            if DSunAlt<0
+                Unit.report(' Waiting for dark\n')
+                Unit.abortablePause(15);
+            else
+                Unit.report('\n')
+            end
         end % if SunAlt<Args.SunMaxAlt
        
     end % while ContinueObs
