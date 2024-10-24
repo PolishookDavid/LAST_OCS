@@ -8,9 +8,11 @@
             if ~exist('state','var') || state
                 state=true;
                 cstate='true';
+                UnitName.GeneralStatus='Aborting';
             else
                 state=false;
                 cstate='false';
+                UnitName.GeneralStatus='releasing AbortActivity';
             end
             UnitObj.AbortActivity=state;
             for i=1:numel(UnitObj.Slave)

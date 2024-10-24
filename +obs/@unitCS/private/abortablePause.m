@@ -6,6 +6,7 @@ function abortablePause(Unit,seconds_to_wait)
     t0=now;
     while (now-t0)*86400<seconds_to_wait
         if Unit.AbortActivity
+            Unit.GeneralStatus='waiting aborted';
             break
         else
             pause(0.1)

@@ -176,6 +176,9 @@ function [Success, Result] = focusTel(UnitObj, itel, Args)
             % fuck you, I have enough of unpacking and repacking, just
             %  return all of it
             Result=UnitObj.FocusData;
+            if UnitObj.AbortActivity
+                UnitObj.GeneralStatus='focus routine aborted';
+            end
         else
             % we cannot block and query, hence exit here
             % define the return arguments as empty, in order not to generate
